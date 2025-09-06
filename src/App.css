@@ -1,0 +1,19 @@
+/* frontend/src/App.css */
+
+.campaign-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.send-button {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  background-color: #53bdeb; /* A nice blue for the action button */
+  color: #111b21;
+}
+
+.send-button:hover {
+  background-color: #4aa4c7;
+}
