@@ -1,14 +1,15 @@
 // frontend/src/pages/Login.js
 
-import React, { useState, useContext } from 'react'; // 1. Import useContext
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext'; // 2. Import our AuthContext
-import './style/Login.css'
+import { AuthContext } from '../context/AuthContext';
+import { API_URL } from '../config'; // <-- 1. IMPORT YOUR LIVE URL
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // 3. Get the login function from context
+  const { login } = useContext(AuthContext);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -17,7 +18,8 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/login', {
+      // 2. USE THE LIVE URL VARIABLE
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,7 +30,6 @@ export default function Login() {
       const data = await response.json();
 
       if (data.success) {
-        // 4. Use the login function from context
         login(data.token);
         alert('Login successful!');
         navigate('/');
@@ -41,7 +42,6 @@ export default function Login() {
     }
   };
 
-  // The JSX form remains the same
   return (
     <div className="form-container" style={{ margin: 'auto', flexBasis: '50%' }}>
       <h2>Login</h2>
@@ -53,13 +53,13 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <textarea
+        {/* 3. USE A PROPER PASSWORD INPUT */}
+        <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          // style={{ minHeight: 'auto' }}
         />
         <button type="submit">Login</button>
       </form>
