@@ -21,16 +21,16 @@ export default function CreateCampaign() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedList, setSelectedList] = useState('');
 
-  // Fetch both templates and contact lists when the page loads
+  // --- NEW: State to store the count of variables in the selected template ---
+  const [variableCount, setVariableCount] = useState(0);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch templates
         const templatesRes = await fetch(`${API_URL}/api/campaigns/templates`);
         const templatesData = await templatesRes.json();
         if (templatesData.success) setTemplates(templatesData.data);
 
-        // Fetch contact lists
         const listsRes = await fetch(`${API_URL}/api/contacts/lists`);
         const listsData = await listsRes.json();
         if (listsData.success) setContactLists(listsData.data);
@@ -41,15 +41,26 @@ export default function CreateCampaign() {
     fetchData();
   }, []);
 
+  // --- THIS FUNCTION IS NOW SMARTER ---
   const handleTemplateChange = (e) => {
     const templateName = e.target.value;
     setSelectedTemplate(templateName);
+    
     const template = templates.find(t => t.name === templateName);
     if (template) {
       const bodyComponent = template.components.find(c => c.type === 'BODY');
-      if (bodyComponent) setFormMessage(bodyComponent.text);
+      if (bodyComponent) {
+        setFormMessage(bodyComponent.text);
+        // Count the variables (e.g., {{1}}, {{2}}) in the template text
+        const matches = bodyComponent.text.match(/\{\{([0-9]+)\}\}/g) || [];
+        setVariableCount(matches.length);
+      } else {
+        setFormMessage('');
+        setVariableCount(0);
+      }
     } else {
       setFormMessage('');
+      setVariableCount(0);
     }
   };
 
@@ -58,7 +69,7 @@ export default function CreateCampaign() {
     const selectedTemplateObject = templates.find(t => t.name === selectedTemplate);
 
     if (!formName || !selectedTemplateObject || !selectedList) {
-        return alert('Please fill out all required fields: Campaign Name, Template, and Contact List.');
+        return alert('Please fill out all required fields.');
     }
     
     try {
@@ -71,10 +82,14 @@ export default function CreateCampaign() {
           message: formMessage,
           templateName: selectedTemplateObject.name,
           templateLanguage: selectedTemplateObject.language,
+          contactList: selectedList,
           headerImageUrl: headerImageUrl,
-          bodyVariables: bodyVariables,
-          contactList: selectedList, // <-- Add the selected contact list ID
+          expectedVariables: variableCount, // <-- Send the variable count
         };
+        
+        if (bodyVariables.length > 0) {
+            campaignData.bodyVariables = bodyVariables;
+        }
 
         const response = await fetch(`${API_URL}/api/campaigns`, {
             method: 'POST',
@@ -85,7 +100,7 @@ export default function CreateCampaign() {
         const data = await response.json();
         if(data.success) {
             alert('Campaign created successfully!');
-            navigate('/'); // Redirect back to the dashboard
+            navigate('/');
         } else {
             alert(`Error: ${data.error}`);
         }
@@ -127,12 +142,15 @@ export default function CreateCampaign() {
           onChange={(e) => setHeaderImageUrl(e.target.value)}
         />
         
-        <input
-          type="text"
-          placeholder="Body variables, comma-separated"
-          value={bodyVariablesText}
-          onChange={(e) => setBodyVariablesText(e.target.value)}
-        />
+        {/* Only show the variables input if the template needs them */}
+        {variableCount > 0 && (
+          <input
+            type="text"
+            placeholder={`Body variables (${variableCount} needed), comma-separated`}
+            value={bodyVariablesText}
+            onChange={(e) => setBodyVariablesText(e.target.value)}
+          />
+        )}
         
         <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
           <option value="">-- Select a Contact List --</option>
