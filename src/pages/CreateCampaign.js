@@ -28,7 +28,7 @@ export default function CreateCampaign() {
         const templatesData = await templatesRes.json();
         if (templatesData.success) setTemplates(templatesData.data);
 
-        const listsRes = await fetch(`${API__URL}/api/contacts/lists`);
+        const listsRes = await fetch(`${API_URL}/api/contacts/lists`);
         const listsData = await listsRes.json();
         if (listsData.success) setContactLists(listsData.data);
       } catch (error) {
