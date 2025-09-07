@@ -7,11 +7,10 @@ import { API_URL } from '../config';
 export default function CreateCampaign() {
   const navigate = useNavigate();
 
-  // Form state
+  // Form state is now simpler
   const [formName, setFormName] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const [headerImageUrl, setHeaderImageUrl] = useState('');
-  const [bodyVariablesText, setBodyVariablesText] = useState('');
   
   // Data for dropdowns
   const [templates, setTemplates] = useState([]);
@@ -21,18 +20,13 @@ export default function CreateCampaign() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedList, setSelectedList] = useState('');
 
-  // Manual input for variable count
-  const [expectedVariables, setExpectedVariables] = useState(0);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch templates
         const templatesRes = await fetch(`${API_URL}/api/campaigns/templates`);
         const templatesData = await templatesRes.json();
         if (templatesData.success) setTemplates(templatesData.data);
 
-        // Fetch contact lists (Corrected URL)
         const listsRes = await fetch(`${API_URL}/api/contacts/lists`);
         const listsData = await listsRes.json();
         if (listsData.success) setContactLists(listsData.data);
@@ -65,6 +59,7 @@ export default function CreateCampaign() {
     }
     
     try {
+        // The data we send is now much simpler
         const campaignData = {
           name: formName,
           message: formMessage,
@@ -72,8 +67,6 @@ export default function CreateCampaign() {
           templateLanguage: selectedTemplateObject.language,
           contactList: selectedList,
           headerImageUrl: headerImageUrl,
-          expectedVariables: parseInt(expectedVariables, 10) || 0,
-          bodyVariables: bodyVariablesText ? bodyVariablesText.split(',').map(item => item.trim()) : [],
         };
 
         const response = await fetch(`${API_URL}/api/campaigns`, {
@@ -85,7 +78,7 @@ export default function CreateCampaign() {
         const data = await response.json();
         if(data.success) {
             alert('Campaign created successfully!');
-            navigate('/');
+            navigate('/'); // Redirect back to the dashboard
         } else {
             alert(`Error: ${data.error}`);
         }
@@ -127,23 +120,7 @@ export default function CreateCampaign() {
           value={headerImageUrl}
           onChange={(e) => setHeaderImageUrl(e.target.value)}
         />
-        
-        <input
-            type="number"
-            placeholder="Number of Body Variables (e.g., 1)"
-            value={expectedVariables}
-            onChange={(e) => setExpectedVariables(e.target.value)}
-            min="0"
-            required
-        />
-        
-        <input
-          type="text"
-          placeholder="Static Body variables (optional, comma-separated)"
-          value={bodyVariablesText}
-          onChange={(e) => setBodyVariablesText(e.target.value)}
-        />
-        
+                
         <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)} required>
           <option value="">-- Select a Contact List --</option>
           {contactLists.map((list) => (
