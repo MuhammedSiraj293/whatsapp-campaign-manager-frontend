@@ -21,9 +21,6 @@ export default function CreateCampaign() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedList, setSelectedList] = useState('');
 
-  // NEW: State to store the count of variables in the selected template
-  const [variableCount, setVariableCount] = useState(0);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -31,7 +28,7 @@ export default function CreateCampaign() {
         const templatesData = await templatesRes.json();
         if (templatesData.success) setTemplates(templatesData.data);
 
-        const listsRes = await fetch(`${API_URL}/api/contacts/lists`);
+        const listsRes = await fetch(`${API__URL}/api/contacts/lists`);
         const listsData = await listsRes.json();
         if (listsData.success) setContactLists(listsData.data);
       } catch (error) {
@@ -41,7 +38,6 @@ export default function CreateCampaign() {
     fetchData();
   }, []);
 
-  // This function now counts the variables in the template
   const handleTemplateChange = (e) => {
     const templateName = e.target.value;
     setSelectedTemplate(templateName);
@@ -49,18 +45,9 @@ export default function CreateCampaign() {
     const template = templates.find(t => t.name === templateName);
     if (template) {
       const bodyComponent = template.components.find(c => c.type === 'BODY');
-      if (bodyComponent && bodyComponent.text) {
-        setFormMessage(bodyComponent.text);
-        // Use a regular expression to find and count all instances of {{...}}
-        const matches = bodyComponent.text.match(/\{\{([0-9]+)\}\}/g) || [];
-        setVariableCount(matches.length);
-      } else {
-        setFormMessage('');
-        setVariableCount(0);
-      }
+      setFormMessage(bodyComponent ? bodyComponent.text : '');
     } else {
       setFormMessage('');
-      setVariableCount(0);
     }
   };
 
@@ -73,6 +60,12 @@ export default function CreateCampaign() {
     }
     
     try {
+        // --- THIS IS THE KEY CHANGE ---
+        // We now determine the number of variables directly from user input.
+        const bodyVariables = bodyVariablesText 
+          ? bodyVariablesText.split(',').map(item => item.trim()).filter(Boolean) 
+          : [];
+
         const campaignData = {
           name: formName,
           message: formMessage,
@@ -80,13 +73,9 @@ export default function CreateCampaign() {
           templateLanguage: selectedTemplateObject.language,
           contactList: selectedList,
           headerImageUrl: headerImageUrl,
-          expectedVariables: variableCount, // <-- Send the variable count to the backend
+          expectedVariables: bodyVariables.length, // The count is now based on what you typed
+          bodyVariables: bodyVariables, // This is for static variables, if any
         };
-        
-        // Only add static bodyVariables if the user has typed something
-        if (bodyVariablesText.trim() !== '') {
-            campaignData.bodyVariables = bodyVariablesText.split(',').map(item => item.trim());
-        }
 
         const response = await fetch(`${API_URL}/api/campaigns`, {
             method: 'POST',
@@ -139,15 +128,12 @@ export default function CreateCampaign() {
           onChange={(e) => setHeaderImageUrl(e.target.value)}
         />
         
-        {/* Only show the variables input if the selected template needs them */}
-        {variableCount > 0 && (
-          <input
-            type="text"
-            placeholder={`Body variables (${variableCount} needed), comma-separated`}
-            value={bodyVariablesText}
-            onChange={(e) => setBodyVariablesText(e.target.value)}
-          />
-        )}
+        <input
+          type="text"
+          placeholder="Static Body variables, comma-separated"
+          value={bodyVariablesText}
+          onChange={(e) => setBodyVariablesText(e.target.value)}
+        />
         
         <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
           <option value="">-- Select a Contact List --</option>
