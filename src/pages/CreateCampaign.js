@@ -7,10 +7,11 @@ import { API_URL } from '../config';
 export default function CreateCampaign() {
   const navigate = useNavigate();
 
-  // Form state is now simpler
+  // Form state
   const [formName, setFormName] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const [headerImageUrl, setHeaderImageUrl] = useState('');
+  const [bodyVariablesText, setBodyVariablesText] = useState('');
   
   // Data for dropdowns
   const [templates, setTemplates] = useState([]);
@@ -19,6 +20,9 @@ export default function CreateCampaign() {
   // Selected values from dropdowns
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedList, setSelectedList] = useState('');
+
+  // --- RE-ADD THE MANUAL INPUT FOR VARIABLE COUNT ---
+  const [expectedVariables, setExpectedVariables] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,11 +59,10 @@ export default function CreateCampaign() {
     const selectedTemplateObject = templates.find(t => t.name === selectedTemplate);
 
     if (!formName || !selectedTemplateObject || !selectedList) {
-        return alert('Please fill out all required fields: Campaign Name, Template, and Contact List.');
+        return alert('Please fill out all required fields.');
     }
     
     try {
-        // The data we send is now much simpler
         const campaignData = {
           name: formName,
           message: formMessage,
@@ -67,6 +70,9 @@ export default function CreateCampaign() {
           templateLanguage: selectedTemplateObject.language,
           contactList: selectedList,
           headerImageUrl: headerImageUrl,
+          // Use the value from the manual input field
+          expectedVariables: parseInt(expectedVariables, 10) || 0,
+          bodyVariables: bodyVariablesText ? bodyVariablesText.split(',').map(item => item.trim()) : [],
         };
 
         const response = await fetch(`${API_URL}/api/campaigns`, {
@@ -78,7 +84,7 @@ export default function CreateCampaign() {
         const data = await response.json();
         if(data.success) {
             alert('Campaign created successfully!');
-            navigate('/'); // Redirect back to the dashboard
+            navigate('/');
         } else {
             alert(`Error: ${data.error}`);
         }
@@ -120,7 +126,24 @@ export default function CreateCampaign() {
           value={headerImageUrl}
           onChange={(e) => setHeaderImageUrl(e.target.value)}
         />
-                
+        
+        {/* --- ADD THE INPUT FIELD BACK --- */}
+        <input
+            type="number"
+            placeholder="Number of Body Variables (e.g., 1)"
+            value={expectedVariables}
+            onChange={(e) => setExpectedVariables(e.target.value)}
+            min="0"
+            required
+        />
+        
+        <input
+          type="text"
+          placeholder="Static Body variables (optional)"
+          value={bodyVariablesText}
+          onChange={(e) => setBodyVariablesText(e.target.value)}
+        />
+        
         <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)} required>
           <option value="">-- Select a Contact List --</option>
           {contactLists.map((list) => (
