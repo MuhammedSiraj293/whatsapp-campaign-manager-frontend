@@ -21,13 +21,18 @@ export default function CreateCampaign() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedList, setSelectedList] = useState('');
 
+  // Manual input for variable count
+  const [expectedVariables, setExpectedVariables] = useState(0);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch templates
         const templatesRes = await fetch(`${API_URL}/api/campaigns/templates`);
         const templatesData = await templatesRes.json();
         if (templatesData.success) setTemplates(templatesData.data);
 
+        // Fetch contact lists (Corrected URL)
         const listsRes = await fetch(`${API_URL}/api/contacts/lists`);
         const listsData = await listsRes.json();
         if (listsData.success) setContactLists(listsData.data);
@@ -56,16 +61,10 @@ export default function CreateCampaign() {
     const selectedTemplateObject = templates.find(t => t.name === selectedTemplate);
 
     if (!formName || !selectedTemplateObject || !selectedList) {
-        return alert('Please fill out all required fields.');
+        return alert('Please fill out all required fields: Campaign Name, Template, and Contact List.');
     }
     
     try {
-        // --- THIS IS THE KEY CHANGE ---
-        // We now determine the number of variables directly from user input.
-        const bodyVariables = bodyVariablesText 
-          ? bodyVariablesText.split(',').map(item => item.trim()).filter(Boolean) 
-          : [];
-
         const campaignData = {
           name: formName,
           message: formMessage,
@@ -73,8 +72,8 @@ export default function CreateCampaign() {
           templateLanguage: selectedTemplateObject.language,
           contactList: selectedList,
           headerImageUrl: headerImageUrl,
-          expectedVariables: bodyVariables.length, // The count is now based on what you typed
-          bodyVariables: bodyVariables, // This is for static variables, if any
+          expectedVariables: parseInt(expectedVariables, 10) || 0,
+          bodyVariables: bodyVariablesText ? bodyVariablesText.split(',').map(item => item.trim()) : [],
         };
 
         const response = await fetch(`${API_URL}/api/campaigns`, {
@@ -104,9 +103,10 @@ export default function CreateCampaign() {
           placeholder="Campaign Name"
           value={formName}
           onChange={(e) => setFormName(e.target.value)}
+          required
         />
         
-        <select value={selectedTemplate} onChange={handleTemplateChange}>
+        <select value={selectedTemplate} onChange={handleTemplateChange} required>
           <option value="">-- Select a Message Template --</option>
           {templates.map((template) => (
             <option key={template.id} value={template.name}>
@@ -129,13 +129,22 @@ export default function CreateCampaign() {
         />
         
         <input
+            type="number"
+            placeholder="Number of Body Variables (e.g., 1)"
+            value={expectedVariables}
+            onChange={(e) => setExpectedVariables(e.target.value)}
+            min="0"
+            required
+        />
+        
+        <input
           type="text"
-          placeholder="Static Body variables, comma-separated"
+          placeholder="Static Body variables (optional, comma-separated)"
           value={bodyVariablesText}
           onChange={(e) => setBodyVariablesText(e.target.value)}
         />
         
-        <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
+        <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)} required>
           <option value="">-- Select a Contact List --</option>
           {contactLists.map((list) => (
             <option key={list._id} value={list._id}>
