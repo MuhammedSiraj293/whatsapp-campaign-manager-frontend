@@ -23,7 +23,8 @@ export default function CreateCampaign() {
 
   // --- RE-ADD THE MANUAL INPUT FOR VARIABLE COUNT ---
   const [expectedVariables, setExpectedVariables] = useState(0);
-
+    // --- NEW: State for the schedule date ---
+  const [scheduledFor, setScheduledFor] = useState('');
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -70,9 +71,10 @@ export default function CreateCampaign() {
           templateLanguage: selectedTemplateObject.language,
           contactList: selectedList,
           headerImageUrl: headerImageUrl,
-          // Use the value from the manual input field
           expectedVariables: parseInt(expectedVariables, 10) || 0,
           bodyVariables: bodyVariablesText ? bodyVariablesText.split(',').map(item => item.trim()) : [],
+          // --- NEW: Add the schedule date to the payload if it exists ---
+          ...(scheduledFor && { scheduledFor }),
         };
 
         const response = await fetch(`${API_URL}/api/campaigns`, {
@@ -83,7 +85,7 @@ export default function CreateCampaign() {
         
         const data = await response.json();
         if(data.success) {
-            alert('Campaign created successfully!');
+            alert('Campaign created/scheduled successfully!');
             navigate('/');
         } else {
             alert(`Error: ${data.error}`);
@@ -143,7 +145,13 @@ export default function CreateCampaign() {
           value={bodyVariablesText}
           onChange={(e) => setBodyVariablesText(e.target.value)}
         />
-        
+        {/* --- NEW DATE/TIME PICKER --- */}
+        <label style={{ marginTop: '10px', fontSize: '0.9rem', color: '#b0b0b0' }}>Schedule for (optional):</label>
+        <input
+            type="datetime-local"
+            value={scheduledFor}
+            onChange={(e) => setScheduledFor(e.target.value)}
+        />
         <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)} required>
           <option value="">-- Select a Contact List --</option>
           {contactLists.map((list) => (

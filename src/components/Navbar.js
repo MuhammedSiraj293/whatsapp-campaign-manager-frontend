@@ -34,6 +34,7 @@ export default function Navbar() {
       {authToken ? (
         <>
           <Link to="/" style={linkStyle}>Dashboard</Link>
+          <Link to="/analytics" style={linkStyle}>Analytics</Link>
           <Link to="/replies" style={linkStyle}>Replies</Link>
           <Link to="/contacts" style={linkStyle}>Contacts</Link> {/* <-- ADD THIS LINK */}
           <button onClick={handleLogout} style={{ ...linkStyle, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>
