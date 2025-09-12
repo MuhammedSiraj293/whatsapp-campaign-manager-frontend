@@ -1,21 +1,20 @@
 // frontend/src/pages/Contacts.js
 
 import React, { useState, useEffect } from 'react';
-import { API_URL } from '../config';
-import { uploadRecipientsFile } from '../services/api'; // We can reuse this service
+import { authFetch, uploadFile } from '../services/api'; // <-- 1. IMPORT AUTH SERVICES
 
 export default function Contacts() {
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newListName, setNewListName] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null); // <-- NEW: State for the selected file
+  const [selectedFile, setSelectedFile] = useState(null);
 
   // Function to fetch all contact lists
   const fetchContactLists = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_URL}/api/contacts/lists`);
-      const data = await response.json();
+      // 2. Use authFetch to get the lists
+      const data = await authFetch('/contacts/lists');
       if (data.success) {
         setLists(data.data);
       }
@@ -37,27 +36,23 @@ export default function Contacts() {
       return alert('Please provide a list name.');
     }
     try {
-      const response = await fetch(`${API_URL}/api/contacts/lists`, {
+      // 3. Use authFetch to create a new list
+      const data = await authFetch('/contacts/lists', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ name: newListName }),
       });
-      const data = await response.json();
+
       if (data.success) {
         alert('List created successfully!');
         setNewListName('');
-        fetchContactLists();
-      } else {
-        alert(`Error: ${data.error}`);
+        fetchContactLists(); // Refresh the list
       }
     } catch (error) {
       console.error('Error creating list:', error);
+      alert(error.message);
     }
   };
 
-  // --- NEW HANDLERS FOR FILE UPLOAD ---
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
   };
@@ -67,29 +62,19 @@ export default function Contacts() {
       return alert('Please select a file to upload.');
     }
     try {
-      // We will reuse the upload service, but we need to create a new one for contacts
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      const response = await fetch(`${API_URL}/api/contacts/lists/${listId}/upload`, {
-          method: 'POST',
-          body: formData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert(result.message);
-        setSelectedFile(null);
-        document.getElementById(`file-input-${listId}`).value = ""; // Reset file input
-      } else {
-        throw new Error(result.error || 'Upload failed');
+      // 4. Use the dedicated and secure uploadFile service
+      const result = await uploadFile(`/contacts/lists/${listId}/upload`, selectedFile);
+      alert(result.message);
+      setSelectedFile(null);
+      // Reset the specific file input that was used
+      const fileInput = document.getElementById(`file-input-${listId}`);
+      if (fileInput) {
+        fileInput.value = "";
       }
     } catch (error) {
       alert(`Error: ${error.message}`);
     }
   };
-  // --- END OF NEW HANDLERS ---
 
   return (
     <div className="App-main">
@@ -115,7 +100,6 @@ export default function Contacts() {
             {lists.map((list) => (
               <li key={list._id}>
                 <strong>{list.name}</strong>
-                {/* --- NEW UPLOAD FORM PER LIST --- */}
                 <div className="upload-section" style={{ marginTop: '15px', borderTop: '1px solid #374248', paddingTop: '15px' }}>
                     <p style={{margin: '0 0 10px 0', fontSize: '0.9rem'}}>Upload contacts to this list:</p>
                     <input type="file" accept=".csv, .xlsx, .xls" id={`file-input-${list._id}`} onChange={handleFileChange} />
