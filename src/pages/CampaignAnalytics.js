@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { API_URL } from '../config';
 
-// Reusable StatCard component, similar to the one on the main Analytics page
 const StatCard = ({ title, value }) => {
     return (
       <div className="bg-[#202c33] p-6 rounded-lg shadow-lg text-center border-l-4 border-emerald-500">
@@ -17,7 +16,7 @@ const StatCard = ({ title, value }) => {
 export default function CampaignAnalytics() {
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { campaignId } = useParams(); // <-- Gets the campaignId from the URL
+  const { campaignId } = useParams();
 
   useEffect(() => {
     if (!campaignId) return;
@@ -38,7 +37,37 @@ export default function CampaignAnalytics() {
     };
 
     fetchCampaignAnalytics();
-  }, [campaignId]); // Re-run if the campaignId changes
+  }, [campaignId]);
+
+  // --- NEW FUNCTION TO HANDLE THE EXPORT ---
+  const handleExport = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/analytics/${campaignId}/export`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      // Convert the response into a blob (a file-like object)
+      const blob = await response.blob();
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link element to trigger the download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${analytics.name}_analytics.csv`; // Set the file name
+      document.body.appendChild(a); // Add the link to the page
+      a.click(); // Programmatically click the link
+      a.remove(); // Remove the link from the page
+      window.URL.revokeObjectURL(url); // Clean up the temporary URL
+
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Failed to export analytics.');
+    }
+  };
+
 
   if (isLoading) {
     return <p className="text-center text-gray-400">Loading campaign analytics...</p>;
@@ -50,9 +79,15 @@ export default function CampaignAnalytics() {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-emerald-500 text-center mb-2">
-        Campaign Analytics
-      </h1>
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-3xl font-bold text-emerald-500">
+          Campaign Analytics
+        </h1>
+        {/* --- NEW EXPORT BUTTON --- */}
+        <button onClick={handleExport} className="send-button">
+          Export to CSV
+        </button>
+      </div>
       <h2 className="text-xl text-gray-300 text-center mb-8">
         {analytics.name}
       </h2>

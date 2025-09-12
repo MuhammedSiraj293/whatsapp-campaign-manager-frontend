@@ -1,20 +1,22 @@
 // frontend/src/pages/Replies.js
 
 import React, { useState, useEffect } from 'react';
-import { API_URL } from '../config';
+import { authFetch, uploadFile } from '../services/api'; // <-- IMPORT authFetch and uploadFile
 import LeftMenu from '../components/LeftMenu';
 import ChatDetail from '../components/ChatDetail';
-import './style/Replies.css';
+import './style/Replies.css'; // Assuming you have this CSS file
 import LoadingScreen from "../components/LoadingScreen";
+
 
 export default function Replies() {
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-   const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // This loading screen effect is fine, no changes needed.
   useEffect(() => {
     const id = setTimeout(() => {
       if (progress >= 100) setLoading(false);
@@ -23,14 +25,13 @@ export default function Replies() {
         setProgress(progress + increment);
       }
     }, 300);
-
     return () => clearTimeout(id);
   }, [progress]);
 
+  // Use authFetch to get conversations
   const fetchConversations = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/replies/conversations`);
-      const data = await response.json();
+      const data = await authFetch('/replies/conversations');
       if (data.success) {
         setConversations(data.data);
       }
@@ -39,12 +40,12 @@ export default function Replies() {
     }
   };
 
+  // Use authFetch to get messages
   const fetchMessages = async (phoneNumber) => {
     if (!phoneNumber) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/replies/conversations/${phoneNumber}`);
-      const data = await response.json();
+      const data = await authFetch(`/replies/conversations/${phoneNumber}`);
       if (data.success) {
         setMessages(data.data);
       }
@@ -57,30 +58,24 @@ export default function Replies() {
 
   useEffect(() => {
     fetchConversations();
+    const conversationInterval = setInterval(fetchConversations, 10000); // Poll for new conversations
+    return () => clearInterval(conversationInterval);
   }, []);
 
   useEffect(() => {
     if (!activeConversationId) return;
     fetchMessages(activeConversationId);
-    const intervalId = setInterval(() => fetchMessages(activeConversationId), 5000);
-    return () => clearInterval(intervalId);
+    const messageInterval = setInterval(() => fetchMessages(activeConversationId), 5000); // Poll for new messages
+    return () => clearInterval(messageInterval);
   }, [activeConversationId]);
 
-  // --- THIS FUNCTION IS CORRECTED ---
   const handleConversationSelect = async (phoneNumber) => {
-    // 1. Set the active conversation to load its messages
     setActiveConversationId(phoneNumber);
-
-    // 2. Find the selected conversation to check its unread count
     const selectedConvo = conversations.find(c => c._id === phoneNumber);
-    
-    // 3. Only mark as read if there are unread messages
     if (selectedConvo && selectedConvo.unreadCount > 0) {
       try {
-        await fetch(`${API_URL}/api/replies/conversations/${phoneNumber}/read`, {
-          method: 'PATCH',
-        });
-        // 4. Refresh the conversation list to update the unread counts
+        // Use authFetch to mark as read
+        await authFetch(`/replies/conversations/${phoneNumber}/read`, { method: 'PATCH' });
         await fetchConversations();
       } catch (error) {
         console.error('Error marking messages as read:', error);
@@ -88,13 +83,12 @@ export default function Replies() {
     }
   };
 
-
   const handleSendReply = async (messageText) => {
     if (!messageText.trim() || !activeConversationId) return;
     try {
-      await fetch(`${API_URL}/api/replies/conversations/${activeConversationId}`, {
+      // Use authFetch to send a reply
+      await authFetch(`/replies/conversations/${activeConversationId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: messageText }),
       });
       await fetchMessages(activeConversationId);
@@ -105,15 +99,9 @@ export default function Replies() {
 
   const handleSendMedia = async (file) => {
     if (!file || !activeConversationId) return;
-    
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      await fetch(`${API_URL}/api/replies/conversations/${activeConversationId}/media`, {
-        method: 'POST',
-        body: formData,
-      });
+      // Use the dedicated uploadFile service for media
+      await uploadFile(`/replies/conversations/${activeConversationId}/media`, file);
       await fetchMessages(activeConversationId);
     } catch (error) {
       console.error('Error sending media:', error);
@@ -126,29 +114,29 @@ export default function Replies() {
       {loading ? (
         <LoadingScreen progress={progress} />
       ) : (
-    <div className="chat-container">
-      <div className="conversations-list">
-        <LeftMenu 
-          conversations={conversations} 
-          onSelectConversation={handleConversationSelect}
-          activeConversationId={activeConversationId}
-        />
-      </div>
-
-      <div className="message-view">
-        {activeConversationId ? (
-          <ChatDetail 
-            key={activeConversationId}
-            activeConversationId={activeConversationId}
-            messages={messages}
-            onSendMessage={handleSendReply}
-            onSendMedia={handleSendMedia}
-          />
-        ) : (
-          <div className="placeholder">Select a conversation to start chatting.</div>
-        )}
-      </div>
-    </div>
-      )}</>
+        <div className="chat-container">
+          <div className="conversations-list">
+            <LeftMenu 
+              conversations={conversations} 
+              onSelectConversation={handleConversationSelect}
+              activeConversationId={activeConversationId}
+            />
+          </div>
+          <div className="message-view">
+            {activeConversationId ? (
+              <ChatDetail 
+                key={activeConversationId}
+                activeConversationId={activeConversationId}
+                messages={messages}
+                onSendMessage={handleSendReply}
+                onSendMedia={handleSendMedia}
+              />
+            ) : (
+              <div className="placeholder">Select a conversation to start chatting.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
