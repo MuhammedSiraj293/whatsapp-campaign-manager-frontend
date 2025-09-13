@@ -36,7 +36,8 @@ export default function Navbar() {
           <Link to="/" style={linkStyle}>Dashboard</Link>
           <Link to="/analytics" style={linkStyle}>Analytics</Link>
           <Link to="/replies" style={linkStyle}>Replies</Link>
-          <Link to="/contacts" style={linkStyle}>Contacts</Link> {/* <-- ADD THIS LINK */}
+          <Link to="/contacts" style={linkStyle}>Contacts</Link> 
+          <Link to="/logs" style={linkStyle}>Logs</Link>{/* <-- ADD THIS LINK */}
           <button onClick={handleLogout} style={{ ...linkStyle, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>
             Logout
           </button>

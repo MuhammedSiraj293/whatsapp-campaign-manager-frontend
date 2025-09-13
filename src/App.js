@@ -8,7 +8,8 @@ import Replies from './pages/Replies';
 import Contacts from './pages/Contacts';
 import CreateCampaign from './pages/CreateCampaign';
 import Analytics from './pages/Analytics';
-import CampaignAnalytics from './pages/CampaignAnalytics'; // <-- IMPORT NEW PAGE
+import CampaignAnalytics from './pages/CampaignAnalytics';
+import Logs from './pages/Logs'; // <-- IMPORT NEW PAGE
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -40,11 +41,14 @@ function App() {
             path="/analytics" 
             element={<ProtectedRoute><Analytics /></ProtectedRoute>} 
           />
-          {/* --- ADD NEW DYNAMIC ROUTE --- */}
-          {/* The ':campaignId' is a URL parameter that will hold the campaign's ID */}
           <Route 
             path="/analytics/:campaignId" 
             element={<ProtectedRoute><CampaignAnalytics /></ProtectedRoute>} 
+          />
+          {/* --- ADD NEW ROUTE --- */}
+          <Route 
+            path="/logs" 
+            element={<ProtectedRoute><Logs /></ProtectedRoute>} 
           />
         </Routes>
       </div>
