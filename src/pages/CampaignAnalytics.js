@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { API_URL } from '../config';
+import { authFetch } from '../services/api'; // <-- IMPORT AUTH SERVICE
 
 const StatCard = ({ title, value }) => {
     return (
@@ -24,8 +24,9 @@ export default function CampaignAnalytics() {
     const fetchCampaignAnalytics = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_URL}/api/analytics/${campaignId}`);
-        const data = await response.json();
+        // --- THIS IS THE FIX for loading stats ---
+        // Use authFetch to make an authenticated request
+        const data = await authFetch(`/analytics/${campaignId}`);
         if (data.success) {
           setAnalytics(data.data);
         }
@@ -39,35 +40,37 @@ export default function CampaignAnalytics() {
     fetchCampaignAnalytics();
   }, [campaignId]);
 
-  // --- NEW FUNCTION TO HANDLE THE EXPORT ---
   const handleExport = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/analytics/${campaignId}/export`);
+      // --- THIS IS THE FIX for exporting ---
+      // We need to manually add the token for this file download request
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/analytics/${campaignId}/export`, { headers });
+      
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       
-      // Convert the response into a blob (a file-like object)
       const blob = await response.blob();
-      
-      // Create a temporary URL for the blob
       const url = window.URL.createObjectURL(blob);
-      
-      // Create a temporary link element to trigger the download
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${analytics.name}_analytics.csv`; // Set the file name
-      document.body.appendChild(a); // Add the link to the page
-      a.click(); // Programmatically click the link
-      a.remove(); // Remove the link from the page
-      window.URL.revokeObjectURL(url); // Clean up the temporary URL
+      a.download = `${analytics.name}_analytics.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
     } catch (error) {
       console.error('Error exporting data:', error);
       alert('Failed to export analytics.');
     }
   };
-
 
   if (isLoading) {
     return <p className="text-center text-gray-400">Loading campaign analytics...</p>;
@@ -83,7 +86,6 @@ export default function CampaignAnalytics() {
         <h1 className="text-3xl font-bold text-emerald-500">
           Campaign Analytics
         </h1>
-        {/* --- NEW EXPORT BUTTON --- */}
         <button onClick={handleExport} className="send-button">
           Export to CSV
         </button>
