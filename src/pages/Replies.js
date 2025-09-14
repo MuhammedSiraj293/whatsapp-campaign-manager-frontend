@@ -1,12 +1,12 @@
 // frontend/src/pages/Replies.js
 
-import React, { useState, useEffect } from 'react';
-import { authFetch, uploadFile } from '../services/api'; // <-- IMPORT authFetch and uploadFile
+import React, { useState, useEffect, useRef } from 'react';
+import { authFetch, uploadFile } from '../services/api';
+import socket from '../services/socket'; // <-- 1. IMPORT THE SOCKET CONNECTION
 import LeftMenu from '../components/LeftMenu';
 import ChatDetail from '../components/ChatDetail';
-import './style/Replies.css'; // Assuming you have this CSS file
+import './style/Replies.css';
 import LoadingScreen from "../components/LoadingScreen";
-
 
 export default function Replies() {
   const [conversations, setConversations] = useState([]);
@@ -15,8 +15,13 @@ export default function Replies() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  // Use a ref to access the latest activeConversationId inside the socket listener
+  const activeConversationIdRef = useRef(activeConversationId);
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
-  // This loading screen effect is fine, no changes needed.
   useEffect(() => {
     const id = setTimeout(() => {
       if (progress >= 100) setLoading(false);
@@ -28,7 +33,6 @@ export default function Replies() {
     return () => clearTimeout(id);
   }, [progress]);
 
-  // Use authFetch to get conversations
   const fetchConversations = async () => {
     try {
       const data = await authFetch('/replies/conversations');
@@ -40,7 +44,6 @@ export default function Replies() {
     }
   };
 
-  // Use authFetch to get messages
   const fetchMessages = async (phoneNumber) => {
     if (!phoneNumber) return;
     setIsLoading(true);
@@ -56,17 +59,36 @@ export default function Replies() {
     }
   };
 
+  // This useEffect now sets up the real-time listeners
   useEffect(() => {
-    fetchConversations();
-    const conversationInterval = setInterval(fetchConversations, 10000); // Poll for new conversations
-    return () => clearInterval(conversationInterval);
-  }, []);
+    fetchConversations(); // Fetch initial list of conversations
 
+    // --- 2. LISTEN FOR NEW MESSAGES ---
+    const handleNewMessage = (data) => {
+      // Refresh the conversation list to show new last message and unread count
+      fetchConversations();
+      // If the new message belongs to the currently active chat, add it to the view
+      if (data.from === activeConversationIdRef.current) {
+        setMessages(prevMessages => [...prevMessages, data.message]);
+      }
+    };
+    
+    socket.on('newMessage', handleNewMessage);
+
+    // --- 3. CLEAN UP THE LISTENER ---
+    // This is important to prevent memory leaks
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+    };
+  }, []); // This runs only once when the component mounts
+
+  // This useEffect now ONLY fetches messages when the active conversation changes
   useEffect(() => {
-    if (!activeConversationId) return;
-    fetchMessages(activeConversationId);
-    const messageInterval = setInterval(() => fetchMessages(activeConversationId), 5000); // Poll for new messages
-    return () => clearInterval(messageInterval);
+    if (activeConversationId) {
+      fetchMessages(activeConversationId);
+    } else {
+      setMessages([]); // Clear messages if no conversation is selected
+    }
   }, [activeConversationId]);
 
   const handleConversationSelect = async (phoneNumber) => {
@@ -74,9 +96,8 @@ export default function Replies() {
     const selectedConvo = conversations.find(c => c._id === phoneNumber);
     if (selectedConvo && selectedConvo.unreadCount > 0) {
       try {
-        // Use authFetch to mark as read
         await authFetch(`/replies/conversations/${phoneNumber}/read`, { method: 'PATCH' });
-        await fetchConversations();
+        await fetchConversations(); // Refresh list to show unread count as 0
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }
@@ -86,12 +107,20 @@ export default function Replies() {
   const handleSendReply = async (messageText) => {
     if (!messageText.trim() || !activeConversationId) return;
     try {
-      // Use authFetch to send a reply
-      await authFetch(`/replies/conversations/${activeConversationId}`, {
+      const data = await authFetch(`/replies/conversations/${activeConversationId}`, {
         method: 'POST',
         body: JSON.stringify({ message: messageText }),
       });
-      await fetchMessages(activeConversationId);
+      // Add the sent message to the UI instantly
+      if (data.success) {
+          const newMessage = {
+              _id: data.data.messages[0].id,
+              body: messageText,
+              timestamp: new Date().toISOString(),
+              direction: 'outgoing',
+          };
+          setMessages(prevMessages => [...prevMessages, newMessage]);
+      }
     } catch (error) {
       console.error('Error sending reply:', error);
     }
@@ -100,9 +129,10 @@ export default function Replies() {
   const handleSendMedia = async (file) => {
     if (!file || !activeConversationId) return;
     try {
-      // Use the dedicated uploadFile service for media
-      await uploadFile(`/replies/conversations/${activeConversationId}/media`, file);
-      await fetchMessages(activeConversationId);
+      const data = await uploadFile(`/replies/conversations/${activeConversationId}/media`, file);
+      if (data.success) {
+        await fetchMessages(activeConversationId); // Refresh to get the saved media message
+      }
     } catch (error) {
       console.error('Error sending media:', error);
       alert('Failed to send media file.');

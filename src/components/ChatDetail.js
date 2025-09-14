@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Message from "./Message";
-import { MdSearch, MdSend } from "react-icons/md";
-import { HiDotsVertical } from "react-icons/hi";
-import { BiHappy } from "react-icons/bi";
+import { MdSend } from "react-icons/md";
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { BsFillMicFill } from "react-icons/bs";
 import Avatar from './Avatar';
@@ -75,7 +73,6 @@ function ChatDetail({ activeConversationId, messages, onSendMessage, onSendMedia
             <p className="text-[#8796a1] text-xs">online</p>
           </div>
         </div>
-        <div className="flex justify-between items-center w-[85px]"></div>
       </div>
 
       {/* Messages section */}
@@ -83,16 +80,15 @@ function ChatDetail({ activeConversationId, messages, onSendMessage, onSendMedia
         className="bg-[#0a131a] bg-chat-bg bg-contain overflow-y-scroll h-full flex flex-col"
         style={{ padding: "12px 7%" }}
       >
-        {/* --- THIS IS THE CORRECTED SECTION --- */}
+        {/* This map ensures all media props are passed down */}
         {messages.map((msg) => (
           <Message
             key={msg._id}
             msg={msg.body}
             time={new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             direction={msg.direction}
-            mediaUrl={msg.mediaUrl} // This prop is no longer used but doesn't hurt
-            mediaId={msg.mediaId} // Pass the mediaId
-            mediaType={msg.mediaType} // Pass the mediaType
+            mediaId={msg.mediaId}
+            mediaType={msg.mediaType}
           />
         ))}
         <div ref={bottomRef} />
@@ -108,9 +104,8 @@ function ChatDetail({ activeConversationId, messages, onSendMessage, onSendMedia
             ref={fileInputRef} 
             onChange={handleFileChange} 
             style={{ display: 'none' }} 
-            accept="image/*,video/*,audio/*,.pdf"
+            accept="image/*,video/*,audio/*,.pdf,.webp"
         />
-
         <input
           type="text"
           placeholder="Type a message"
