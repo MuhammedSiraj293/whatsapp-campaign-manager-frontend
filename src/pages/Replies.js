@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { authFetch, uploadFile } from '../services/api';
-import socket from '../services/socket'; // <-- 1. IMPORT THE SOCKET CONNECTION
+import socket from '../services/socket'; // Import the socket connection
 import LeftMenu from '../components/LeftMenu';
 import ChatDetail from '../components/ChatDetail';
 import './style/Replies.css';
@@ -16,7 +16,6 @@ export default function Replies() {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   
-  // Use a ref to access the latest activeConversationId inside the socket listener
   const activeConversationIdRef = useRef(activeConversationId);
   useEffect(() => {
     activeConversationIdRef.current = activeConversationId;
@@ -61,9 +60,8 @@ export default function Replies() {
 
   // This useEffect now sets up the real-time listeners
   useEffect(() => {
-    fetchConversations(); // Fetch initial list of conversations
+    fetchConversations(); // Fetch initial list
 
-    // --- 2. LISTEN FOR NEW MESSAGES ---
     const handleNewMessage = (data) => {
       // Refresh the conversation list to show new last message and unread count
       fetchConversations();
@@ -75,19 +73,18 @@ export default function Replies() {
     
     socket.on('newMessage', handleNewMessage);
 
-    // --- 3. CLEAN UP THE LISTENER ---
-    // This is important to prevent memory leaks
+    // Clean up the listener when the component is unmounted
     return () => {
       socket.off('newMessage', handleNewMessage);
     };
-  }, []); // This runs only once when the component mounts
+  }, []); // Runs only once when the component mounts
 
-  // This useEffect now ONLY fetches messages when the active conversation changes
+  // This useEffect ONLY fetches messages when the active conversation changes
   useEffect(() => {
     if (activeConversationId) {
       fetchMessages(activeConversationId);
     } else {
-      setMessages([]); // Clear messages if no conversation is selected
+      setMessages([]);
     }
   }, [activeConversationId]);
 
@@ -97,7 +94,7 @@ export default function Replies() {
     if (selectedConvo && selectedConvo.unreadCount > 0) {
       try {
         await authFetch(`/replies/conversations/${phoneNumber}/read`, { method: 'PATCH' });
-        await fetchConversations(); // Refresh list to show unread count as 0
+        await fetchConversations();
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }
@@ -111,15 +108,14 @@ export default function Replies() {
         method: 'POST',
         body: JSON.stringify({ message: messageText }),
       });
-      // Add the sent message to the UI instantly
       if (data.success) {
-          const newMessage = {
+          const sentMessage = {
               _id: data.data.messages[0].id,
               body: messageText,
               timestamp: new Date().toISOString(),
               direction: 'outgoing',
           };
-          setMessages(prevMessages => [...prevMessages, newMessage]);
+          setMessages(prevMessages => [...prevMessages, sentMessage]);
       }
     } catch (error) {
       console.error('Error sending reply:', error);
@@ -131,7 +127,7 @@ export default function Replies() {
     try {
       const data = await uploadFile(`/replies/conversations/${activeConversationId}/media`, file);
       if (data.success) {
-        await fetchMessages(activeConversationId); // Refresh to get the saved media message
+        await fetchMessages(activeConversationId);
       }
     } catch (error) {
       console.error('Error sending media:', error);
