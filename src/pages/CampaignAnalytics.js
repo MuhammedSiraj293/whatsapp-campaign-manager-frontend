@@ -6,7 +6,7 @@ import { authFetch } from '../services/api'; // <-- IMPORT AUTH SERVICE
 
 const StatCard = ({ title, value }) => {
     return (
-      <div className="bg-[#202c33] p-6 rounded-lg shadow-lg text-center border-l-4 border-emerald-500">
+      <div className="bg-[#202d33] p-6 rounded-lg shadow-lg text-center border-l-4 border-emerald-500">
         <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">{title}</h2>
         <p className="text-3xl font-bold text-white mt-1">{value}</p>
       </div>
@@ -24,8 +24,7 @@ export default function CampaignAnalytics() {
     const fetchCampaignAnalytics = async () => {
       try {
         setIsLoading(true);
-        // --- THIS IS THE FIX for loading stats ---
-        // Use authFetch to make an authenticated request
+        // --- USE AUTH FETCH ---
         const data = await authFetch(`/analytics/${campaignId}`);
         if (data.success) {
           setAnalytics(data.data);
@@ -42,8 +41,6 @@ export default function CampaignAnalytics() {
 
   const handleExport = async () => {
     try {
-      // --- THIS IS THE FIX for exporting ---
-      // We need to manually add the token for this file download request
       const token = localStorage.getItem('authToken');
       const headers = {};
       if (token) {

@@ -5,7 +5,8 @@ import Chat from "./Chat";
 import { ImFolderDownload } from "react-icons/im";
 
 function Chats({ conversations, filterText, onSelectConversation, activeConversationId }) {
-  // Filter conversations based on the search text (name or phone number)
+  // --- THIS IS THE FIX ---
+  // Filter conversations based on the search text from the parent component
   const filteredConversations = conversations.filter((convo) =>
     (convo.name && convo.name.toLowerCase().includes(filterText.toLowerCase())) ||
     convo._id.includes(filterText)
