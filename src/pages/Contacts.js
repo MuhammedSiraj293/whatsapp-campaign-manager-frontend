@@ -1,19 +1,19 @@
 // frontend/src/pages/Contacts.js
 
 import React, { useState, useEffect } from 'react';
-import { authFetch, uploadFile } from '../services/api'; // <-- 1. IMPORT AUTH SERVICES
+import { authFetch } from '../services/api';
 
 export default function Contacts() {
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newListName, setNewListName] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
+  
+  // State for the pasted text for each list
+  const [pastedData, setPastedData] = useState({});
 
-  // Function to fetch all contact lists
   const fetchContactLists = async () => {
     try {
       setIsLoading(true);
-      // 2. Use authFetch to get the lists
       const data = await authFetch('/contacts/lists');
       if (data.success) {
         setLists(data.data);
@@ -29,23 +29,18 @@ export default function Contacts() {
     fetchContactLists();
   }, []);
 
-  // Handler for creating a new list
   const handleCreateList = async (e) => {
     e.preventDefault();
-    if (!newListName.trim()) {
-      return alert('Please provide a list name.');
-    }
+    if (!newListName.trim()) return alert('Please provide a list name.');
     try {
-      // 3. Use authFetch to create a new list
       const data = await authFetch('/contacts/lists', {
         method: 'POST',
         body: JSON.stringify({ name: newListName }),
       });
-
       if (data.success) {
         alert('List created successfully!');
         setNewListName('');
-        fetchContactLists(); // Refresh the list
+        fetchContactLists();
       }
     } catch (error) {
       console.error('Error creating list:', error);
@@ -53,27 +48,42 @@ export default function Contacts() {
     }
   };
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
-  };
-
-  const handleFileUpload = async (listId) => {
-    if (!selectedFile) {
-      return alert('Please select a file to upload.');
+  // Function to handle pasting and uploading data
+  const handlePasteUpload = async (listId) => {
+    const dataToUpload = pastedData[listId];
+    if (!dataToUpload || !dataToUpload.trim()) {
+      return alert('Please paste your contact data into the text box for this list.');
     }
+    
+    // Convert the pasted text (assumed to be tab-separated) into a JSON array
+    const rows = dataToUpload.trim().split('\n');
+    const headers = rows[0].split('\t');
+    const contacts = rows.slice(1).map(row => {
+      const values = row.split('\t');
+      let contact = {};
+      headers.forEach((header, index) => {
+        contact[header.trim()] = values[index];
+      });
+      return contact;
+    });
+
     try {
-      // 4. Use the dedicated and secure uploadFile service
-      const result = await uploadFile(`/contacts/lists/${listId}/upload`, selectedFile);
+      // We will create this new API endpoint in the next steps
+      const result = await authFetch(`/contacts/lists/${listId}/bulk-add`, {
+          method: 'POST',
+          body: JSON.stringify({ contacts }),
+      });
       alert(result.message);
-      setSelectedFile(null);
-      // Reset the specific file input that was used
-      const fileInput = document.getElementById(`file-input-${listId}`);
-      if (fileInput) {
-        fileInput.value = "";
-      }
+      // Clear the text area for this specific list
+      setPastedData({ ...pastedData, [listId]: '' });
+      // We can add a function here later to refresh contact counts
     } catch (error) {
       alert(`Error: ${error.message}`);
     }
+  };
+
+  const handlePastedDataChange = (listId, value) => {
+      setPastedData({ ...pastedData, [listId]: value });
   };
 
   return (
@@ -83,7 +93,7 @@ export default function Contacts() {
         <form onSubmit={handleCreateList}>
           <input
             type="text"
-            placeholder="New list name (e.g., 'August Leads')"
+            placeholder="New list name"
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}
           />
@@ -100,11 +110,18 @@ export default function Contacts() {
             {lists.map((list) => (
               <li key={list._id}>
                 <strong>{list.name}</strong>
+                {/* --- NEW PASTE-FROM-SHEET FORM --- */}
                 <div className="upload-section" style={{ marginTop: '15px', borderTop: '1px solid #374248', paddingTop: '15px' }}>
-                    <p style={{margin: '0 0 10px 0', fontSize: '0.9rem'}}>Upload contacts to this list:</p>
-                    <input type="file" accept=".csv, .xlsx, .xls" id={`file-input-${list._id}`} onChange={handleFileChange} />
-                    <button onClick={() => handleFileUpload(list._id)} disabled={!selectedFile}>
-                      Upload
+                    <p style={{margin: '0 0 10px 0', fontSize: '0.9rem'}}>Copy columns from your sheet (with headers) and paste here:</p>
+                    <textarea
+                        className="bg-[#2c3943] text-neutral-200 text-sm rounded-lg block w-full p-2.5"
+                        rows="5"
+                        placeholder="phoneNumber	name	var1..."
+                        value={pastedData[list._id] || ''}
+                        onChange={(e) => handlePastedDataChange(list._id, e.target.value)}
+                    ></textarea>
+                    <button onClick={() => handlePasteUpload(list._id)} disabled={!pastedData[list._id] || !pastedData[list._id].trim()} style={{marginTop: '10px'}}>
+                      Upload Pasted Contacts
                     </button>
                   </div>
               </li>
