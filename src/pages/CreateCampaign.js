@@ -24,6 +24,9 @@ export default function CreateCampaign() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedList, setSelectedList] = useState('');
 
+    // --- NEW: State for buttons ---
+  const [buttons, setButtons] = useState([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -52,6 +55,30 @@ export default function CreateCampaign() {
     }
   };
 
+    // --- NEW: Functions to manage buttons ---
+  const addButton = () => {
+    // WhatsApp templates allow up to 3 buttons of certain types
+    if (buttons.length < 3) {
+      setButtons([...buttons, { type: 'QUICK_REPLY', text: '' }]);
+    }
+  };
+
+  const handleButtonChange = (index, field, value) => {
+    const newButtons = [...buttons];
+    newButtons[index][field] = value;
+    // If switching to QUICK_REPLY, remove the url field
+    if (field === 'type' && value === 'QUICK_REPLY') {
+      delete newButtons[index].url;
+    }
+    setButtons(newButtons);
+  };
+
+  const removeButton = (index) => {
+    setButtons(buttons.filter((_, i) => i !== index));
+  };
+  // --- END of new button functions ---
+
+
   const handleCreateCampaign = async (event) => {
     event.preventDefault();
     const selectedTemplateObject = templates.find(t => t.name === selectedTemplate);
@@ -62,14 +89,16 @@ export default function CreateCampaign() {
     
     try {
         const campaignData = {
-          name: formName, message: formMessage,
+          name: formName,
+          message: formMessage,
           templateName: selectedTemplateObject.name,
           templateLanguage: selectedTemplateObject.language,
-          contactList: selectedList, headerImageUrl: headerImageUrl,
+          contactList: selectedList,
+          headerImageUrl: headerImageUrl,
           expectedVariables: parseInt(expectedVariables, 10) || 0,
-          bodyVariables: bodyVariablesText ? bodyVariablesText.split(',').map(item => item.trim()) : [],
+          spreadsheetId: spreadsheetId,
+          buttons: buttons, // <-- Add buttons to the payload
           ...(scheduledFor && { scheduledFor }),
-          ...(spreadsheetId && { spreadsheetId }),
         };
 
         const data = await authFetch('/campaigns', {
@@ -151,6 +180,28 @@ export default function CreateCampaign() {
         <div>
             <label htmlFor="schedule" className={labelStyle}>Schedule For (Optional)</label>
             <input id="schedule" type="datetime-local" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} className={`${inputStyle} text-gray-400`} />
+        </div>
+
+        <div>
+            <label className={labelStyle}>Interactive Buttons (Optional)</label>
+            {buttons.map((button, index) => (
+                <div key={index} className="flex items-center gap-2 p-3 border border-gray-700 rounded-lg mb-2">
+                    <select value={button.type} onChange={(e) => handleButtonChange(index, 'type', e.target.value)} className={inputStyle}>
+                        <option value="QUICK_REPLY">Quick Reply</option>
+                        <option value="URL">URL Button</option>
+                    </select>
+                    <input type="text" placeholder="Button Text" value={button.text} onChange={(e) => handleButtonChange(index, 'text', e.target.value)} className={inputStyle} required />
+                    {button.type === 'URL' && (
+                        <input type="text" placeholder="https://example.com" value={button.url || ''} onChange={(e) => handleButtonChange(index, 'url', e.target.value)} className={inputStyle} required />
+                    )}
+                    <button type="button" onClick={() => removeButton(index)} className="text-red-500 p-2">&times;</button>
+                </div>
+            ))}
+            {buttons.length < 3 && (
+                <button type="button" onClick={addButton} className="text-emerald-500 text-sm font-medium mt-2">
+                    + Add Button
+                </button>
+            )}
         </div>
         
         <button type="submit" className={`${buttonStyle} mt-4`}>{scheduledFor ? 'Schedule Campaign' : 'Create as Draft'}</button>
