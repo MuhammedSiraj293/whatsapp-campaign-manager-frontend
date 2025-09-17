@@ -54,46 +54,84 @@ export default function Dashboard() {
     }
   };
 
+  // --- NEW DELETE FUNCTION ---
+  const handleDeleteCampaign = async (campaignId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this campaign? This cannot be undone.')) return;
+    try {
+      const result = await authFetch(`/campaigns/${campaignId}`, { method: 'DELETE' });
+      if (result.success) {
+        alert('Campaign deleted successfully.');
+        fetchCampaignsAndCounts(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      alert(error.message);
+    }
+  };
+
   // This component is no longer used here but can be moved to the Contacts page
   // For simplicity, we are removing the file upload from the dashboard.
   // The primary upload functionality is on the Contacts page.
 
+     // --- STYLING CLASSES ---
+  const buttonStyle = "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+  const analyticsButtonStyle = "text-white bg-sky-600 hover:bg-sky-700 font-medium rounded-lg text-sm p-2.5 text-center";
+  const deleteButtonStyle = "text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-2.5 text-center";
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2>Existing Campaigns</h2>
-        <button onClick={() => navigate('/create-campaign')} className="send-button">
+    <div className="p-4 md:p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-emerald-500">
+          Campaigns
+        </h1>
+        <button onClick={() => navigate('/create-campaign')} className={buttonStyle}>
           + Create New Campaign
         </button>
       </div>
       <div className="list-container">
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : (
-          <ul>
-            {campaigns.map((campaign) => (
-              <li key={campaign._id}>
-                <strong>{campaign.name}</strong>
-                <p>"{campaign.message}"</p>
-                <div className="campaign-footer">
-                  <span>Status: {campaign.status}</span>
-                  <span>Recipients: {recipientCounts[campaign._id] || 0}</span>
+           {isLoading ? (
+        <p className="text-center text-gray-400">Loading campaigns...</p>
+      ) : (
+// --- THIS IS THE NEW CARD GRID ---
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {campaigns.map((campaign) => (
+            // Each item is now a styled card
+            <div key={campaign._id} className="bg-[#202d33] p-6 rounded-lg shadow-lg flex flex-col justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white truncate uppercase">{campaign.name}</h2>
+                <p className="text-gray-200 text-sm mt-2 h-20 overflow-hidden">{campaign.message}</p>
+              </div>
+              
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>STATUS</span>
+                  <span>RECIPIENTS</span>
                 </div>
-                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                  {campaign.status !== 'sent' && (
-                    <button className="send-button" onClick={() => handleSendCampaign(campaign._id)}>
-                      Send Campaign
-                    </button>
-                  )}
-                  {campaign.status === 'sent' && (
-                    <Link to={`/analytics/${campaign._id}`} className="analytics-button">
-                      View Analytics
-                    </Link>
-                  )}
+                <div className="flex justify-between font-medium text-white">
+                  <span className="px-2 py-1 bg-green-600 rounded-full text-xs capitalize mt-2">{campaign.status}</span>
+                  <span>{recipientCounts[campaign._id] || 0}</span>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+
+              <div className="mt-6 flex gap-12">
+                {campaign.status !== 'sent' && (
+                  <button className={`${buttonStyle} w-full`} onClick={() => handleSendCampaign(campaign._id)}>
+                    Send
+                  </button>
+                )}
+                {campaign.status === 'sent' && (
+                  <Link to={`/analytics/${campaign._id}`} className={`${analyticsButtonStyle} w-full`}>
+                    View Analytics
+                  </Link>
+                )}
+                {/* --- NEW DELETE BUTTON --- */}
+                <button className={`${deleteButtonStyle} w-full`} onClick={() => handleDeleteCampaign(campaign._id)}>
+                    Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
         )}
       </div>
     </div>
