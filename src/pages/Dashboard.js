@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authFetch, uploadFile } from '../services/api'; // <-- IMPORT OUR NEW SERVICES
+import { authFetch } from '../services/api'; // <-- IMPORT OUR NEW SERVICES
 
 export default function Dashboard() {
   const [campaigns, setCampaigns] = useState([]);
@@ -79,7 +79,8 @@ export default function Dashboard() {
   const deleteButtonStyle = "text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-2.5 text-center";
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="bg-gray-900">
+    <div className=" p-4 md:p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-emerald-500">
           Campaigns
@@ -134,6 +135,7 @@ export default function Dashboard() {
         </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

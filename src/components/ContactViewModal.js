@@ -16,7 +16,7 @@ export default function ContactViewModal({ contacts, onClose }) {
     >
       {/* Modal Content: the white box */}
       <div 
-        className="bg-[#202d33] rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+        className="bg-[#202d33] rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
       >
         {/* Modal Header */}
@@ -35,17 +35,17 @@ export default function ContactViewModal({ contacts, onClose }) {
           <table className="min-w-full">
             <thead className="bg-[#2a3942]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone Number</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Variables</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Phone Number</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">Variables</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
               {contacts.map((contact) => (
                 <tr key={contact._id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{contact.phoneNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{contact.name || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">{contact.phoneNumber}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">{contact.name || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">
                     {/* Display variables as key=value pairs */}
                     {contact.variables && Object.entries(contact.variables).map(([key, value]) => `${key}=${value}`).join(', ')}
                   </td>
@@ -53,7 +53,7 @@ export default function ContactViewModal({ contacts, onClose }) {
               ))}
             </tbody>
           </table>
-          {contacts.length === 0 && <p className="text-center text-gray-500 py-8">No contacts found in this list.</p>}
+          {contacts.length === 0 && <p className="text-center text-gray-100 py-8">No contacts found in this list.</p>}
         </div>
       </div>
     </div>

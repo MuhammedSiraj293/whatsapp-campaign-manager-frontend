@@ -202,7 +202,7 @@ export default function Contacts() {
                   {/* --- 5. CONNECT the "View Contacts" button --- */}
                   <button
                     onClick={() => handleViewContacts(list._id)}
-                    className="w-full text-white bg-gray-600 hover:bg-gray-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                    className="w-full text-white bg-sky-600 hover:bg-sky-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                   >
                     View Contacts
                   </button>
