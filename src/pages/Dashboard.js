@@ -74,7 +74,7 @@ export default function Dashboard() {
   // The primary upload functionality is on the Contacts page.
 
      // --- STYLING CLASSES ---
-  const buttonStyle = "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+  const buttonStyle = "bg-emerald-600 hover:bg-emerald-700 relative rounded-full px-3 py-1 text-sm/6 text-gray-100 ring-1 ring-white hover:ring-white/20 text-center";
   const analyticsButtonStyle = "text-white bg-sky-600 hover:bg-sky-700 font-medium rounded-lg text-sm p-2.5 text-center";
   const deleteButtonStyle = "text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-2.5 text-center";
 
@@ -82,7 +82,7 @@ export default function Dashboard() {
     <div className="bg-gray-900">
     <div className=" p-4 md:p-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-emerald-500">
+        <h1 className="text-3xl font-semibold text-white">
           Campaigns
         </h1>
         <button onClick={() => navigate('/create-campaign')} className={buttonStyle}>

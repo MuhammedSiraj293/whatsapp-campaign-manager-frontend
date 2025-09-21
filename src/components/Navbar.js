@@ -49,7 +49,7 @@ export default function Navbar() {
             <div className="flex shrink-0 items-center">
               <img
                 alt="Logo"
-                src="https://thecapitalavenue.com/wp-content/uploads/2023/12/300X150-e1756124855815.png"
+                src="https://thecapitalavenue.com/wp-content/uploads/2025/09/Capital-Avenue-White.png"
                 className="h-8 w-auto"
               />
             </div>
