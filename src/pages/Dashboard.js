@@ -109,7 +109,7 @@ export default function Dashboard() {
     "text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-2.5 text-center";
 
   return (
-    <div className="bg-gray-900">
+    <div className="bg-gray-900 min-h-screen w-full">
       <div className=" p-4 md:p-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-semibold text-white">Campaigns</h1>

@@ -94,9 +94,9 @@ export default function CampaignAnalytics() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="min-h-screen w-full p-4 md:p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-black">
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-3xl font-bold text-emerald-500">Campaign Analytics</h1>
+        <h1 className="text-3xl font-bold text-white">Campaign Analytics</h1>
         <button onClick={handleCsvExport} className="send-button">
           Export to CSV
         </button>
