@@ -1,10 +1,8 @@
-// frontend/src/pages/Analytics.js
+import React, { useState, useEffect } from 'react';
+import { authFetch } from '../services/api'; // <-- 1. IMPORT THE SECURE SERVICE
+import { FaPaperPlane, FaUsers, FaReply } from 'react-icons/fa';
 
-import {React, useState,useEffect} from 'react';
-import { API_URL } from '../config';
-import { FaPaperPlane, FaUsers, FaReply } from 'react-icons/fa'; // Importing icons for a nicer look
-
-// A small, reusable component for the stat cards, defined within the same file.
+// Reusable component for the stat cards
 const StatCard = ({ title, value, icon }) => {
   return (
     <div className="bg-[#202d33] p-6 rounded-lg shadow-lg flex items-center border-l-4 border-emerald-500">
@@ -19,7 +17,6 @@ const StatCard = ({ title, value, icon }) => {
   );
 };
 
-
 export default function Analytics() {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,13 +25,16 @@ export default function Analytics() {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_URL}/api/analytics/stats`);
-        const data = await response.json();
+        // --- 2. THIS IS THE FIX ---
+        // Use authFetch to make an authenticated request
+        const data = await authFetch('/analytics/stats');
         if (data.success) {
           setStats(data.data);
         }
       } catch (error) {
         console.error('Error fetching analytics stats:', error);
+        // Display the specific error message to the user
+        alert(error.message);
       } finally {
         setIsLoading(false);
       }
@@ -52,12 +52,11 @@ export default function Analytics() {
   }
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-emerald-500 text-center mb-8">
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black p-4 md:p-8">
+      <h1 className="text-3xl font-bold text-white text-center mb-8">
         Analytics Dashboard
       </h1>
 
-      {/* A responsive grid for the stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           title="Campaigns Sent" 
