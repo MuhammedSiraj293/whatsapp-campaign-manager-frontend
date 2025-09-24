@@ -9,18 +9,27 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check localStorage for user info when the app loads
   useEffect(() => {
+    // --- THIS IS THE FIX ---
+    // First, check if the user item exists in storage
     const storedUser = localStorage.getItem('user');
+    // Only try to parse it if it's not null
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+        // Clear out bad data if it's corrupted
+        localStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+      }
     }
-    setIsLoading(false); // Finished loading
+    setIsLoading(false);
   }, []);
 
   const login = (userData, token) => {
     localStorage.setItem('authToken', token);
-    localStorage.setItem('user', JSON.stringify(userData)); // Save user object
+    localStorage.setItem('user', JSON.stringify(userData));
     setAuthToken(token);
     setUser(userData);
   };
@@ -35,12 +44,11 @@ export const AuthProvider = ({ children }) => {
   const value = {
     authToken,
     user,
-    isLoading, // <-- Expose the loading state
+    isLoading,
     login,
     logout,
   };
 
-  // Only render the app after we have checked for the user
   return (
     <AuthContext.Provider value={value}>
       {!isLoading && children}
