@@ -2,41 +2,45 @@
 
 import React, { createContext, useState, useEffect } from 'react';
 
-// 1. Create the context
 export const AuthContext = createContext(null);
 
-// 2. Create the provider component
 export const AuthProvider = ({ children }) => {
-  const [authToken, setAuthToken] = useState(null);
+  const [authToken, setAuthToken] = useState(localStorage.getItem('authToken'));
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 3. Check localStorage for a token when the app loads
+  // Check localStorage for user info when the app loads
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setAuthToken(token);
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
-    setIsLoading(false);
+    setIsLoading(false); // Finished loading
   }, []);
 
-  const login = (token) => {
+  const login = (userData, token) => {
     localStorage.setItem('authToken', token);
+    localStorage.setItem('user', JSON.stringify(userData)); // Save user object
     setAuthToken(token);
+    setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
     setAuthToken(null);
+    setUser(null);
   };
 
-  // 4. Provide the values to the rest of the app
   const value = {
     authToken,
-    isLoading,
+    user,
+    isLoading, // <-- Expose the loading state
     login,
     logout,
   };
 
+  // Only render the app after we have checked for the user
   return (
     <AuthContext.Provider value={value}>
       {!isLoading && children}

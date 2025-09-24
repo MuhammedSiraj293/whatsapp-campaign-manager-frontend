@@ -5,13 +5,18 @@ import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  const { authToken } = useContext(AuthContext);
+  const { authToken, isLoading } = useContext(AuthContext);
 
+  // 1. If the authentication state is still loading, show a loading message.
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // 2. After loading, if there is no token, redirect to the login page.
   if (!authToken) {
-    // If no token, redirect to the login page
     return <Navigate to="/login" replace />;
   }
 
-  // If token exists, render the child component (e.g., Dashboard)
+  // 3. If loading is finished and a token exists, show the protected page.
   return children;
 }
