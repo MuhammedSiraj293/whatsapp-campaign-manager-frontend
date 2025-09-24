@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { authFetch, uploadFile } from '../services/api';
-import socket from '../services/socket'; // Import the socket connection
+import socket from '../services/socket';
 import LeftMenu from '../components/LeftMenu';
 import ChatDetail from '../components/ChatDetail';
 import './style/Replies.css';
@@ -58,14 +58,18 @@ export default function Replies() {
     }
   };
 
-  // This useEffect now sets up the real-time listeners
   useEffect(() => {
-    fetchConversations(); // Fetch initial list
+    fetchConversations();
 
     const handleNewMessage = (data) => {
-      // Refresh the conversation list to show new last message and unread count
-      fetchConversations();
-      // If the new message belongs to the currently active chat, add it to the view
+      // --- THIS IS THE FIX ---
+      // We only update the conversation list if it's a new conversation
+      // and update the message list if the chat is active.
+      const isNewConversation = !conversations.some(c => c._id === data.from);
+      if (isNewConversation) {
+          fetchConversations();
+      }
+      
       if (data.from === activeConversationIdRef.current) {
         setMessages(prevMessages => [...prevMessages, data.message]);
       }
@@ -73,13 +77,11 @@ export default function Replies() {
     
     socket.on('newMessage', handleNewMessage);
 
-    // Clean up the listener when the component is unmounted
     return () => {
       socket.off('newMessage', handleNewMessage);
     };
-  }, []); // Runs only once when the component mounts
+  }, [conversations]); // Re-run effect if conversations list changes
 
-  // This useEffect ONLY fetches messages when the active conversation changes
   useEffect(() => {
     if (activeConversationId) {
       fetchMessages(activeConversationId);
@@ -104,19 +106,11 @@ export default function Replies() {
   const handleSendReply = async (messageText) => {
     if (!messageText.trim() || !activeConversationId) return;
     try {
-      const data = await authFetch(`/replies/conversations/${activeConversationId}`, {
+      await authFetch(`/replies/conversations/${activeConversationId}`, {
         method: 'POST',
         body: JSON.stringify({ message: messageText }),
       });
-      if (data.success) {
-          const sentMessage = {
-              _id: data.data.messages[0].id,
-              body: messageText,
-              timestamp: new Date().toISOString(),
-              direction: 'outgoing',
-          };
-          setMessages(prevMessages => [...prevMessages, sentMessage]);
-      }
+      // The socket event from the backend will update the UI
     } catch (error) {
       console.error('Error sending reply:', error);
     }
@@ -125,10 +119,8 @@ export default function Replies() {
   const handleSendMedia = async (file) => {
     if (!file || !activeConversationId) return;
     try {
-      const data = await uploadFile(`/replies/conversations/${activeConversationId}/media`, file);
-      if (data.success) {
-        await fetchMessages(activeConversationId);
-      }
+      await uploadFile(`/replies/conversations/${activeConversationId}/media`, file);
+      // The socket event from the backend will update the UI
     } catch (error) {
       console.error('Error sending media:', error);
       alert('Failed to send media file.');
