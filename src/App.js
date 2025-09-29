@@ -10,6 +10,7 @@ import CreateCampaign from './pages/CreateCampaign';
 import Analytics from './pages/Analytics';
 import CampaignAnalytics from './pages/CampaignAnalytics';
 import Logs from './pages/Logs'; // <-- IMPORT NEW PAGE
+import Users from './pages/Users'; 
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -50,6 +51,7 @@ function App() {
             path="/logs" 
             element={<ProtectedRoute><Logs /></ProtectedRoute>} 
           />
+          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
         </Routes>
       </div>
     </Router>

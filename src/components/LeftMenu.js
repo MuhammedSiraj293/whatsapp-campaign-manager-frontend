@@ -4,7 +4,11 @@ import React from "react";
 import Chats from "./Chats";
 import { pp } from "../assets/whatsapp";
 
-function LeftMenu({ conversations, onSelectConversation, activeConversationId }) {
+function LeftMenu({
+  conversations,
+  onSelectConversation,
+  activeConversationId,
+}) {
   return (
     <div className="flex flex-col border-r border-neutral-700 w-full h-screen">
       {/* Profile nav */}
@@ -13,8 +17,8 @@ function LeftMenu({ conversations, onSelectConversation, activeConversationId })
       </div>
 
       {/* The Chats component will now handle its own search and filtering */}
-      <Chats 
-        conversations={conversations} 
+      <Chats
+        conversations={conversations}
         onSelectConversation={onSelectConversation}
         activeConversationId={activeConversationId}
       />

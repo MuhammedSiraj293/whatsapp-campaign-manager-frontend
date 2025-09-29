@@ -1,3 +1,5 @@
+// frontend/src/pages/Login.js
+
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -16,7 +18,6 @@ export default function Login() {
     }
 
     try {
-      // Use the live API URL from your config
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -28,11 +29,22 @@ export default function Login() {
       const data = await response.json();
 
       if (data.success) {
-        // --- THIS IS THE FIX ---
-        // Pass both the user data and the token to the login function
         login(data.user, data.token);
         alert('Login successful!');
-        navigate('/'); // Redirect to the dashboard
+        
+        // --- THIS IS THE KEY CHANGE ---
+        // Redirect based on user role
+        switch (data.user.role) {
+          case 'admin':
+          case 'manager':
+            navigate('/');
+            break;
+          case 'viewer':
+            navigate('/replies');
+            break;
+          default:
+            navigate('/'); // Default to dashboard
+        }
       } else {
         alert(`Login failed: ${data.error}`);
       }
@@ -41,7 +53,6 @@ export default function Login() {
       alert('An error occurred during login.');
     }
   };
-
   const inputStyle = "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5";
   const labelStyle = "block mb-2 text-sm font-medium text-gray-400";
   const buttonStyle = "w-full text-white bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
