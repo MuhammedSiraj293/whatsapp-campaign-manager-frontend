@@ -252,16 +252,14 @@ export default function CreateCampaign() {
         </div>
 
         <div>
-          <label htmlFor="schedule" className={labelStyle}>
-            Schedule For (Optional)
-          </label>
-          <input
-            id="schedule"
-            type="datetime-local"
-            value={scheduledFor}
-            onChange={(e) => setScheduledFor(e.target.value)}
-            className={`${inputStyle} text-gray-400`}
-          />
+            <label htmlFor="schedule" className="block mb-2 text-sm font-medium text-gray-400">Schedule For (Optional)</label>
+            <input 
+                id="schedule" 
+                type="datetime-local" 
+                value={scheduledFor} 
+                onChange={(e) => setScheduledFor(e.target.value)} 
+                className="bg-[#2c3943] border border-gray-700 text-gray-400 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5" 
+            />
         </div>
 
         <div>
