@@ -146,7 +146,7 @@ export default function Dashboard() {
               {campaigns.map((campaign) => (
                 <div
                   key={campaign._id}
-                  className="bg-[#202d33] p-6 rounded-lg shadow-lg flex flex-col justify-between"
+                  className="bg-gradient-to-br from-slate-900 via-slate-800 to-black p-6 rounded-lg shadow-lg flex flex-col justify-between"
                 >
                   <div>
                     <h2 className="text-xl font-bold text-white uppercase truncate">
