@@ -149,7 +149,7 @@ export default function Dashboard() {
                   className="bg-[#202d33] p-6 rounded-lg shadow-lg flex flex-col justify-between"
                 >
                   <div>
-                    <h2 className="text-xl font-bold text-white truncate">
+                    <h2 className="text-xl font-bold text-white uppercase truncate">
                       {campaign.name}
                     </h2>
                     {/* --- NEW: Display the date/time --- */}
