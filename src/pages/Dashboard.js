@@ -96,6 +96,22 @@ export default function Dashboard() {
     }
   };
 
+  // --- NEW HELPER FUNCTION to get the correct date/time ---
+  const getCampaignDate = (campaign) => {
+    let label = "Created:";
+    let date = new Date(campaign.createdAt);
+
+    if (campaign.status === "scheduled" && campaign.scheduledFor) {
+      label = "Scheduled for:";
+      date = new Date(campaign.scheduledFor);
+    } else if (campaign.status === "sent") {
+      label = "Sent on:";
+      date = new Date(campaign.updatedAt);
+    }
+
+    return `${label} ${date.toLocaleString()}`;
+  };
+
   // This component is no longer used here but can be moved to the Contacts page
   // For simplicity, we are removing the file upload from the dashboard.
   // The primary upload functionality is on the Contacts page.
@@ -120,7 +136,7 @@ export default function Dashboard() {
             + Create New Campaign
           </button>
         </div>
-        
+
         <div className="list-container">
           {isLoading ? (
             <p className="text-center text-gray-400">Loading campaigns...</p>
@@ -128,28 +144,31 @@ export default function Dashboard() {
             // --- THIS IS THE NEW CARD GRID ---
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {campaigns.map((campaign) => (
-                // Each item is now a styled card
                 <div
                   key={campaign._id}
-                  className="bg-gradient-to-br from-slate-900 via-slate-800 to-black p-6 rounded-lg shadow-lg flex flex-col justify-between"
+                  className="bg-[#202d33] p-6 rounded-lg shadow-lg flex flex-col justify-between"
                 >
                   <div>
-                    <h2 className="text-xl font-bold text-white truncate uppercase">
+                    <h2 className="text-xl font-bold text-white truncate">
                       {campaign.name}
                     </h2>
-                    <p className="text-gray-200 text-sm mt-2 h-20 overflow-hidden">
-                      {campaign.message}
+                    {/* --- NEW: Display the date/time --- */}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {getCampaignDate(campaign)}
+                    </p>
+                    <p className="text-gray-400 text-sm mt-4 h-20 overflow-hidden">
+                      "{campaign.message}"
                     </p>
                   </div>
 
                   <div className="mt-4">
-                    <div className="flex justify-between text-xs text-gray-400">
+                    <div className="flex justify-between items-center text-xs text-gray-400">
                       <span>STATUS</span>
                       <span>RECIPIENTS</span>
                     </div>
-                    <div className="flex justify-between font-medium text-white">
+                    <div className="flex justify-between items-center font-medium text-white">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs capitalize mt-2 ${getStatusClass(
+                        className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusClass(
                           campaign.status
                         )}`}
                       >
@@ -159,13 +178,13 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="mt-6 flex gap-12">
+                  <div className="mt-6 flex gap-2">
                     {campaign.status !== "sent" && (
                       <button
                         className={`${buttonStyle} w-full`}
                         onClick={() => handleSendCampaign(campaign._id)}
                       >
-                        Send
+                        Send Now
                       </button>
                     )}
                     {campaign.status === "sent" && (
@@ -173,10 +192,9 @@ export default function Dashboard() {
                         to={`/analytics/${campaign._id}`}
                         className={`${analyticsButtonStyle} w-full`}
                       >
-                        View Analytics
+                        Analytics
                       </Link>
                     )}
-                    {/* --- NEW DELETE BUTTON --- */}
                     <button
                       className={`${deleteButtonStyle} w-full`}
                       onClick={() => handleDeleteCampaign(campaign._id)}
