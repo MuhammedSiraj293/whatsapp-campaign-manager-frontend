@@ -8,15 +8,15 @@ import { authFetch } from "../services/api"; // <-- IMPORT OUR NEW SERVICES
 const getStatusClass = (status) => {
   switch (status) {
     case "draft":
-      return "bg-gray-400 text-gray-900"; // gray for draft
+      return "bg-gray-400 text-gray-900";
     case "scheduled":
-      return "bg-blue-600 text-white"; // blue for scheduled
+      return "bg-blue-600 text-white";
     case "sent":
-      return "bg-green-600 text-white"; // green for sent
+      return "bg-green-600 text-white";
     case "failed":
-      return "bg-red-600 text-white"; // red for failed
+      return "bg-red-600 text-white";
     default:
-      return "bg-gray-200 text-gray-800"; // fallback
+      return "bg-gray-200 text-gray-800";
   }
 };
 
@@ -29,21 +29,32 @@ export default function Dashboard() {
   const fetchCampaignsAndCounts = async () => {
     setIsLoading(true);
     try {
-      // Use authFetch to get campaigns
       const campaignsData = await authFetch("/campaigns");
+
       if (campaignsData.success) {
-        setCampaigns(campaignsData.data);
+        const campaignsList = campaignsData.data;
+        setCampaigns(campaignsList);
+
+        // Fetch all recipient counts in parallel
+        const countResults = await Promise.all(
+          campaignsList.map((campaign) =>
+            authFetch(`/campaigns/${campaign._id}/recipients/count`)
+              .then((res) => ({
+                campaignId: campaign._id,
+                count: res.success ? res.count : 0,
+              }))
+              .catch(() => ({
+                campaignId: campaign._id,
+                count: 0,
+              }))
+          )
+        );
 
         const counts = {};
-        for (const campaign of campaignsData.data) {
-          // Use authFetch to get recipient counts
-          const countData = await authFetch(
-            `/campaigns/${campaign._id}/recipients/count`
-          );
-          if (countData.success) {
-            counts[campaign._id] = countData.count;
-          }
-        }
+        countResults.forEach(({ campaignId, count }) => {
+          counts[campaignId] = count;
+        });
+
         setRecipientCounts(counts);
       }
     } catch (error) {
@@ -60,7 +71,6 @@ export default function Dashboard() {
   const handleSendCampaign = async (campaignId) => {
     if (!window.confirm("Are you sure you want to send this campaign?")) return;
     try {
-      // Use authFetch to send a campaign
       const result = await authFetch(`/campaigns/${campaignId}/send`, {
         method: "POST",
       });
@@ -74,7 +84,6 @@ export default function Dashboard() {
     }
   };
 
-  // --- NEW DELETE FUNCTION ---
   const handleDeleteCampaign = async (campaignId) => {
     if (
       !window.confirm(
@@ -88,7 +97,7 @@ export default function Dashboard() {
       });
       if (result.success) {
         alert("Campaign deleted successfully.");
-        fetchCampaignsAndCounts(); // Refresh the list
+        fetchCampaignsAndCounts();
       }
     } catch (error) {
       console.error("Error deleting campaign:", error);
@@ -96,7 +105,6 @@ export default function Dashboard() {
     }
   };
 
-  // --- NEW HELPER FUNCTION to get the correct date/time ---
   const getCampaignDate = (campaign) => {
     let label = "Created:";
     let date = new Date(campaign.createdAt);
@@ -112,11 +120,6 @@ export default function Dashboard() {
     return `${label} ${date.toLocaleString()}`;
   };
 
-  // This component is no longer used here but can be moved to the Contacts page
-  // For simplicity, we are removing the file upload from the dashboard.
-  // The primary upload functionality is on the Contacts page.
-
-  // --- STYLING CLASSES ---
   const buttonStyle =
     "bg-emerald-600 hover:bg-emerald-700 relative rounded-full px-3 py-1 text-sm/6 text-gray-100 ring-1 ring-white hover:ring-white/20 text-center";
   const analyticsButtonStyle =
@@ -126,7 +129,7 @@ export default function Dashboard() {
 
   return (
     <div className="bg-gray-900 min-h-screen w-full">
-      <div className=" p-4 md:p-8">
+      <div className="p-4 md:p-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-semibold text-white">Campaigns</h1>
           <button
@@ -141,7 +144,6 @@ export default function Dashboard() {
           {isLoading ? (
             <p className="text-center text-gray-400">Loading campaigns...</p>
           ) : (
-            // --- THIS IS THE NEW CARD GRID ---
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {campaigns.map((campaign) => (
                 <div
@@ -152,7 +154,6 @@ export default function Dashboard() {
                     <h2 className="text-xl font-bold text-white uppercase truncate">
                       {campaign.name}
                     </h2>
-                    {/* --- NEW: Display the date/time --- */}
                     <p className="text-xs text-gray-500 mt-1">
                       {getCampaignDate(campaign)}
                     </p>
@@ -179,15 +180,14 @@ export default function Dashboard() {
                   </div>
 
                   <div className="mt-6 flex gap-2">
-                    {campaign.status !== "sent" && (
+                    {campaign.status !== "sent" ? (
                       <button
                         className={`${buttonStyle} w-full`}
                         onClick={() => handleSendCampaign(campaign._id)}
                       >
                         Send Now
                       </button>
-                    )}
-                    {campaign.status === "sent" && (
+                    ) : (
                       <Link
                         to={`/analytics/${campaign._id}`}
                         className={`${analyticsButtonStyle} w-full`}
