@@ -102,11 +102,12 @@ export default function CampaignAnalytics() {
         </button>
       </div>
       <h2 className="text-xl text-gray-300 text-center mb-8">{analytics.name}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard title="Total Sent" value={analytics.totalSent} />
         <StatCard title="Delivered" value={`${analytics.delivered} (${analytics.deliveryRate})`} />
         <StatCard title="Read" value={`${analytics.read} (${analytics.readRate})`} />
         <StatCard title="Replies" value={`${analytics.replies} (${analytics.replyRate})`} />
+        <StatCard title="Failed" value={`${analytics.failed} (${analytics.failed})`} />
       </div>
 
       {/* --- NEW GOOGLE SHEETS EXPORT SECTION --- */}

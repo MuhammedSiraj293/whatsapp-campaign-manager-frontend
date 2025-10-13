@@ -110,6 +110,22 @@ export default function Navbar() {
                         <p className="font-medium">{user.name}</p>
                         <p className="text-gray-400 capitalize">{user.role}</p>
                       </div>
+
+                      {/* --- THIS IS THE NEW LINK --- */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            to="/profile"
+                            className={classNames(
+                              active ? "bg-white/5" : "",
+                              "block px-4 py-2 text-sm text-gray-300"
+                            )}
+                          >
+                            My Profile
+                          </Link>
+                        )}
+                      </Menu.Item>
+
                       <Menu.Item>
                         {({ active }) => (
                           <button
