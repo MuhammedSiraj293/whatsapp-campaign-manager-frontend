@@ -107,7 +107,7 @@ export default function CampaignAnalytics() {
         <StatCard title="Delivered" value={`${analytics.delivered} (${analytics.deliveryRate})`} />
         <StatCard title="Read" value={`${analytics.read} (${analytics.readRate})`} />
         <StatCard title="Replies" value={`${analytics.replies} (${analytics.replyRate})`} />
-        <StatCard title="Failed" value={`${analytics.failed} (${analytics.failed})`} />
+        <StatCard title="Failed" value={`${analytics.failed} (${analytics.failedRate})`} />
       </div>
 
       {/* --- NEW GOOGLE SHEETS EXPORT SECTION --- */}
