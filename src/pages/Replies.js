@@ -57,30 +57,33 @@ export default function Replies() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
+    useEffect(() => {
     fetchConversations();
 
     const handleNewMessage = (data) => {
-      // --- THIS IS THE FIX ---
-      // We only update the conversation list if it's a new conversation
-      // and update the message list if the chat is active.
-      const isNewConversation = !conversations.some(c => c._id === data.from);
-      if (isNewConversation) {
-          fetchConversations();
-      }
-      
+      fetchConversations();
       if (data.from === activeConversationIdRef.current) {
         setMessages(prevMessages => [...prevMessages, data.message]);
       }
     };
+
+    // --- NEW LISTENER for status updates ---
+    const handleStatusUpdate = (data) => {
+        if (data.from === activeConversationIdRef.current) {
+            setMessages(prevMessages => prevMessages.map(msg => 
+                msg._id === data.wamid ? { ...msg, status: data.status } : msg
+            ));
+        }
+    };
     
     socket.on('newMessage', handleNewMessage);
+    socket.on('messageStatusUpdate', handleStatusUpdate); // <-- LISTEN for new event
 
     return () => {
       socket.off('newMessage', handleNewMessage);
+      socket.off('messageStatusUpdate', handleStatusUpdate); // <-- CLEAN UP new listener
     };
-  }, [conversations]); // Re-run effect if conversations list changes
+  }, []);
 
   useEffect(() => {
     if (activeConversationId) {
