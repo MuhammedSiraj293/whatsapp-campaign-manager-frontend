@@ -19,10 +19,12 @@ export default function CreateCampaign() {
   // Data for dropdowns
   const [templates, setTemplates] = useState([]);
   const [contactLists, setContactLists] = useState([]);
+  const [wabaAccounts, setWabaAccounts] = useState([]); // <-- NEW
 
   // Selected values from dropdowns
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedList, setSelectedList] = useState("");
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState(''); // <-- NEW
 
   // --- NEW: State for buttons ---
   const [buttons, setButtons] = useState([]);
@@ -30,14 +32,19 @@ export default function CreateCampaign() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const templatesData = await authFetch("/campaigns/templates");
-        if (templatesData.success) setTemplates(templatesData.data);
+        // Fetch all data in parallel
+        const [templatesData, listsData, accountsData] = await Promise.all([
+          authFetch('/campaigns/templates'),
+          authFetch('/contacts/lists'),
+          authFetch('/waba/accounts') // <-- Fetch WABA accounts
+        ]);
 
-        const listsData = await authFetch("/contacts/lists");
+        if (templatesData.success) setTemplates(templatesData.data);
         if (listsData.success) setContactLists(listsData.data);
+        if (accountsData.success) setWabaAccounts(accountsData.data);
+
       } catch (error) {
         console.error("Failed to fetch initial data", error);
-        alert("Failed to load necessary data. Please try logging in again.");
       }
     };
     fetchData();
@@ -84,8 +91,9 @@ export default function CreateCampaign() {
       (t) => t.name === selectedTemplate
     );
 
-    if (!formName || !selectedTemplateObject || !selectedList) {
-      return alert("Please fill out all required fields.");
+   // Add validation for the new phone number field
+    if (!formName || !selectedTemplateObject || !selectedList || !selectedPhoneNumber) {
+        return alert('Please fill out all fields, including "Send From".');
     }
 
     try {
@@ -99,6 +107,7 @@ export default function CreateCampaign() {
         expectedVariables: parseInt(expectedVariables, 10) || 0,
         spreadsheetId: spreadsheetId,
         buttons: buttons, // <-- Add buttons to the payload
+        phoneNumber: selectedPhoneNumber, // <-- ADD THE PHONE NUMBER ID
         ...(scheduledFor && { scheduledFor: new Date(scheduledFor).toISOString() }),
       };
 
@@ -132,6 +141,22 @@ export default function CreateCampaign() {
         {scheduledFor ? "Schedule New Campaign" : "Create New Campaign"}
       </h2>
       <form onSubmit={handleCreateCampaign} className="flex flex-col gap-4">
+        {/* --- NEW "SEND FROM" DROPDOWN --- */}
+        <div>
+            <label htmlFor="sendFrom" className={labelStyle}>Send From (Phone Number)</label>
+            <select id="sendFrom" value={selectedPhoneNumber} onChange={(e) => setSelectedPhoneNumber(e.target.value)} className={inputStyle} required>
+              <option value="">-- Select a Phone Number --</option>
+              {wabaAccounts.map(account => (
+                <optgroup label={account.accountName} key={account._id}>
+                  {account.phoneNumbers.map(phone => (
+                    <option key={phone._id} value={phone._id}>
+                      {phone.phoneNumberName} ({phone.phoneNumberId})
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+        </div>
         <div>
           <label htmlFor="campaignName" className={labelStyle}>
             Campaign Name

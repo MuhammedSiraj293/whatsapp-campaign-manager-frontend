@@ -12,6 +12,7 @@ import CampaignAnalytics from './pages/CampaignAnalytics';
 import Logs from './pages/Logs'; // <-- IMPORT NEW PAGE
 import Users from './pages/Users';
 import Profile from './pages/Profile'; 
+import Integrations from './pages/Integrations';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -54,6 +55,7 @@ function App() {
           />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/integrations" element={<ProtectedRoute roles={['admin']}><Integrations /></ProtectedRoute>} />
         </Routes>
       </div>
     </Router>
