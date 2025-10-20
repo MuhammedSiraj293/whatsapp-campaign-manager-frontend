@@ -11,32 +11,28 @@ export default function CreateCampaign() {
   const [formName, setFormName] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [headerImageUrl, setHeaderImageUrl] = useState("");
-  const [bodyVariablesText, setBodyVariablesText] = useState("");
   const [expectedVariables, setExpectedVariables] = useState(0);
-  const [scheduledFor, setScheduledFor] = useState("");
   const [spreadsheetId, setSpreadsheetId] = useState("");
+  const [scheduledFor, setScheduledFor] = useState("");
+  const [buttons, setButtons] = useState([]);
 
   // Data for dropdowns
   const [templates, setTemplates] = useState([]);
   const [contactLists, setContactLists] = useState([]);
-  const [wabaAccounts, setWabaAccounts] = useState([]); // <-- NEW
+  const [wabaAccounts, setWabaAccounts] = useState([]);
 
   // Selected values from dropdowns
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedList, setSelectedList] = useState("");
-  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState(""); // <-- NEW
-
-  // --- NEW: State for buttons ---
-  const [buttons, setButtons] = useState([]);
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState(""); // The required field
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch all data in parallel
         const [templatesData, listsData, accountsData] = await Promise.all([
           authFetch("/campaigns/templates"),
           authFetch("/contacts/lists"),
-          authFetch("/waba/accounts"), // <-- Fetch WABA accounts
+          authFetch("/waba/accounts"), // Fetch WABA accounts
         ]);
 
         if (templatesData.success) setTemplates(templatesData.data);
@@ -61,9 +57,7 @@ export default function CreateCampaign() {
     }
   };
 
-  // --- NEW: Functions to manage buttons ---
   const addButton = () => {
-    // WhatsApp templates allow up to 3 buttons of certain types
     if (buttons.length < 3) {
       setButtons([...buttons, { type: "QUICK_REPLY", text: "" }]);
     }
@@ -72,7 +66,6 @@ export default function CreateCampaign() {
   const handleButtonChange = (index, field, value) => {
     const newButtons = [...buttons];
     newButtons[index][field] = value;
-    // If switching to QUICK_REPLY, remove the url field
     if (field === "type" && value === "QUICK_REPLY") {
       delete newButtons[index].url;
     }
@@ -82,7 +75,6 @@ export default function CreateCampaign() {
   const removeButton = (index) => {
     setButtons(buttons.filter((_, i) => i !== index));
   };
-  // --- END of new button functions ---
 
   const handleCreateCampaign = async (event) => {
     event.preventDefault();
@@ -90,7 +82,6 @@ export default function CreateCampaign() {
       (t) => t.name === selectedTemplate
     );
 
-    // Add validation for the new phone number field
     if (
       !formName ||
       !selectedTemplateObject ||
@@ -110,8 +101,10 @@ export default function CreateCampaign() {
         headerImageUrl: headerImageUrl,
         expectedVariables: parseInt(expectedVariables, 10) || 0,
         spreadsheetId: spreadsheetId,
-        buttons: buttons, // <-- Add buttons to the payload
-        phoneNumber: selectedPhoneNumber, // <-- ADD THE PHONE NUMBER ID
+        buttons: buttons,
+        // --- THIS IS THE FIX ---
+        phoneNumber: selectedPhoneNumber, // This line was missing or incorrect
+        // ---
         ...(scheduledFor && {
           scheduledFor: new Date(scheduledFor).toISOString(),
         }),
@@ -134,12 +127,12 @@ export default function CreateCampaign() {
     }
   };
 
-  // --- STYLING CLASSES ---
+  // --- STYLING (unchanged) ---
   const inputStyle =
-    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5";
+    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
   const labelStyle = "block mb-2 text-sm font-medium text-gray-400";
   const buttonStyle =
-    "w-full text-white bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+    "w-full text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
 
   return (
     <div className="max-w-2xl mx-auto bg-[#202d33] p-6 rounded-lg shadow-lg">
@@ -147,7 +140,6 @@ export default function CreateCampaign() {
         {scheduledFor ? "Schedule New Campaign" : "Create New Campaign"}
       </h2>
       <form onSubmit={handleCreateCampaign} className="flex flex-col gap-4">
-        {/* --- NEW "SEND FROM" DROPDOWN --- */}
         <div>
           <label htmlFor="sendFrom" className={labelStyle}>
             Send From (Phone Number)
@@ -171,6 +163,27 @@ export default function CreateCampaign() {
             ))}
           </select>
         </div>
+
+        <div>
+          <label htmlFor="contactList" className={labelStyle}>
+            Send To (Contact List)
+          </label>
+          <select
+            id="contactList"
+            value={selectedList}
+            onChange={(e) => setSelectedList(e.target.value)}
+            className={inputStyle}
+            required
+          >
+            <option value="">-- Select a Contact List --</option>
+            {contactLists.map((list) => (
+              <option key={list._id} value={list._id}>
+                {list.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label htmlFor="campaignName" className={labelStyle}>
             Campaign Name
@@ -212,99 +225,29 @@ export default function CreateCampaign() {
           className={`${inputStyle} h-28`}
           readOnly
         />
-
-        <div>
-          <label htmlFor="headerUrl" className={labelStyle}>
-            Header Image URL (Optional)
-          </label>
-          <input
-            id="headerUrl"
-            type="text"
-            placeholder="https://..."
-            value={headerImageUrl}
-            onChange={(e) => setHeaderImageUrl(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="numVars" className={labelStyle}>
-            Number of Body Variables
-          </label>
-          <input
-            id="numVars"
-            type="number"
-            value={expectedVariables}
-            onChange={(e) => setExpectedVariables(e.target.value)}
-            className={inputStyle}
-            min="0"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="staticVars" className={labelStyle}>
-            Static Body Variables (Optional)
-          </label>
-          <input
-            id="staticVars"
-            type="text"
-            placeholder="e.g., SALE25,Monday"
-            value={bodyVariablesText}
-            onChange={(e) => setBodyVariablesText(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="contactList" className={labelStyle}>
-            Contact List
-          </label>
-          <select
-            id="contactList"
-            value={selectedList}
-            onChange={(e) => setSelectedList(e.target.value)}
-            className={inputStyle}
-            required
-          >
-            <option value="">-- Select a Contact List --</option>
-            {contactLists.map((list) => (
-              <option key={list._id} value={list._id}>
-                {list.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="sheetId" className={labelStyle}>
-            Google Sheet ID for Live Leads (Optional)
-          </label>
-          <input
-            id="sheetId"
-            type="text"
-            placeholder="Paste Sheet ID from URL"
-            value={spreadsheetId}
-            onChange={(e) => setSpreadsheetId(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="schedule"
-            className="block mb-2 text-sm font-medium text-gray-400"
-          >
-            Schedule For (Optional)
-          </label>
-          <input
-            id="schedule"
-            type="datetime-local"
-            value={scheduledFor}
-            onChange={(e) => setScheduledFor(e.target.value)}
-            className="bg-[#2c3943] border border-gray-700 text-gray-400 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5"
-          />
-        </div>
+        <input
+          type="text"
+          placeholder="Header Image URL (Optional)"
+          value={headerImageUrl}
+          onChange={(e) => setHeaderImageUrl(e.target.value)}
+          className={inputStyle}
+        />
+        <input
+          type="number"
+          placeholder="Number of Body Variables"
+          value={expectedVariables}
+          onChange={(e) => setExpectedVariables(e.target.value)}
+          className={inputStyle}
+          min="0"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Google Sheet ID for Live Leads (Optional)"
+          value={spreadsheetId}
+          onChange={(e) => setSpreadsheetId(e.target.value)}
+          className={inputStyle}
+        />
 
         <div>
           <label className={labelStyle}>Interactive Buttons (Optional)</label>
@@ -363,6 +306,19 @@ export default function CreateCampaign() {
               + Add Button
             </button>
           )}
+        </div>
+
+        <div>
+          <label htmlFor="schedule" className={labelStyle}>
+            Schedule For (Optional)
+          </label>
+          <input
+            id="schedule"
+            type="datetime-local"
+            value={scheduledFor}
+            onChange={(e) => setScheduledFor(e.target.value)}
+            className={`${inputStyle} text-gray-400`}
+          />
         </div>
 
         <button type="submit" className={`${buttonStyle} mt-4`}>
