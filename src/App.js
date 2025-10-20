@@ -51,9 +51,9 @@ function App() {
           {/* --- ADD NEW ROUTE --- */}
           <Route 
             path="/logs" 
-            element={<ProtectedRoute><Logs /></ProtectedRoute>} 
+            element={<ProtectedRoute roles={['admin']}><Logs /></ProtectedRoute>} 
           />
-          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute roles={['admin']}><Users /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/integrations" element={<ProtectedRoute roles={['admin']}><Integrations /></ProtectedRoute>} />
         </Routes>
