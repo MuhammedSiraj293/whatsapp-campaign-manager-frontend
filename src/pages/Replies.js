@@ -20,11 +20,20 @@ export default function Replies() {
   const [selectedPhoneId, setSelectedPhoneId] = useState(""); // This is the 'recipientId'
   const [availablePhones, setAvailablePhones] = useState([]);
 
-  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [activeConversationId, setActiveConversationId] = useState(null); // This is the customer's phone number
 
-  const activeChatRef = useRef({ activeConversationId, selectedPhoneId });
+  // Ref to hold the most current state for the socket listener
+  const activeChatRef = useRef({
+    customerPhone: activeConversationId,
+    businessPhone: selectedPhoneId,
+  });
+
+  // Keep the ref updated
   useEffect(() => {
-    activeChatRef.current = { activeConversationId, selectedPhoneId };
+    activeChatRef.current = {
+      customerPhone: activeConversationId,
+      businessPhone: selectedPhoneId,
+    };
   }, [activeConversationId, selectedPhoneId]);
 
   useEffect(() => {
@@ -43,7 +52,7 @@ export default function Replies() {
     fetchAccounts();
   }, []);
 
-  // --- NEW: Update available phones when a WABA is selected ---
+  // Update available phones when a WABA is selected
   useEffect(() => {
     if (selectedWabaId) {
       const account = wabaAccounts.find((acc) => acc._id === selectedWabaId);
@@ -52,16 +61,17 @@ export default function Replies() {
     } else {
       setAvailablePhones([]);
     }
+    // Clear all chat data when WABA changes
     setConversations([]);
     setMessages([]);
     setActiveConversationId(null);
   }, [selectedWabaId, wabaAccounts]);
 
-  // --- UPGRADED: Fetch conversations for the selected phone number ---
-  const fetchConversations = async (phoneId) => {
-    if (!phoneId) return;
+  // Fetch conversations for the selected business phone number
+  const fetchConversations = async (recipientId) => {
+    if (!recipientId) return;
     try {
-      const data = await authFetch(`/replies/conversations/${phoneId}`);
+      const data = await authFetch(`/replies/conversations/${recipientId}`);
       if (data.success) {
         setConversations(data.data);
       }
@@ -71,12 +81,12 @@ export default function Replies() {
   };
 
   // Fetch messages for the selected chat
-  const fetchMessages = async (phoneNumber, phoneId) => {
-    if (!phoneNumber || !phoneId) return;
+  const fetchMessages = async (customerPhone, recipientId) => {
+    if (!customerPhone || !recipientId) return;
     setIsLoading(true);
     try {
       const data = await authFetch(
-        `/replies/messages/${phoneNumber}/${phoneId}`
+        `/replies/messages/${customerPhone}/${recipientId}`
       );
       if (data.success) {
         setMessages(data.data);
@@ -92,32 +102,30 @@ export default function Replies() {
   useEffect(() => {
     const handleNewMessage = (data) => {
       // Check if the message is for the currently selected business phone number
-      if (data.recipientId === activeChatRef.current.selectedPhoneId) {
-        // Refresh the conversation list on the left
-        fetchConversations(activeChatRef.current.selectedPhoneId);
+      if (data.recipientId === activeChatRef.current.businessPhone) {
+        fetchConversations(activeChatRef.current.businessPhone);
         // If it's for the active chat, add it to the window
-        if (data.from === activeChatRef.current.activeConversationId) {
+        if (data.from === activeChatRef.current.customerPhone) {
           setMessages((prevMessages) => [...prevMessages, data.message]);
         }
       }
     };
 
     socket.on("newMessage", handleNewMessage);
-    // ... (socket listener for status updates can be added here)
 
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, []);
+  }, []); // Runs only once
 
-  // --- UPGRADED: Fetch conversations when selectedPhoneId changes ---
+  // Fetch conversations when selectedPhoneId (business phone) changes
   useEffect(() => {
     if (selectedPhoneId) {
       fetchConversations(selectedPhoneId);
     }
   }, [selectedPhoneId]);
 
-  // Fetch messages when activeConversationId changes
+  // Fetch messages when activeConversationId (customer phone) changes
   useEffect(() => {
     if (activeConversationId && selectedPhoneId) {
       fetchMessages(activeConversationId, selectedPhoneId);
@@ -126,13 +134,13 @@ export default function Replies() {
     }
   }, [activeConversationId, selectedPhoneId]);
 
-  // --- UPGRADED: Handle selecting a conversation ---
-  const handleConversationSelect = async (phoneNumber) => {
-    setActiveConversationId(phoneNumber);
-    const selectedConvo = conversations.find((c) => c._id === phoneNumber);
+  // Handle selecting a conversation
+  const handleConversationSelect = async (customerPhone) => {
+    setActiveConversationId(customerPhone);
+    const selectedConvo = conversations.find((c) => c._id === customerPhone);
     if (selectedConvo && selectedConvo.unreadCount > 0) {
       try {
-        await authFetch(`/replies/read/${phoneNumber}/${selectedPhoneId}`, {
+        await authFetch(`/replies/read/${customerPhone}/${selectedPhoneId}`, {
           method: "PATCH",
         });
         await fetchConversations(selectedPhoneId); // Refresh list
@@ -142,7 +150,7 @@ export default function Replies() {
     }
   };
 
-  // --- UPGRADED: Send replies from the correct phone number ---
+  // Send replies from the correct phone number
   const handleSendReply = async (messageText) => {
     if (!messageText.trim() || !activeConversationId || !selectedPhoneId)
       return;
@@ -159,7 +167,7 @@ export default function Replies() {
     }
   };
 
-  // --- UPGRADED: Send media from the correct phone number ---
+  // Send media from the correct phone number
   const handleSendMedia = async (file) => {
     if (!file || !activeConversationId || !selectedPhoneId) return;
     try {

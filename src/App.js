@@ -9,9 +9,9 @@ import Contacts from './pages/Contacts';
 import CreateCampaign from './pages/CreateCampaign';
 import Analytics from './pages/Analytics';
 import CampaignAnalytics from './pages/CampaignAnalytics';
-import Logs from './pages/Logs'; // <-- IMPORT NEW PAGE
+import Logs from './pages/Logs';
 import Users from './pages/Users';
-import Profile from './pages/Profile'; 
+import Profile from './pages/Profile';
 import Integrations from './pages/Integrations';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -24,38 +24,94 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route 
-            path="/" 
-            element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
-          />
+          
+          {/* --- NEW ROLE-BASED ROUTES --- */}
+          
+          {/* Viewer, Manager, & Admin Routes */}
           <Route 
             path="/replies" 
-            element={<ProtectedRoute><Replies /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute roles={['admin', 'manager', 'viewer']}>
+                <Replies />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute roles={['admin', 'manager', 'viewer']}>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Manager & Admin Routes */}
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/contacts" 
-            element={<ProtectedRoute><Contacts /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <Contacts />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/create-campaign" 
-            element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <CreateCampaign />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/analytics" 
-            element={<ProtectedRoute><Analytics /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <Analytics />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/analytics/:campaignId" 
-            element={<ProtectedRoute><CampaignAnalytics /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <CampaignAnalytics />
+              </ProtectedRoute>
+            } 
           />
-          {/* --- ADD NEW ROUTE --- */}
+
+          {/* Admin Only Routes */}
           <Route 
             path="/logs" 
-            element={<ProtectedRoute roles={['admin']}><Logs /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Logs />
+              </ProtectedRoute>
+            } 
           />
-          <Route path="/users" element={<ProtectedRoute roles={['admin']}><Users /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/integrations" element={<ProtectedRoute roles={['admin']}><Integrations /></ProtectedRoute>} />
+          <Route 
+            path="/users" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Users />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/integrations" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Integrations />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </div>
     </Router>
