@@ -163,7 +163,7 @@ export default function CreateCampaign() {
             {wabaAccounts.map((account) => (
               <optgroup label={account.accountName} key={account._id}>
                 {account.phoneNumbers.map((phone) => (
-                  <option key={phone._id} value={phone.phoneNumberId}>
+                  <option key={phone._id} value={phone._id}>
                     {phone.phoneNumberName} ({phone.phoneNumberId})
                   </option>
                 ))}
