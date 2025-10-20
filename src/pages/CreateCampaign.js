@@ -24,7 +24,7 @@ export default function CreateCampaign() {
   // Selected values from dropdowns
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedList, setSelectedList] = useState("");
-  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState(''); // <-- NEW
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState(""); // <-- NEW
 
   // --- NEW: State for buttons ---
   const [buttons, setButtons] = useState([]);
@@ -34,15 +34,14 @@ export default function CreateCampaign() {
       try {
         // Fetch all data in parallel
         const [templatesData, listsData, accountsData] = await Promise.all([
-          authFetch('/campaigns/templates'),
-          authFetch('/contacts/lists'),
-          authFetch('/waba/accounts') // <-- Fetch WABA accounts
+          authFetch("/campaigns/templates"),
+          authFetch("/contacts/lists"),
+          authFetch("/waba/accounts"), // <-- Fetch WABA accounts
         ]);
 
         if (templatesData.success) setTemplates(templatesData.data);
         if (listsData.success) setContactLists(listsData.data);
         if (accountsData.success) setWabaAccounts(accountsData.data);
-
       } catch (error) {
         console.error("Failed to fetch initial data", error);
       }
@@ -91,9 +90,14 @@ export default function CreateCampaign() {
       (t) => t.name === selectedTemplate
     );
 
-   // Add validation for the new phone number field
-    if (!formName || !selectedTemplateObject || !selectedList || !selectedPhoneNumber) {
-        return alert('Please fill out all fields, including "Send From".');
+    // Add validation for the new phone number field
+    if (
+      !formName ||
+      !selectedTemplateObject ||
+      !selectedList ||
+      !selectedPhoneNumber
+    ) {
+      return alert('Please fill out all fields, including "Send From".');
     }
 
     try {
@@ -108,7 +112,9 @@ export default function CreateCampaign() {
         spreadsheetId: spreadsheetId,
         buttons: buttons, // <-- Add buttons to the payload
         phoneNumber: selectedPhoneNumber, // <-- ADD THE PHONE NUMBER ID
-        ...(scheduledFor && { scheduledFor: new Date(scheduledFor).toISOString() }),
+        ...(scheduledFor && {
+          scheduledFor: new Date(scheduledFor).toISOString(),
+        }),
       };
 
       const data = await authFetch("/campaigns", {
@@ -143,19 +149,27 @@ export default function CreateCampaign() {
       <form onSubmit={handleCreateCampaign} className="flex flex-col gap-4">
         {/* --- NEW "SEND FROM" DROPDOWN --- */}
         <div>
-            <label htmlFor="sendFrom" className={labelStyle}>Send From (Phone Number)</label>
-            <select id="sendFrom" value={selectedPhoneNumber} onChange={(e) => setSelectedPhoneNumber(e.target.value)} className={inputStyle} required>
-              <option value="">-- Select a Phone Number --</option>
-              {wabaAccounts.map(account => (
-                <optgroup label={account.accountName} key={account._id}>
-                  {account.phoneNumbers.map(phone => (
-                    <option key={phone._id} value={phone._id}>
-                      {phone.phoneNumberName} ({phone.phoneNumberId})
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+          <label htmlFor="sendFrom" className={labelStyle}>
+            Send From (Phone Number)
+          </label>
+          <select
+            id="sendFrom"
+            value={selectedPhoneNumber}
+            onChange={(e) => setSelectedPhoneNumber(e.target.value)}
+            className={inputStyle}
+            required
+          >
+            <option value="">-- Select a Phone Number --</option>
+            {wabaAccounts.map((account) => (
+              <optgroup label={account.accountName} key={account._id}>
+                {account.phoneNumbers.map((phone) => (
+                  <option key={phone._id} value={phone.phoneNumberId}>
+                    {phone.phoneNumberName} ({phone.phoneNumberId})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
         <div>
           <label htmlFor="campaignName" className={labelStyle}>
@@ -277,14 +291,19 @@ export default function CreateCampaign() {
         </div>
 
         <div>
-            <label htmlFor="schedule" className="block mb-2 text-sm font-medium text-gray-400">Schedule For (Optional)</label>
-            <input 
-                id="schedule" 
-                type="datetime-local" 
-                value={scheduledFor} 
-                onChange={(e) => setScheduledFor(e.target.value)} 
-                className="bg-[#2c3943] border border-gray-700 text-gray-400 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5" 
-            />
+          <label
+            htmlFor="schedule"
+            className="block mb-2 text-sm font-medium text-gray-400"
+          >
+            Schedule For (Optional)
+          </label>
+          <input
+            id="schedule"
+            type="datetime-local"
+            value={scheduledFor}
+            onChange={(e) => setScheduledFor(e.target.value)}
+            className="bg-[#2c3943] border border-gray-700 text-gray-400 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5"
+          />
         </div>
 
         <div>
