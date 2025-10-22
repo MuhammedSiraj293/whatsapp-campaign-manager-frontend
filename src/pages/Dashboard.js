@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authFetch } from "../services/api"; // <-- IMPORT OUR NEW SERVICES
+import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT THE WABA CONTEXT
 
 // Helper function
 const getStatusClass = (status) => {
@@ -25,17 +26,24 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [recipientCounts, setRecipientCounts] = useState({});
   const navigate = useNavigate();
+  const { activeWaba } = useWaba(); // <-- 2. GET THE ACTIVE WABA ID
+  
 
   const fetchCampaignsAndCounts = async () => {
+    if (!activeWaba) {
+      setIsLoading(false);
+      return; // Don't fetch if no WABA is selected
+    }
     setIsLoading(true);
     try {
-      const campaignsData = await authFetch("/campaigns");
+      // --- 3. THIS IS THE KEY CHANGE ---
+      // Fetch campaigns for the *active* WABA
+      const campaignsData = await authFetch(`/campaigns/waba/${activeWaba}`);
 
       if (campaignsData.success) {
         const campaignsList = campaignsData.data;
         setCampaigns(campaignsList);
 
-        // Fetch all recipient counts in parallel
         const countResults = await Promise.all(
           campaignsList.map((campaign) =>
             authFetch(`/campaigns/${campaign._id}/recipients/count`)
@@ -43,10 +51,7 @@ export default function Dashboard() {
                 campaignId: campaign._id,
                 count: res.success ? res.count : 0,
               }))
-              .catch(() => ({
-                campaignId: campaign._id,
-                count: 0,
-              }))
+              .catch(() => ({ campaignId: campaign._id, count: 0 }))
           )
         );
 
@@ -54,7 +59,6 @@ export default function Dashboard() {
         countResults.forEach(({ campaignId, count }) => {
           counts[campaignId] = count;
         });
-
         setRecipientCounts(counts);
       }
     } catch (error) {
@@ -62,11 +66,11 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }; // 4. RE-FETCH campaigns when the activeWaba changes
 
   useEffect(() => {
     fetchCampaignsAndCounts();
-  }, []);
+  }, [activeWaba]);
 
   const handleSendCampaign = async (campaignId) => {
     if (!window.confirm("Are you sure you want to send this campaign?")) return;
@@ -87,7 +91,7 @@ export default function Dashboard() {
   const handleDeleteCampaign = async (campaignId) => {
     if (
       !window.confirm(
-        "Are you sure you want to permanently delete this campaign? This cannot be undone."
+        "Are you sure you want to permanently delete this campaign?"
       )
     )
       return;
@@ -108,7 +112,6 @@ export default function Dashboard() {
   const getCampaignDate = (campaign) => {
     let label = "Created:";
     let date = new Date(campaign.createdAt);
-
     if (campaign.status === "scheduled" && campaign.scheduledFor) {
       label = "Scheduled for:";
       date = new Date(campaign.scheduledFor);
@@ -116,7 +119,6 @@ export default function Dashboard() {
       label = "Sent on:";
       date = new Date(campaign.updatedAt);
     }
-
     return `${label} ${date.toLocaleString()}`;
   };
 
@@ -143,6 +145,10 @@ export default function Dashboard() {
         <div className="list-container">
           {isLoading ? (
             <p className="text-center text-gray-400">Loading campaigns...</p>
+          ) : !activeWaba ? (
+            <p className="text-center text-yellow-400">
+              Please select a WABA account from the navbar to view campaigns.
+            </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {campaigns.map((campaign) => (

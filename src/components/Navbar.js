@@ -1,10 +1,12 @@
 // frontend/src/components/Navbar.js
 
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Disclosure, Menu } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AuthContext } from "../context/AuthContext";
+import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT WABA CONTEXT
+import { authFetch } from "../services/api"; // <-- 2. IMPORT AUTH FETCH
 
 // This is a helper function to determine which links a user can see
 const getNavigation = (userRole) => {
@@ -19,7 +21,7 @@ const getNavigation = (userRole) => {
     { name: "Analytics", href: "/analytics", roles: ["admin", "manager"] },
     { name: "Logs", href: "/logs", roles: ["admin"] },
     { name: "Users", href: "/users", roles: ["admin"] },
-    { name: "Integrations", href: "/integrations", roles: ['admin'] }, // <-- NEW LINK
+    { name: "Integrations", href: "/integrations", roles: ["admin"] }, // <-- NEW LINK
   ];
   // Filter the routes based on the current user's role
   return allRoutes.filter((route) => route.roles.includes(userRole));
@@ -31,16 +33,50 @@ function classNames(...classes) {
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
+  const { activeWaba, selectWaba } = useWaba(); // <-- 3. USE WABA CONTEXT
+  const [wabaAccounts, setWabaAccounts] = useState([]); // <-- 4. STATE FOR ACCOUNTS
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get the navigation items that are allowed for the current user's role
   const navigation = user ? getNavigation(user.role) : [];
 
+  // 5. FETCH ALL WABA ACCOUNTS ON LOAD
+  useEffect(() => {
+    if (user) {
+      // Only fetch if user is logged in
+      const fetchAccounts = async () => {
+        try {
+          const data = await authFetch("/waba/accounts");
+          if (data.success) {
+            setWabaAccounts(data.data);
+            // If no WABA is active, select the first one by default
+            if (!activeWaba && data.data.length > 0) {
+              selectWaba(data.data[0]._id);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching WABA accounts for navbar:", error);
+        }
+      };
+      fetchAccounts();
+    }
+  }, [user, activeWaba, selectWaba]); // Rerun if user logs in
+
   const handleLogout = () => {
     logout();
+    selectWaba(null); // Clear active WABA on logout
     navigate("/login");
   };
+  const handleWabaChange = (wabaId) => {
+    selectWaba(wabaId);
+    // Reload the page to force all components to refetch data
+    window.location.reload();
+  };
+
+  const activeWabaName =
+    wabaAccounts.find((a) => a._id === activeWaba)?.accountName ||
+    "Select Account";
 
   return (
     <Disclosure
@@ -97,51 +133,79 @@ export default function Navbar() {
               {/* Right side */}
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 {user ? (
-                  <Menu as="div" className="relative ml-3">
-                    <Menu.Button className="relative flex rounded-full">
-                      <span className="sr-only">Open user menu</span>
-                      <img
-                        alt="profile"
-                        src="https://thecapitalavenue.com/wp-content/uploads/2025/08/Group-3.svg"
-                        className="size-8 rounded-full bg-gray-100"
-                      />
-                    </Menu.Button>
-                    <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                      <div className="px-4 py-2 text-sm text-white border-b border-gray-700">
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-gray-400 capitalize">{user.role}</p>
-                      </div>
-
-                      {/* --- THIS IS THE NEW LINK --- */}
-                      <Menu.Item>
-                        {({ active }) => (
-                          <Link
-                            to="/profile"
-                            className={classNames(
-                              active ? "bg-white/5" : "",
-                              "block px-4 py-2 text-sm text-gray-300"
+                  <>
+                    {/* --- 6. NEW WABA SELECTOR DROPDOWN --- */}
+                    <Menu as="div" className="relative ml-3">
+                      <Menu.Button className="relative flex rounded-md bg-gray-800 p-2 text-sm text-gray-300 hover:bg-white/5">
+                        <span className="sr-only">Select WABA</span>
+                        {activeWabaName}
+                      </Menu.Button>
+                      <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        {wabaAccounts.map((account) => (
+                          <Menu.Item key={account._id}>
+                            {({ active }) => (
+                              <button
+                                onClick={() => handleWabaChange(account._id)}
+                                className={classNames(
+                                  active ? "bg-white/5" : "",
+                                  "block w-full text-left px-4 py-2 text-sm text-gray-300"
+                                )}
+                              >
+                                {account.accountName}
+                              </button>
                             )}
-                          >
-                            My Profile
-                          </Link>
-                        )}
-                      </Menu.Item>
+                          </Menu.Item>
+                        ))}
+                      </Menu.Items>
+                    </Menu>
+                    <Menu as="div" className="relative ml-3">
+                      <Menu.Button className="relative flex rounded-full">
+                        <span className="sr-only">Open user menu</span>
+                        <img
+                          alt="profile"
+                          src="https://thecapitalavenue.com/wp-content/uploads/2025/08/Group-3.svg"
+                          className="size-8 rounded-full bg-gray-100"
+                        />
+                      </Menu.Button>
+                      <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div className="px-4 py-2 text-sm text-white border-b border-gray-700">
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-gray-400 capitalize">
+                            {user.role}
+                          </p>
+                        </div>
 
-                      <Menu.Item>
-                        {({ active }) => (
-                          <button
-                            onClick={handleLogout}
-                            className={classNames(
-                              active ? "bg-white/5" : "",
-                              "block w-full text-left px-4 py-2 text-sm text-gray-300"
-                            )}
-                          >
-                            Logout
-                          </button>
-                        )}
-                      </Menu.Item>
-                    </Menu.Items>
-                  </Menu>
+                        {/* --- THIS IS THE NEW LINK --- */}
+                        <Menu.Item>
+                          {({ active }) => (
+                            <Link
+                              to="/profile"
+                              className={classNames(
+                                active ? "bg-white/5" : "",
+                                "block px-4 py-2 text-sm text-gray-300"
+                              )}
+                            >
+                              My Profile
+                            </Link>
+                          )}
+                        </Menu.Item>
+
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={handleLogout}
+                              className={classNames(
+                                active ? "bg-white/5" : "",
+                                "block w-full text-left px-4 py-2 text-sm text-gray-300"
+                              )}
+                            >
+                              Logout
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </Menu.Items>
+                    </Menu>
+                  </>
                 ) : (
                   <Link
                     to="/login"
