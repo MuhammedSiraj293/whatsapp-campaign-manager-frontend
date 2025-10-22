@@ -1,12 +1,14 @@
 // frontend/src/pages/Replies.js
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { authFetch, uploadFile } from "../services/api";
 import socket from "../services/socket";
 import LeftMenu from "../components/LeftMenu";
 import ChatDetail from "../components/ChatDetail";
 import "./style/Replies.css";
 import LoadingScreen from "../components/LoadingScreen";
+import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT THE WABA CONTEXT
+import { AuthContext } from "../context/AuthContext"; // To check user role
 
 export default function Replies() {
   const [wabaAccounts, setWabaAccounts] = useState([]);
@@ -15,20 +17,20 @@ export default function Replies() {
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const { activeWaba } = useWaba(); // <-- 2. GET THE GLOBALLY ACTIVE WABA
+  const { user } = useContext(AuthContext); // Get user for role check
+
   // --- NEW STATE FOR MULTI-ACCOUNT ---
-  const [selectedWabaId, setSelectedWabaId] = useState("");
   const [selectedPhoneId, setSelectedPhoneId] = useState(""); // This is the 'recipientId'
   const [availablePhones, setAvailablePhones] = useState([]);
 
-  const [activeConversationId, setActiveConversationId] = useState(null); // This is the customer's phone number
+  const [activeConversationId, setActiveConversationId] = useState(null); // Customer's phone number
 
-  // Ref to hold the most current state for the socket listener
   const activeChatRef = useRef({
     customerPhone: activeConversationId,
     businessPhone: selectedPhoneId,
   });
 
-  // Keep the ref updated
   useEffect(() => {
     activeChatRef.current = {
       customerPhone: activeConversationId,
@@ -36,8 +38,8 @@ export default function Replies() {
     };
   }, [activeConversationId, selectedPhoneId]);
 
+  // Fetch WABA accounts when component mounts
   useEffect(() => {
-    // Fetch WABA accounts when component mounts
     const fetchAccounts = async () => {
       try {
         const data = await authFetch("/waba/accounts");
@@ -47,15 +49,18 @@ export default function Replies() {
       } catch (error) {
         console.error("Error fetching WABA accounts:", error);
       }
-      setLoading(false); // Stop the main loading screen
+      setLoading(false);
     };
-    fetchAccounts();
-  }, []);
+    if (user) {
+      // Only fetch if user is logged in
+      fetchAccounts();
+    }
+  }, [user]);
 
-  // Update available phones when a WABA is selected
+  // --- 3. UPGRADED: Automatically filter phones based on global WABA ---
   useEffect(() => {
-    if (selectedWabaId) {
-      const account = wabaAccounts.find((acc) => acc._id === selectedWabaId);
+    if (activeWaba && wabaAccounts.length > 0) {
+      const account = wabaAccounts.find((acc) => acc._id === activeWaba);
       setAvailablePhones(account ? account.phoneNumbers : []);
       setSelectedPhoneId(""); // Reset phone selection
     } else {
@@ -65,7 +70,7 @@ export default function Replies() {
     setConversations([]);
     setMessages([]);
     setActiveConversationId(null);
-  }, [selectedWabaId, wabaAccounts]);
+  }, [activeWaba, wabaAccounts]);
 
   // Fetch conversations for the selected business phone number
   const fetchConversations = async (recipientId) => {
@@ -104,7 +109,6 @@ export default function Replies() {
       // Check if the message is for the currently selected business phone number
       if (data.recipientId === activeChatRef.current.businessPhone) {
         fetchConversations(activeChatRef.current.businessPhone);
-        // If it's for the active chat, add it to the window
         if (data.from === activeChatRef.current.customerPhone) {
           setMessages((prevMessages) => [...prevMessages, data.message]);
         }
@@ -116,7 +120,7 @@ export default function Replies() {
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, []); // Runs only once
+  }, []);
 
   // Fetch conversations when selectedPhoneId (business phone) changes
   useEffect(() => {
@@ -193,32 +197,22 @@ export default function Replies() {
           <div className="conversations-list">
             {/* --- NEW ACCOUNT SELECTORS --- */}
             <div className="p-3 bg-[#111b21] border-b border-neutral-700">
+              <label className="block mb-2 text-sm font-medium text-gray-400">
+                Select Phone Number
+              </label>
               <select
-                value={selectedWabaId}
-                onChange={(e) => setSelectedWabaId(e.target.value)}
-                className={inputStyle}
+                value={selectedPhoneId}
+                onChange={(e) => setSelectedPhoneId(e.target.value)}
+                className={`${inputStyle} mt-2`}
+                disabled={availablePhones.length === 0}
               >
-                <option value="">-- Select an Account --</option>
-                {wabaAccounts.map((acc) => (
-                  <option key={acc._id} value={acc._id}>
-                    {acc.accountName}
+                <option value="">-- Select a Phone Number --</option>
+                {availablePhones.map((phone) => (
+                  <option key={phone._id} value={phone.phoneNumberId}>
+                    {phone.phoneNumberName} ({phone.phoneNumberId})
                   </option>
                 ))}
               </select>
-              {availablePhones.length > 0 && (
-                <select
-                  value={selectedPhoneId}
-                  onChange={(e) => setSelectedPhoneId(e.target.value)}
-                  className={`${inputStyle} mt-2`}
-                >
-                  <option value="">-- Select a Phone Number --</option>
-                  {availablePhones.map((phone) => (
-                    <option key={phone._id} value={phone.phoneNumberId}>
-                      {phone.phoneNumberName} ({phone.phoneNumberId})
-                    </option>
-                  ))}
-                </select>
-              )}
             </div>
 
             <LeftMenu
@@ -238,8 +232,9 @@ export default function Replies() {
               />
             ) : (
               <div className="placeholder">
-                Select a WABA account, a phone number, and then a conversation
-                to start chatting.
+                {activeWaba
+                  ? "Please select a phone number to view chats."
+                  : "Please select a WABA account from the navbar."}
               </div>
             )}
           </div>

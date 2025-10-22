@@ -136,7 +136,7 @@ export default function Navbar() {
                   <>
                     {/* --- 6. NEW WABA SELECTOR DROPDOWN --- */}
                     <Menu as="div" className="relative ml-3">
-                      <Menu.Button className="relative flex rounded-md bg-gray-800 p-2 text-sm text-gray-300 hover:bg-white/5">
+                      <Menu.Button className="relative flex rounded-md bg-fuchsia-900 px-4 py-2 text-sm text-gray-100 hover:bg-pink-950">
                         <span className="sr-only">Select WABA</span>
                         {activeWabaName}
                       </Menu.Button>
