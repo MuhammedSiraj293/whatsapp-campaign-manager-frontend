@@ -29,6 +29,7 @@ export default function Profile() {
   const buttonStyle = "w-full text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
 
   return (
+    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full">
     <div className="max-w-xl mx-auto bg-[#202d33] p-8 rounded-lg shadow-lg text-center">
       <h1 className="text-2xl font-bold text-white mb-6">My Profile & Security</h1>
       
@@ -43,9 +44,6 @@ export default function Profile() {
         
         {!qrCodeUrl ? (
           <>
-            <p className="text-gray-400 mb-4">
-              Add an extra layer of security to your account.
-            </p>
             <button onClick={handleEnable2FA} className={buttonStyle}>
               Enable 2FA
             </button>
@@ -69,6 +67,7 @@ export default function Profile() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

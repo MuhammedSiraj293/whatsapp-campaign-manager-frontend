@@ -136,7 +136,7 @@ export default function Navbar() {
                   <>
                     {/* --- 6. NEW WABA SELECTOR DROPDOWN --- */}
                     <Menu as="div" className="relative ml-3">
-                      <Menu.Button className="relative flex rounded-md bg-fuchsia-900 px-4 py-2 text-sm text-gray-100 hover:bg-pink-950">
+                      <Menu.Button className="relative flex rounded-md bg-fuchsia-900 capitalize px-4 py-2 text-sm text-gray-100 hover:bg-pink-950">
                         <span className="sr-only">Select WABA</span>
                         {activeWabaName}
                       </Menu.Button>
@@ -148,7 +148,7 @@ export default function Navbar() {
                                 onClick={() => handleWabaChange(account._id)}
                                 className={classNames(
                                   active ? "bg-white/5" : "",
-                                  "block w-full text-left px-4 py-2 text-sm text-gray-300"
+                                  "block w-full text-left px-4 py-2 text-sm capitalize text-gray-300"
                                 )}
                               >
                                 {account.accountName}

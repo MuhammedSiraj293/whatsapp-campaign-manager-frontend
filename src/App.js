@@ -9,6 +9,7 @@ import Contacts from './pages/Contacts';
 import CreateCampaign from './pages/CreateCampaign';
 import Analytics from './pages/Analytics';
 import CampaignAnalytics from './pages/CampaignAnalytics';
+import TemplateAnalytics from './pages/TemplateAnalytics.js';
 import Logs from './pages/Logs';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
@@ -83,6 +84,15 @@ function App() {
             element={
               <ProtectedRoute roles={['admin', 'manager']}>
                 <CampaignAnalytics />
+              </ProtectedRoute>
+            } 
+          />
+          {/* This is the new route for a specific template */}
+          <Route 
+            path="/analytics/template/:templateName" 
+            element={
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <TemplateAnalytics />
               </ProtectedRoute>
             } 
           />

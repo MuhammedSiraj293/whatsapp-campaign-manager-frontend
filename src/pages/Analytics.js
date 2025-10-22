@@ -1,6 +1,9 @@
+// frontend/src/pages/Analytics.js
+
 import React, { useState, useEffect } from 'react';
-import { authFetch } from '../services/api'; // <-- 1. IMPORT THE SECURE SERVICE
-import { FaPaperPlane, FaUsers, FaReply } from 'react-icons/fa';
+import { Link } from 'react-router-dom'; // <-- 1. IMPORT Link
+import { authFetch } from '../services/api';
+import { FaPaperPlane, FaUsers, FaReply, FaCheckDouble, FaEye, FaExclamationTriangle } from 'react-icons/fa';
 
 // Reusable component for the stat cards
 const StatCard = ({ title, value, icon }) => {
@@ -17,30 +20,44 @@ const StatCard = ({ title, value, icon }) => {
   );
 };
 
+// --- 2. NEW HELPER FUNCTION for formatting the template name ---
+const formatTemplateName = (name) => {
+  if (!name) return '';
+  // Replace underscores/hyphens with spaces and capitalize words
+  return name
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 export default function Analytics() {
   const [stats, setStats] = useState(null);
+  const [templateStats, setTemplateStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchAllStats = async () => {
       try {
         setIsLoading(true);
-        // --- 2. THIS IS THE FIX ---
-        // Use authFetch to make an authenticated request
-        const data = await authFetch('/analytics/stats');
-        if (data.success) {
-          setStats(data.data);
+        const [statsData, templateData] = await Promise.all([
+          authFetch('/analytics/stats'),
+          authFetch('/analytics/templates')
+        ]);
+
+        if (statsData.success) {
+          setStats(statsData.data);
+        }
+        if (templateData.success) {
+          setTemplateStats(templateData.data);
         }
       } catch (error) {
         console.error('Error fetching analytics stats:', error);
-        // Display the specific error message to the user
         alert(error.message);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchStats();
+    fetchAllStats();
   }, []);
 
   if (isLoading) {
@@ -52,8 +69,8 @@ export default function Analytics() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-white text-center mb-8">
+    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8">
+      <h1 className="text-3xl text-white mb-8">
         Analytics Dashboard
       </h1>
 
@@ -73,6 +90,59 @@ export default function Analytics() {
           value={stats.repliesReceived}
           icon={<FaReply />}
         />
+      </div>
+
+      <div className="mt-12">
+        <h2 className="text-2xl text-white mb-6">
+          Template Performance
+        </h2>
+        <div className="bg-[#202d33] rounded-lg shadow-lg overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-[#2a3942]">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Template Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Total Sent</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Delivered</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Read</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Failed</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Replies</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {templateStats.map((template) => (
+                <tr key={template.templateName}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    {/* --- 3. THIS IS THE FIX --- */}
+                    {/* The name is now a clickable link */}
+                    <Link 
+                      to={`/analytics/template/${template.templateName}`} 
+                      className="text-white hover:text-gray-400 hover:underline"
+                    >
+                      {formatTemplateName(template.templateName)}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{template.totalSent}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <FaCheckDouble className="inline mr-1 text-cyan-500" />
+                    {template.delivered}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <FaEye className="inline mr-1 text-green-500" />
+                    {template.read}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowGrap text-sm text-gray-300">
+                    <FaExclamationTriangle className="inline mr-1 text-red-500" />
+                    {template.failed}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <FaReply className="inline mr-1 text-yellow-500" />
+                    {template.replies}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

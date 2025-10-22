@@ -97,9 +97,9 @@ export default function Integrations() {
   };
 
   return (
-    <div className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Column 1: Add New Accounts/Phones */}
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col  gap-8">
         <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-bold text-white mb-4">Add New WABA Account</h2>
           <form onSubmit={handleAddAccount} className="flex flex-col gap-4">
