@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { authFetch } from '../services/api';
 
-const StatCard = ({ title, value }) => {
+const StatCard = ({ title, value, className = '' }) => {
     return (
-      <div className="bg-[#202d33] p-6 rounded-lg shadow-lg text-center border-l-4 border-emerald-500">
+      <div className={`bg-[#202d33] p-6 rounded-lg shadow-lg text-center ${className}`}>
         <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">{title}</h2>
         <p className="text-3xl font-bold text-white mt-1">{value}</p>
       </div>
@@ -103,11 +103,11 @@ export default function CampaignAnalytics() {
       </div>
       <h2 className="text-xl text-gray-300 text-center mb-8">{analytics.name}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard title="Total Sent" value={analytics.totalSent} />
-        <StatCard title="Delivered" value={`${analytics.delivered} (${analytics.deliveryRate})`} />
-        <StatCard title="Read" value={`${analytics.read} (${analytics.readRate})`} />
-        <StatCard title="Replies" value={`${analytics.replies} (${analytics.replyRate})`} />
-        <StatCard title="Failed" value={`${analytics.failed} (${analytics.failedRate})`} />
+        <StatCard title="Total Sent" value={analytics.totalSent} className="border-l-4 border-violet-700" />
+        <StatCard title="Delivered" value={`${analytics.delivered} (${analytics.deliveryRate})`} className="border-l-4 border-cyan-500" />
+        <StatCard title="Read" value={`${analytics.read} (${analytics.readRate})`} className="border-l-4 border-green-500" />
+        <StatCard title="Replies" value={`${analytics.replies} (${analytics.replyRate})`} className="border-l-4 border-yellow-500" />
+        <StatCard title="Failed" value={`${analytics.failed} (${analytics.failedRate})`} className="border-l-4 border-red-500" />
       </div>
 
       {/* --- NEW GOOGLE SHEETS EXPORT SECTION --- */}
