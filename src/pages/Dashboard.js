@@ -27,7 +27,6 @@ export default function Dashboard() {
   const [recipientCounts, setRecipientCounts] = useState({});
   const navigate = useNavigate();
   const { activeWaba } = useWaba(); // <-- 2. GET THE ACTIVE WABA ID
-  
 
   const fetchCampaignsAndCounts = async () => {
     if (!activeWaba) {
@@ -109,16 +108,20 @@ export default function Dashboard() {
     }
   };
 
+  // --- THIS IS THE CORRECTED DATE FUNCTION ---
   const getCampaignDate = (campaign) => {
     let label = "Created:";
     let date = new Date(campaign.createdAt);
+
     if (campaign.status === "scheduled" && campaign.scheduledFor) {
       label = "Scheduled for:";
       date = new Date(campaign.scheduledFor);
-    } else if (campaign.status === "sent") {
+    } else if (campaign.status === "sent" && campaign.sentAt) {
+      // It will now use the accurate 'sentAt' field
       label = "Sent on:";
-      date = new Date(campaign.updatedAt);
+      date = new Date(campaign.sentAt);
     }
+
     return `${label} ${date.toLocaleString()}`;
   };
 
