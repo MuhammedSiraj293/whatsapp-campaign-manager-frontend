@@ -122,7 +122,7 @@ export default function CampaignAnalytics() {
           className="border-l-4 border-violet-700"
         />
         <StatCard
-          title="Total Delivered (Delivered + Read)"
+          title="Total Delivered"
           value={`${analytics.totalDelivered} (${analytics.totalDeliveryRate})`}
           className="border-l-4 border-blue-500"
         />

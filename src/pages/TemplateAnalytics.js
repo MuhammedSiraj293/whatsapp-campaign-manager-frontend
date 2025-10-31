@@ -69,6 +69,11 @@ export default function TemplateAnalytics() {
       {/* Display the stats in the card layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard title="Total" value={analytics.total} className="border-l-4 border-violet-700" />
+        <StatCard
+          title="Total Delivered"
+          value={`${analytics.totalDelivered} (${analytics.totalDeliveryRate})`}
+          className="border-l-4 border-blue-500"
+        />
         <StatCard title="Delivered" value={`${analytics.delivered} (${analytics.deliveryRate})`} className="border-l-4 border-cyan-500" />
         <StatCard title="Read" value={`${analytics.read} (${analytics.readRate})`} className="border-l-4 border-green-500" />
         <StatCard title="Replies" value={`${analytics.replies} (${analytics.replyRate})`} className="border-l-4 border-yellow-500" />
@@ -76,4 +81,4 @@ export default function TemplateAnalytics() {
       </div>
     </div>
   );
-}
+} 
