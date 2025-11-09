@@ -1,13 +1,12 @@
-// frontend/src/pages/CreateCampaign.js
-
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
 import { authFetch } from "../services/api";
-import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT THE WABA CONTEXT
+import { useWaba } from "../context/WabaContext";
 
 export default function CreateCampaign() {
   const navigate = useNavigate();
-  const { activeWaba } = useWaba(); // <-- 2. GET THE ACTIVELY SELECTED WABA
+  const { activeWaba } = useWaba();
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -23,22 +22,21 @@ export default function CreateCampaign() {
   const [contactLists, setContactLists] = useState([]);
   const [wabaAccounts, setWabaAccounts] = useState([]);
 
-  // Selected values from dropdowns
+  // Selected values
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedList, setSelectedList] = useState("");
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
 
-  // 3. NEW: Filtered lists based on the active WABA
+  // Filtered data
   const [filteredPhones, setFilteredPhones] = useState([]);
   const [filteredTemplates, setFilteredTemplates] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Only fetch data if an active WABA is selected
         if (activeWaba) {
           const [templatesData, listsData, accountsData] = await Promise.all([
-            authFetch(`/campaigns/templates/${activeWaba}`), // <-- Fetch templates for this WABA
+            authFetch(`/campaigns/templates/${activeWaba}`),
             authFetch("/contacts/lists"),
             authFetch("/waba/accounts"),
           ]);
@@ -52,21 +50,17 @@ export default function CreateCampaign() {
       }
     };
     fetchData();
-  }, [activeWaba]); // Re-fetch all data when the active WABA changes
+  }, [activeWaba]);
 
-  // 4. NEW: Effect to update the filtered lists
   useEffect(() => {
-    // Update the phone list when accounts or active WABA changes
     const activeAccount = wabaAccounts.find((acc) => acc._id === activeWaba);
     setFilteredPhones(activeAccount ? activeAccount.phoneNumbers : []);
 
-    // Update the template list when templates or active WABA changes
     const activeTemplates = templates.filter(
       (t) => t.wabaAccountId === activeWaba
     );
     setFilteredTemplates(activeTemplates);
 
-    // Reset selections
     setSelectedPhoneNumber("");
     setSelectedTemplate("");
     setFormMessage("");
@@ -77,7 +71,9 @@ export default function CreateCampaign() {
     setSelectedTemplate(templateName);
     const template = templates.find((t) => t.name === templateName);
     if (template) {
-      const bodyComponent = template.components.find((c) => c.type === "BODY");
+      const bodyComponent = template.components.find(
+        (c) => c.type === "BODY"
+      );
       setFormMessage(bodyComponent ? bodyComponent.text : "");
     } else {
       setFormMessage("");
@@ -125,13 +121,11 @@ export default function CreateCampaign() {
         templateName: selectedTemplateObject.name,
         templateLanguage: selectedTemplateObject.language,
         contactList: selectedList,
-        headerImageUrl: headerImageUrl,
+        headerImageUrl,
         expectedVariables: parseInt(expectedVariables, 10) || 0,
-        spreadsheetId: spreadsheetId,
-        buttons: buttons,
-        // --- THIS IS THE FIX ---
-        phoneNumber: selectedPhoneNumber, // This line was missing or incorrect
-        // ---
+        spreadsheetId,
+        buttons,
+        phoneNumber: selectedPhoneNumber,
         ...(scheduledFor && {
           scheduledFor: new Date(scheduledFor).toISOString(),
         }),
@@ -154,216 +148,270 @@ export default function CreateCampaign() {
     }
   };
 
-  // --- STYLING (unchanged) ---
-  const inputStyle =
-    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
-  const labelStyle = "block mb-2 text-sm font-medium text-gray-400";
-  const buttonStyle =
-    "w-full text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+const inputStyle =
+  "bg-[#2c3943] border border-gray-700 text-white text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
+const labelStyle = "block mb-2 text-sm font-medium text-white";
+const buttonStyle =
+  "w-full text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+
+  // --- React Select custom dark styles ---
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: "#2c3943",
+      borderColor: "#475569",
+      color: "#ffffff",
+      boxShadow: "none",
+      "&:hover": { borderColor: "#10b981" },
+    }),
+    singleValue: (base) => ({ ...base, color: "#ffffff" }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: "#1e293b",
+      color: "#ffffff",
+    }),
+    option: (base, { isFocused }) => ({
+      ...base,
+      backgroundColor: isFocused ? "#047857" : "#1e293b",
+      color: "#ffffff",
+    }),
+    placeholder: (base) => ({ ...base, color: "#ffffff" }),
+  };
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full">
-    <div className="max-w-2xl mx-auto bg-[#202d33] p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-white mb-6 text-center">
-        {scheduledFor ? "Schedule New Campaign" : "Create New Campaign"}
-      </h2>
+      <div className="max-w-2xl mx-auto bg-[#202d33] p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+          {scheduledFor ? "Schedule New Campaign" : "Create New Campaign"}
+        </h2>
 
-      {!activeWaba && (
-        <p className="text-center text-yellow-400 p-4 bg-yellow-900/50 rounded-lg">
-          Please select a WABA account from the navbar to create a campaign.
-        </p>
-      )}
+        {!activeWaba && (
+          <p className="text-center text-yellow-400 p-4 bg-yellow-900/50 rounded-lg">
+            Please select a WABA account from the navbar to create a campaign.
+          </p>
+        )}
 
-      <form
-        onSubmit={handleCreateCampaign}
-        className={`flex flex-col gap-4 ${
-          !activeWaba ? "opacity-50 pointer-events-none" : ""
-        }`}
-      >
-        {/* 5. "Send From" dropdown is now filtered */}
-        <div>
-          <label htmlFor="sendFrom" className={labelStyle}>
-            Send From (Phone Number)
-          </label>
-          <select
-            id="sendFrom"
-            value={selectedPhoneNumber}
-            onChange={(e) => setSelectedPhoneNumber(e.target.value)}
-            className={inputStyle}
-            required
-          >
-            <option value="">-- Select a Phone Number --</option>
-            {filteredPhones.map((phone) => (
-              <option key={phone._id} value={phone._id}>
-                {phone.phoneNumberName} ({phone.phoneNumberId})
-              </option>
-            ))}
-          </select>
-        </div>
+        <form
+          onSubmit={handleCreateCampaign}
+          className={`flex flex-col gap-4 ${
+            !activeWaba ? "opacity-50 pointer-events-none" : ""
+          }`}
+        >
+          {/* --- Send From --- */}
+          <div>
+            <label htmlFor="sendFrom" className={labelStyle}>
+              Send From (Phone Number)
+            </label>
+            <Select
+              id="sendFrom"
+              options={filteredPhones.map((phone) => ({
+                value: phone._id,
+                label: `${phone.phoneNumberName} (${phone.phoneNumberId})`,
+              }))}
+              value={
+                selectedPhoneNumber
+                  ? {
+                      value: selectedPhoneNumber,
+                      label:
+                        filteredPhones.find(
+                          (p) => p._id === selectedPhoneNumber
+                        )?.phoneNumberName || "",
+                    }
+                  : null
+              }
+              onChange={(option) =>
+                setSelectedPhoneNumber(option?.value || "")
+              }
+              placeholder="-- Select a Phone Number --"
+              styles={selectStyles}
+              isSearchable
+            />
+          </div>
 
-        <div>
-          <label htmlFor="contactList" className={labelStyle}>
-            Send To (Contact List)
-          </label>
-          <select
-            id="contactList"
-            value={selectedList}
-            onChange={(e) => setSelectedList(e.target.value)}
-            className={inputStyle}
-            required
-          >
-            <option value="">-- Select a Contact List --</option>
-            {contactLists.map((list) => (
-              <option key={list._id} value={list._id}>
-                {list.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* --- Send To --- */}
+          <div>
+            <label htmlFor="contactList" className={labelStyle}>
+              Send To (Contact List)
+            </label>
+            <Select
+              id="contactList"
+              options={contactLists.map((list) => ({
+                value: list._id,
+                label: `${list.name} (${list.contacts?.length || 0})`,
+              }))}
+              value={
+                selectedList
+                  ? {
+                      value: selectedList,
+                      label:
+                        contactLists.find((l) => l._id === selectedList)
+                          ?.name || "",
+                    }
+                  : null
+              }
+              onChange={(option) => setSelectedList(option?.value || "")}
+              placeholder="-- Select a Contact List --"
+              styles={selectStyles}
+              isSearchable
+            />
+          </div>
 
-        <div>
-          <label htmlFor="campaignName" className={labelStyle}>
-            Campaign Name
-          </label>
+          {/* --- Campaign Name --- */}
+          <div>
+            <label htmlFor="campaignName" className={labelStyle}>
+              Campaign Name
+            </label>
+            <input
+              id="campaignName"
+              type="text"
+              placeholder="e.g., August Open House"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              className={inputStyle}
+              required
+            />
+          </div>
+
+          {/* --- Message Template --- */}
+          <div>
+            <label htmlFor="template" className={labelStyle}>
+              Message Template
+            </label>
+            <Select
+              id="template"
+              options={filteredTemplates.map((template) => ({
+                value: template.name,
+                label: `${template.name} (${template.language})`,
+              }))}
+              value={
+                selectedTemplate
+                  ? {
+                      value: selectedTemplate,
+                      label:
+                        filteredTemplates.find(
+                          (t) => t.name === selectedTemplate
+                        )?.name || "",
+                    }
+                  : null
+              }
+              onChange={(option) =>
+                handleTemplateChange({ target: { value: option?.value || "" } })
+              }
+              placeholder="-- Select a Template --"
+              styles={selectStyles}
+              isSearchable
+            />
+          </div>
+
+          <textarea
+            placeholder="Template message body..."
+            value={formMessage}
+            className={`${inputStyle} h-28`}
+            readOnly
+          />
           <input
-            id="campaignName"
             type="text"
-            placeholder="e.g., August Open House"
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
+            placeholder="Header Image URL (Optional)"
+            value={headerImageUrl}
+            onChange={(e) => setHeaderImageUrl(e.target.value)}
             className={inputStyle}
+          />
+          <input
+            type="number"
+            placeholder="Number of Body Variables"
+            value={expectedVariables}
+            onChange={(e) => setExpectedVariables(e.target.value)}
+            className={inputStyle}
+            min="0"
             required
           />
-        </div>
-
-        {/* 6. "Message Template" dropdown is now filtered */}
-        <div>
-          <label htmlFor="template" className={labelStyle}>
-            Message Template
-          </label>
-          <select
-            id="template"
-            value={selectedTemplate}
-            onChange={handleTemplateChange}
+          <input
+            type="text"
+            placeholder="Google Sheet ID for Live Leads (Optional)"
+            value={spreadsheetId}
+            onChange={(e) => setSpreadsheetId(e.target.value)}
             className={inputStyle}
-            required
-          >
-            <option value="">-- Select a Template --</option>
-            {filteredTemplates.map((template) => (
-              <option key={template.id} value={template.name}>
-                {template.name} ({template.language})
-              </option>
-            ))}
-          </select>
-        </div>
+          />
 
-        <textarea
-          placeholder="Template message body..."
-          value={formMessage}
-          className={`${inputStyle} h-28`}
-          readOnly
-        />
-        <input
-          type="text"
-          placeholder="Header Image URL (Optional)"
-          value={headerImageUrl}
-          onChange={(e) => setHeaderImageUrl(e.target.value)}
-          className={inputStyle}
-        />
-        <input
-          type="number"
-          placeholder="Number of Body Variables"
-          value={expectedVariables}
-          onChange={(e) => setExpectedVariables(e.target.value)}
-          className={inputStyle}
-          min="0"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Google Sheet ID for Live Leads (Optional)"
-          value={spreadsheetId}
-          onChange={(e) => setSpreadsheetId(e.target.value)}
-          className={inputStyle}
-        />
-
-        <div>
-          <label className={labelStyle}>Interactive Buttons (Optional)</label>
-          {buttons.map((button, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-2 p-3 border border-gray-700 rounded-lg mb-2"
-            >
-              <select
-                value={button.type}
-                onChange={(e) =>
-                  handleButtonChange(index, "type", e.target.value)
-                }
-                className={inputStyle}
+          {/* Buttons Section */}
+          <div>
+            <label className={labelStyle}>Interactive Buttons (Optional)</label>
+            {buttons.map((button, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 p-3 border border-gray-700 rounded-lg mb-2"
               >
-                <option value="QUICK_REPLY">Quick Reply</option>
-                <option value="URL">URL Button</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Button Text"
-                value={button.text}
-                onChange={(e) =>
-                  handleButtonChange(index, "text", e.target.value)
-                }
-                className={inputStyle}
-                required
-              />
-              {button.type === "URL" && (
+                <select
+                  value={button.type}
+                  onChange={(e) =>
+                    handleButtonChange(index, "type", e.target.value)
+                  }
+                  className={inputStyle}
+                >
+                  <option value="QUICK_REPLY">Quick Reply</option>
+                  <option value="URL">URL Button</option>
+                </select>
                 <input
                   type="text"
-                  placeholder="https://example.com"
-                  value={button.url || ""}
+                  placeholder="Button Text"
+                  value={button.text}
                   onChange={(e) =>
-                    handleButtonChange(index, "url", e.target.value)
+                    handleButtonChange(index, "text", e.target.value)
                   }
                   className={inputStyle}
                   required
                 />
-              )}
+                {button.type === "URL" && (
+                  <input
+                    type="text"
+                    placeholder="https://example.com"
+                    value={button.url || ""}
+                    onChange={(e) =>
+                      handleButtonChange(index, "url", e.target.value)
+                    }
+                    className={inputStyle}
+                    required
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeButton(index)}
+                  className="text-red-500 p-2"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+            {buttons.length < 3 && (
               <button
                 type="button"
-                onClick={() => removeButton(index)}
-                className="text-red-500 p-2"
+                onClick={addButton}
+                className="text-emerald-500 text-sm font-medium mt-2"
               >
-                &times;
+                + Add Button
               </button>
-            </div>
-          ))}
-          {buttons.length < 3 && (
-            <button
-              type="button"
-              onClick={addButton}
-              className="text-emerald-500 text-sm font-medium mt-2"
-            >
-              + Add Button
-            </button>
-          )}
-        </div>
+            )}
+          </div>
 
-        <div>
-          <label htmlFor="schedule" className={labelStyle}>
-            Schedule For (Optional)
-          </label>
-          <input
-            id="schedule"
-            type="datetime-local"
-            value={scheduledFor}
-            onChange={(e) => setScheduledFor(e.target.value)}
-            className={`${inputStyle} text-gray-400`}
-          />
-        </div>
+          {/* Schedule */}
+          <div>
+            <label htmlFor="schedule" className={labelStyle}>
+              Schedule For (Optional)
+            </label>
+            <input
+              id="schedule"
+              type="datetime-local"
+              value={scheduledFor}
+              onChange={(e) => setScheduledFor(e.target.value)}
+              className={`${inputStyle} text-gray-400`}
+            />
+          </div>
 
-        <button type="submit" className={`${buttonStyle} mt-4`}>
-          {scheduledFor ? "Schedule Campaign" : "Create as Draft"}
-        </button>
-      </form>
-    </div>
+          <button type="submit" className={`${buttonStyle} mt-4`}>
+            {scheduledFor ? "Schedule Campaign" : "Create as Draft"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
