@@ -71,7 +71,7 @@ export default function Users() {
   };
 
   const inputStyle = "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5";
-  const labelStyle = "block mb-2 text-sm font-medium text-gray-400";
+  // const labelStyle = "block mb-2 text-sm font-medium text-gray-400";
   const buttonStyle = "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
 
   return (

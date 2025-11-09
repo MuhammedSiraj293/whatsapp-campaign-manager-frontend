@@ -14,7 +14,7 @@ export default function Replies() {
   const [wabaAccounts, setWabaAccounts] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const { activeWaba } = useWaba(); // <-- 2. GET THE GLOBALLY ACTIVE WABA
@@ -88,7 +88,7 @@ export default function Replies() {
   // Fetch messages for the selected chat
   const fetchMessages = async (customerPhone, recipientId) => {
     if (!customerPhone || !recipientId) return;
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
       const data = await authFetch(
         `/replies/messages/${customerPhone}/${recipientId}`
@@ -99,7 +99,7 @@ export default function Replies() {
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 
