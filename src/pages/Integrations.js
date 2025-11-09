@@ -7,6 +7,7 @@ import { FaTrash, FaSave } from "react-icons/fa";
 export default function Integrations() {
   const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  
 
   // State for the new WABA account form
   const [accountName, setAccountName] = useState("");
