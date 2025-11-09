@@ -1,6 +1,6 @@
 // frontend/src/pages/Dashboard.js
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authFetch } from "../services/api"; // <-- IMPORT OUR NEW SERVICES
 import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT THE WABA CONTEXT
@@ -28,15 +28,14 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { activeWaba } = useWaba(); // <-- 2. GET THE ACTIVE WABA ID
 
-  const fetchCampaignsAndCounts = async () => {
+  const fetchCampaignsAndCounts = useCallback(async () => {
     if (!activeWaba) {
+      setCampaigns([]); // Clear campaigns if no WABA is selected
       setIsLoading(false);
-      return; // Don't fetch if no WABA is selected
+      return;
     }
     setIsLoading(true);
     try {
-      // --- 3. THIS IS THE KEY CHANGE ---
-      // Fetch campaigns for the *active* WABA
       const campaignsData = await authFetch(`/campaigns/waba/${activeWaba}`);
 
       if (campaignsData.success) {
@@ -65,11 +64,12 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
-  }; // 4. RE-FETCH campaigns when the activeWaba changes
+  }, [activeWaba]); // Add activeWaba as a dependency
 
+  // 3. This useEffect is now safe
   useEffect(() => {
     fetchCampaignsAndCounts();
-  }, [activeWaba]);
+  }, [fetchCampaignsAndCounts]);
 
   const handleSendCampaign = async (campaignId) => {
     if (!window.confirm("Are you sure you want to send this campaign?")) return;
