@@ -8,7 +8,7 @@ import { MdCancel } from 'react-icons/md';
 export default function ContactViewModal({ list, contacts, onClose, onRefresh }) {
   const [editingContactId, setEditingContactId] = useState(null);
   const [updatedData, setUpdatedData] = useState({});
-
+  const [filter, setFilter] = useState(""); // <-- 2. Add state for the filter
   if (!list) return null; // The modal is controlled by the 'list' prop
 
   const handleEditClick = (contact) => {
@@ -48,6 +48,14 @@ export default function ContactViewModal({ list, contacts, onClose, onRefresh })
     }
   };
 
+  // --- 3. FILTER THE CONTACTS ---
+  const filteredContacts = contacts.filter(contact => {
+    const name = contact.name || '';
+    const phone = contact.phoneNumber || '';
+    const search = filter.toLowerCase();
+    return name.toLowerCase().includes(search) || phone.includes(search);
+  });
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-[#202d33] rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -55,6 +63,18 @@ export default function ContactViewModal({ list, contacts, onClose, onRefresh })
           <h2 className="text-xl font-bold text-white">Contacts in "{list.name}" ({contacts.length})</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">&times;</button>
         </div>
+
+        {/* --- 4. ADD THE SEARCH BAR --- */}
+        <div className="p-4 border-b border-gray-700">
+            <input
+                type="text"
+                placeholder="Search by name or phone number..."
+                className="bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+            />
+        </div>
+
         <div className="p-6 overflow-y-auto">
           <table className="min-w-full">
             <thead className="bg-[#2a3942]">
@@ -65,7 +85,7 @@ export default function ContactViewModal({ list, contacts, onClose, onRefresh })
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {contacts.map((contact) => (
+              {filteredContacts.map((contact) => (
                 <tr key={contact._id}>
                   {editingContactId === contact._id ? (
                     <>
@@ -91,6 +111,9 @@ export default function ContactViewModal({ list, contacts, onClose, onRefresh })
             </tbody>
           </table>
           {contacts.length === 0 && <p className="text-center text-gray-500 py-8">No contacts found in this list.</p>}
+          {contacts.length > 0 && filteredContacts.length === 0 && (
+              <p className="text-center text-gray-500 py-8">No contacts match your search.</p>
+          )}
         </div>
       </div>
     </div>
