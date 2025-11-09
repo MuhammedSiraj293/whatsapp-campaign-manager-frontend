@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { authFetch } from "../services/api";
-import { FaTrash, FaPlus, FaSave } from "react-icons/fa";
+import { FaTrash, FaSave } from "react-icons/fa";
 
 export default function Integrations() {
   const [accounts, setAccounts] = useState([]);
