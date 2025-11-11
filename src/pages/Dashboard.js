@@ -1,10 +1,10 @@
 // frontend/src/pages/Dashboard.js
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react"; //
 import { useNavigate, Link } from "react-router-dom";
 import { authFetch } from "../services/api"; // <-- IMPORT OUR NEW SERVICES
 import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT THE WABA CONTEXT
-
+import socket from "../services/socket"; // 3. Import the socket
 // Helper function
 const getStatusClass = (status) => {
   switch (status) {
@@ -24,52 +24,53 @@ const getStatusClass = (status) => {
 export default function Dashboard() {
   const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [recipientCounts, setRecipientCounts] = useState({});
-  const navigate = useNavigate();
-  const { activeWaba } = useWaba(); // <-- 2. GET THE ACTIVE WABA ID
 
+  // const [recipientCounts, setRecipientCounts] = useState({}); // 4. REMOVED - No longer needed
+  const navigate = useNavigate();
+  const { activeWaba } = useWaba(); // Get the active WABA ID
+
+  // 5. UPGRADED: This function is now faster and wrapped in useCallback
   const fetchCampaignsAndCounts = useCallback(async () => {
     if (!activeWaba) {
-      setCampaigns([]); // Clear campaigns if no WABA is selected
+      setCampaigns([]);
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
+      // This is now one single, fast API call
       const campaignsData = await authFetch(`/campaigns/waba/${activeWaba}`);
 
       if (campaignsData.success) {
-        const campaignsList = campaignsData.data;
-        setCampaigns(campaignsList);
-
-        const countResults = await Promise.all(
-          campaignsList.map((campaign) =>
-            authFetch(`/campaigns/${campaign._id}/recipients/count`)
-              .then((res) => ({
-                campaignId: campaign._id,
-                count: res.success ? res.count : 0,
-              }))
-              .catch(() => ({ campaignId: campaign._id, count: 0 }))
-          )
-        );
-
-        const counts = {};
-        countResults.forEach(({ campaignId, count }) => {
-          counts[campaignId] = count;
-        });
-        setRecipientCounts(counts);
+        setCampaigns(campaignsData.data);
+        // No more N+1 queries. The recipient count is already included.
       }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [activeWaba]); // Add activeWaba as a dependency
+  }, [activeWaba]); // It only depends on activeWaba // 6. This useEffect now runs the fetch function
 
-  // 3. This useEffect is now safe
   useEffect(() => {
     fetchCampaignsAndCounts();
   }, [fetchCampaignsAndCounts]);
+
+  // 7. NEW: This useEffect listens for real-time updates
+  useEffect(() => {
+    const handleCampaignUpdate = () => {
+      console.log(
+        "Socket event received: campaignsUpdated. Refreshing dashboard."
+      );
+      fetchCampaignsAndCounts();
+    };
+
+    socket.on("campaignsUpdated", handleCampaignUpdate);
+
+    return () => {
+      socket.off("campaignsUpdated", handleCampaignUpdate);
+    };
+  }, [fetchCampaignsAndCounts]); // Use the stable fetch function
 
   const handleSendCampaign = async (campaignId) => {
     if (!window.confirm("Are you sure you want to send this campaign?")) return;
@@ -79,7 +80,8 @@ export default function Dashboard() {
       });
       if (result.success) {
         alert(result.data.message);
-        fetchCampaignsAndCounts();
+        // We no longer need to call fetchCampaignsAndCounts() here,
+        // because the socket event will handle it automatically.
       }
     } catch (error) {
       console.error("Error sending campaign:", error);
@@ -100,15 +102,15 @@ export default function Dashboard() {
       });
       if (result.success) {
         alert("Campaign deleted successfully.");
-        fetchCampaignsAndCounts();
+        // We no longer need to call fetchCampaignsAndCounts() here,
+        // because the socket event will handle it automatically.
       }
     } catch (error) {
       console.error("Error deleting campaign:", error);
       alert(error.message);
     }
-  };
+  }; // 8. UPGRADED: This function now uses the 'sentAt' field
 
-  // --- THIS IS THE CORRECTED DATE FUNCTION ---
   const getCampaignDate = (campaign) => {
     let label = "Created:";
     let date = new Date(campaign.createdAt);
@@ -117,7 +119,6 @@ export default function Dashboard() {
       label = "Scheduled for:";
       date = new Date(campaign.scheduledFor);
     } else if (campaign.status === "sent" && campaign.sentAt) {
-      // It will now use the accurate 'sentAt' field
       label = "Sent on:";
       date = new Date(campaign.sentAt);
     }
@@ -184,7 +185,7 @@ export default function Dashboard() {
                       >
                         {campaign.status}
                       </span>
-                      <span>{recipientCounts[campaign._id] || 0}</span>
+                      <span>{campaign.contactCount || 0}</span>
                     </div>
                   </div>
 
