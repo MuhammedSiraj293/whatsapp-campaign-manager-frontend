@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Replies from './pages/Replies';
 import Contacts from './pages/Contacts';
+import Enquiries from './pages/Enquiries.js';
 import CreateCampaign from './pages/CreateCampaign';
 import Analytics from './pages/Analytics';
 import CampaignAnalytics from './pages/CampaignAnalytics';
@@ -42,6 +43,15 @@ function App() {
             element={
               <ProtectedRoute roles={['admin', 'manager', 'viewer']}>
                 <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          {/* --- 2. ADD NEW ENQUIRIES ROUTE (ALL ROLES) --- */}
+          <Route 
+            path="/enquiries" 
+            element={
+              <ProtectedRoute roles={['admin', 'manager', 'viewer']}>
+                <Enquiries />
               </ProtectedRoute>
             } 
           />

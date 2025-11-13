@@ -17,6 +17,7 @@ const getNavigation = (userRole) => {
       href: "/replies",
       roles: ["admin", "manager", "viewer"],
     },
+    { name: "Enquiries", href: "/enquiries", roles: ['admin', 'manager', 'viewer'] }, // <-- NEW LINK
     { name: "Contacts", href: "/contacts", roles: ["admin", "manager"] },
     { name: "Analytics", href: "/analytics", roles: ["admin", "manager"] },
     { name: "Logs", href: "/logs", roles: ["admin"] },
