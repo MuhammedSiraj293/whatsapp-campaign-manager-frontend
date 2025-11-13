@@ -176,6 +176,11 @@ const buttonStyle =
       color: "#ffffff",
     }),
     placeholder: (base) => ({ ...base, color: "#ffffff" }),
+      input: (base) => ({
+    ...base,
+    color: "#ffffff",           // Text color while typing
+    caretColor: "#ffffff",      // Cursor color
+  }),
   };
 
   return (
