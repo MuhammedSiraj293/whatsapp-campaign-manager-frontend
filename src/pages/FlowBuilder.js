@@ -32,7 +32,7 @@ export default function FlowBuilder() {
       setIsLoading(true);
       // We can fetch the flow details and nodes in parallel
       const [nodesData, flowData] = await Promise.all([
-         authFetch(`/api/bot-flows/${flowId}/nodes`),
+         authFetch(`/bot-flows/${flowId}/nodes`),
          // We'll need a new endpoint to get single flow details
          // For now, let's just fetch nodes
       ]);
@@ -93,14 +93,14 @@ export default function FlowBuilder() {
     try {
       if (isEditing) {
         // Update existing node
-        await authFetch(`/api/bot-flows/nodes/${currentNode._id}`, {
+        await authFetch(`/bot-flows/nodes/${currentNode._id}`, {
           method: 'PUT',
           body: JSON.stringify(nodeData),
         });
         alert('Node updated successfully!');
       } else {
         // Create new node
-        await authFetch(`/api/bot-flows/${flowId}/nodes`, {
+        await authFetch(`/bot-flows/${flowId}/nodes`, {
           method: 'POST',
           body: JSON.stringify(nodeData),
         });
@@ -128,7 +128,7 @@ export default function FlowBuilder() {
   const handleDeleteClick = async (nodeId) => {
     if (!window.confirm('Are you sure you want to delete this node?')) return;
     try {
-      await authFetch(`/api/bot-flows/nodes/${nodeId}`, { method: 'DELETE' });
+      await authFetch(`/bot-flows/nodes/${nodeId}`, { method: 'DELETE' });
       alert('Node deleted.');
       fetchNodes(); // Refresh list
     } catch (error) {
