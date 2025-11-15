@@ -1,6 +1,6 @@
 // frontend/src/pages/BotStudio.js
 
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../services/api";
 import { useWaba } from "../context/WabaContext";
@@ -14,71 +14,81 @@ export default function BotStudio() {
   const { activeWaba } = useWaba();
   const navigate = useNavigate();
 
+  // --- STYLES (same pattern as Dashboard.js uses) ---
   const inputStyle =
-    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
+    "bg-[#2c3943] border border-gray-700 text-white text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
   const buttonStyle =
-    "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center"; // --- THIS IS THE CORRECTED LOGIC --- // 1. Wrap fetchFlows in useCallback, it only depends on activeWaba
+    "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
 
+  // --- FETCH BOT FLOWS ---
   const fetchFlows = useCallback(async () => {
     if (!activeWaba) {
-      setFlows([]); // Clear flows if no WABA is selected
+      setFlows([]);
       setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const data = await authFetch(`/api/bot-flows/waba/${activeWaba}`);
+      const data = await authFetch(`/bot-flows/waba/${activeWaba}`);
+
       if (data.success) {
         setFlows(data.data);
       }
     } catch (error) {
       console.error("Error fetching bot flows:", error);
-      setFlows([]); // Clear on error
+      setFlows([]);
     } finally {
       setIsLoading(false);
     }
-  }, [activeWaba]); // This function is stable as long as activeWaba is stable // 2. This useEffect now *only* depends on the stable fetchFlows function
+  }, [activeWaba]);
 
+  // Load flows when activeWaba changes
   useEffect(() => {
     fetchFlows();
-  }, [fetchFlows]); // --- END OF CORRECTION ---
+  }, [fetchFlows]);
 
+  // --- CREATE NEW FLOW ---
   const handleCreateFlow = async (e) => {
     e.preventDefault();
-    if (!newFlowName.trim() || !activeWaba) {
-      alert("Please enter a name and select a WABA account.");
-      return;
+
+    if (!newFlowName.trim()) {
+      return alert("Enter a flow name.");
     }
+
     try {
-      await authFetch("/api/bot-flows", {
+      const res = await authFetch("/bot-flows", {
         method: "POST",
-        body: JSON.stringify({ name: newFlowName, wabaAccount: activeWaba }),
+        body: JSON.stringify({
+          name: newFlowName,
+          wabaAccount: activeWaba,
+        }),
       });
-      setNewFlowName("");
-      fetchFlows(); // Refresh the list
+
+      if (res.success) {
+        setNewFlowName("");
+        fetchFlows();
+      }
     } catch (error) {
       alert(error.message);
     }
   };
 
+  // --- DELETE FLOW ---
   const handleDeleteFlow = async (flowId) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this entire flow and all its nodes?"
-      )
-    )
-      return;
+    if (!window.confirm("Delete this flow?")) return;
+
     try {
-      await authFetch(`/api/bot-flows/${flowId}`, { method: "DELETE" });
-      alert("Flow deleted.");
-      fetchFlows(); // Refresh the list
+      const res = await authFetch(`/bot-flows/${flowId}`, {
+        method: "DELETE",
+      });
+
+      if (res.success) {
+        fetchFlows();
+      }
     } catch (error) {
       alert(error.message);
     }
-  };
-
-  const navigateToFlow = (flowId) => {
-    navigate(`/bot-studio/${flowId}`);
   };
 
   return (
@@ -87,86 +97,88 @@ export default function BotStudio() {
         Bot Studio
       </h1>
 
-      {/* Create New Flow Form */}
+      {/* CREATE FLOW --- same layout style as Dashboard */}
       <div className="max-w-xl mx-auto mb-8">
         <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Create New Bot Flow
-          </h2>
+          <h2 className="text-xl font-bold text-white mb-4">Create New Flow</h2>
+
           <form onSubmit={handleCreateFlow} className="flex gap-4">
             <input
               type="text"
-              placeholder="New flow name (e.g., 'Property Bot')"
+              placeholder="Flow name (e.g., Property Bot)"
               value={newFlowName}
               onChange={(e) => setNewFlowName(e.target.value)}
               className={inputStyle}
               disabled={!activeWaba}
             />
-            <button
-              type="submit"
-              className={buttonStyle}
-              disabled={!activeWaba}
-            >
-              <FaPlus className="inline mr-2" />
-              Create Flow
+            <button className={buttonStyle} disabled={!activeWaba}>
+              <FaPlus className="inline mr-2" /> Create
             </button>
           </form>
+
           {!activeWaba && (
             <p className="text-yellow-400 text-sm mt-2">
-              Please select a WABA account from the navbar to create a flow.
+              Select a WABA account to create a flow.
             </p>
           )}
         </div>
       </div>
 
-      {/* Existing Flows List */}
+      {/* FLOWS LIST --- same loading pattern as Dashboard */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          Existing Flows
+          Your Flows
         </h2>
+
         {isLoading ? (
           <p className="text-center text-gray-400">Loading flows...</p>
         ) : !activeWaba ? (
           <p className="text-center text-yellow-400">
-            Please select a WABA account to see its flows.
+            Select a WABA account to see flows.
+          </p>
+        ) : flows.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">
+            No flows yet. Create your first flow above.
           </p>
         ) : (
           <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
             <table className="min-w-full">
               <thead className="bg-[#2a3942]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
-                    Flow Name
+                  <th className="px-6 py-3 text-left text-xs text-gray-300 uppercase">
+                    Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
-                    Created At
+                  <th className="px-6 py-3 text-left text-xs text-gray-300 uppercase">
+                    Created
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                  <th className="px-6 py-3 text-left text-xs text-gray-300 uppercase">
                     Actions
                   </th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-700">
                 {flows.map((flow) => (
                   <tr key={flow._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    <td className="px-6 py-4 text-sm text-white">
                       {flow.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+
+                    <td className="px-6 py-4 text-sm text-gray-400">
                       {new Date(flow.createdAt).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-4">
+
+                    <td className="px-6 py-4 text-sm flex gap-4">
                       <button
-                        onClick={() => navigateToFlow(flow._id)}
+                        onClick={() => navigate(`/bot-studio/${flow._id}`)}
                         className="text-sky-500 hover:text-sky-400"
-                        title="Edit Flow"
                       >
                         <FaEdit />
                       </button>
+
                       <button
                         onClick={() => handleDeleteFlow(flow._id)}
                         className="text-red-500 hover:text-red-400"
-                        title="Delete Flow"
                       >
                         <FaTrash />
                       </button>
@@ -175,11 +187,6 @@ export default function BotStudio() {
                 ))}
               </tbody>
             </table>
-            {!isLoading && flows.length === 0 && (
-              <p className="text-center text-gray-500 py-8">
-                No bot flows found for this account.
-              </p>
-            )}
           </div>
         )}
       </div>
