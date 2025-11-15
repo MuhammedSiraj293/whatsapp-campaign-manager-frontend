@@ -1,27 +1,27 @@
 // frontend/src/pages/BotStudio.js
 
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authFetch } from '../services/api';
-import { useWaba } from '../context/WabaContext';
-import { AuthContext } from '../context/AuthContext';
-import { FaTrash, FaPlus, FaEdit } from 'react-icons/fa';
+import React, { useState, useEffect, useContext, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { authFetch } from "../services/api";
+import { useWaba } from "../context/WabaContext";
+import { FaTrash, FaPlus, FaEdit } from "react-icons/fa";
 
 export default function BotStudio() {
   const [flows, setFlows] = useState([]);
-  const [newFlowName, setNewFlowName] = useState('');
+  const [newFlowName, setNewFlowName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const { activeWaba } = useWaba();
-  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const inputStyle = "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
-  const buttonStyle = "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+  const inputStyle =
+    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
+  const buttonStyle =
+    "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center"; // --- THIS IS THE CORRECTED LOGIC --- // 1. Wrap fetchFlows in useCallback, it only depends on activeWaba
 
-  // Fetch all flows for the active WABA
-  const fetchFlows = async () => {
+  const fetchFlows = useCallback(async () => {
     if (!activeWaba) {
+      setFlows([]); // Clear flows if no WABA is selected
       setIsLoading(false);
       return;
     }
@@ -32,30 +32,29 @@ export default function BotStudio() {
         setFlows(data.data);
       }
     } catch (error) {
-      console.error('Error fetching bot flows:', error);
+      console.error("Error fetching bot flows:", error);
+      setFlows([]); // Clear on error
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeWaba]); // This function is stable as long as activeWaba is stable // 2. This useEffect now *only* depends on the stable fetchFlows function
 
   useEffect(() => {
-    if (user) { // Only fetch if user is logged in
-      fetchFlows();
-    }
-  }, [user, activeWaba]); // Re-fetch when activeWaba changes
+    fetchFlows();
+  }, [fetchFlows]); // --- END OF CORRECTION ---
 
   const handleCreateFlow = async (e) => {
     e.preventDefault();
     if (!newFlowName.trim() || !activeWaba) {
-      alert('Please enter a name and select a WABA account.');
+      alert("Please enter a name and select a WABA account.");
       return;
     }
     try {
-      await authFetch('/api/bot-flows', {
-        method: 'POST',
+      await authFetch("/api/bot-flows", {
+        method: "POST",
         body: JSON.stringify({ name: newFlowName, wabaAccount: activeWaba }),
       });
-      setNewFlowName('');
+      setNewFlowName("");
       fetchFlows(); // Refresh the list
     } catch (error) {
       alert(error.message);
@@ -63,16 +62,21 @@ export default function BotStudio() {
   };
 
   const handleDeleteFlow = async (flowId) => {
-    if (!window.confirm('Are you sure you want to delete this entire flow and all its nodes?')) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this entire flow and all its nodes?"
+      )
+    )
+      return;
     try {
-      await authFetch(`/api/bot-flows/${flowId}`, { method: 'DELETE' });
-      alert('Flow deleted.');
+      await authFetch(`/api/bot-flows/${flowId}`, { method: "DELETE" });
+      alert("Flow deleted.");
       fetchFlows(); // Refresh the list
     } catch (error) {
       alert(error.message);
     }
   };
-  
+
   const navigateToFlow = (flowId) => {
     navigate(`/bot-studio/${flowId}`);
   };
@@ -86,7 +90,9 @@ export default function BotStudio() {
       {/* Create New Flow Form */}
       <div className="max-w-xl mx-auto mb-8">
         <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-4">Create New Bot Flow</h2>
+          <h2 className="text-xl font-bold text-white mb-4">
+            Create New Bot Flow
+          </h2>
           <form onSubmit={handleCreateFlow} className="flex gap-4">
             <input
               type="text"
@@ -96,7 +102,11 @@ export default function BotStudio() {
               className={inputStyle}
               disabled={!activeWaba}
             />
-            <button type="submit" className={buttonStyle} disabled={!activeWaba}>
+            <button
+              type="submit"
+              className={buttonStyle}
+              disabled={!activeWaba}
+            >
               <FaPlus className="inline mr-2" />
               Create Flow
             </button>
@@ -111,25 +121,37 @@ export default function BotStudio() {
 
       {/* Existing Flows List */}
       <div>
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">Existing Flows</h2>
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+          Existing Flows
+        </h2>
         {isLoading ? (
           <p className="text-center text-gray-400">Loading flows...</p>
         ) : !activeWaba ? (
-          <p className="text-center text-yellow-400">Please select a WABA account to see its flows.</p>
+          <p className="text-center text-yellow-400">
+            Please select a WABA account to see its flows.
+          </p>
         ) : (
           <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
             <table className="min-w-full">
               <thead className="bg-[#2a3942]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Flow Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Created At</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                    Flow Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                    Created At
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
                 {flows.map((flow) => (
                   <tr key={flow._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{flow.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                      {flow.name}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       {new Date(flow.createdAt).toLocaleString()}
                     </td>
@@ -154,7 +176,9 @@ export default function BotStudio() {
               </tbody>
             </table>
             {!isLoading && flows.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No bot flows found for this account.</p>
+              <p className="text-center text-gray-500 py-8">
+                No bot flows found for this account.
+              </p>
             )}
           </div>
         )}
