@@ -15,6 +15,8 @@ import Logs from './pages/Logs';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Integrations from './pages/Integrations';
+import BotStudio from './pages/BotStudio';   // <-- 1. IMPORT
+import FlowBuilder from './pages/FlowBuilder';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -132,6 +134,9 @@ function App() {
               </ProtectedRoute>
             } 
           />
+        {/* --- 2. ADD NEW BOT ROUTES --- */}
+          <Route path="/bot-studio" element={<ProtectedRoute roles={['admin']}><BotStudio /></ProtectedRoute>} />
+          <Route path="/bot-studio/:flowId" element={<ProtectedRoute roles={['admin']}><FlowBuilder /></ProtectedRoute>} />
         </Routes>
       </div>
     </Router>

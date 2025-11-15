@@ -1,13 +1,17 @@
 // frontend/src/pages/Integrations.js
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { authFetch } from "../services/api";
-import { FaTrash, FaSave } from "react-icons/fa";
+import { FaTrash, FaSave, FaEdit } from "react-icons/fa";
+import { useWaba } from "../context/WabaContext";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Integrations() {
   const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [botFlows, setBotFlows] = useState([]);
+  const { activeWaba } = useWaba();
+  const { user } = useContext(AuthContext);
 
   // State for the new WABA account form
   const [accountName, setAccountName] = useState("");
@@ -18,9 +22,9 @@ export default function Integrations() {
   const [phoneName, setPhoneName] = useState("");
   const [phoneId, setPhoneId] = useState("");
   const [selectedWaba, setSelectedWaba] = useState("");
-
   // --- NEW: State to manage editing the Master Sheet ID ---
   const [editingSheetId, setEditingSheetId] = useState({});
+  const [editingBotFlow, setEditingBotFlow] = useState({});
 
   const inputStyle =
     "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
@@ -36,10 +40,24 @@ export default function Integrations() {
         setAccounts(data.data);
         // Initialize the editing state with current values
         const sheetIdState = {};
+        const botFlowState = {};
         data.data.forEach((acc) => {
           sheetIdState[acc._id] = acc.masterSpreadsheetId || "";
+          acc.phoneNumbers.forEach((phone) => {
+            botFlowState[phone._id] = phone.activeBotFlow || "";
+          });
         });
         setEditingSheetId(sheetIdState);
+        setEditingBotFlow(botFlowState);
+      }
+      // 4. *Now* fetch bot flows only if a WABA is active
+      if (activeWaba) {
+        const flowsData = await authFetch(`/api/bot-flows/waba/${activeWaba}`);
+        if (flowsData.success) {
+          setBotFlows(flowsData.data);
+        }
+      } else {
+        setBotFlows([]); // Clear flows if no WABA is selected
       }
     } catch (error) {
       console.error("Error fetching WABA accounts:", error);
@@ -132,6 +150,23 @@ export default function Integrations() {
       await authFetch(`/waba/phones/${id}`, { method: "DELETE" });
       alert("Phone number deleted.");
       fetchAccounts();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+  // --- Bot Flow Assignment Handlers ---
+  const handleBotFlowChange = (phoneId, botFlowId) => {
+    setEditingBotFlow({ ...editingBotFlow, [phoneId]: botFlowId });
+  };
+
+  const handleSaveBotFlow = async (phoneId) => {
+    const botFlowId = editingBotFlow[phoneId];
+    try {
+      await authFetch(`/api/waba/phones/${phoneId}`, {
+        method: "PUT",
+        body: JSON.stringify({ activeBotFlow: botFlowId }),
+      });
+      alert("Bot flow assigned successfully!");
     } catch (error) {
       alert(error.message);
     }
@@ -276,18 +311,54 @@ export default function Integrations() {
                         key={phone._id}
                         className="flex justify-between items-center bg-[#202d33] p-2 rounded"
                       >
-                        <div>
-                          <p className="text-white">{phone.phoneNumberName}</p>
-                          <p className="text-xs text-gray-400">
-                            {phone.phoneNumberId}
-                          </p>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-white">
+                              {phone.phoneNumberName}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {phone.phoneNumberId}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleDeletePhone(phone._id)}
+                            className="text-red-500 hover:text-red-400"
+                          >
+                            <FaTrash />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleDeletePhone(phone._id)}
-                          className="text-red-500 hover:text-red-400"
-                        >
-                          <FaTrash />
-                        </button>
+
+                        <div className="mt-3">
+                          <label className={`${labelStyle} text-xs`}>
+                            Active Bot Flow
+                          </label>
+                          <div className="flex gap-2">
+                            <select
+                              value={editingBotFlow[phone._id] || ""}
+                              onChange={(e) =>
+                                handleBotFlowChange(phone._id, e.target.value)
+                              }
+                              className={inputStyle}
+                            >
+                              <option value="">-- No Bot --</option>
+                              {botFlows
+                                .filter(
+                                  (flow) => flow.wabaAccount === account._id
+                                )
+                                .map((flow) => (
+                                  <option key={flow._id} value={flow._id}>
+                                    {flow.name}
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              onClick={() => handleSaveBotFlow(phone._id)}
+                              className="text-white bg-sky-600 hover:bg-sky-700 rounded-lg p-2.5"
+                            >
+                              <FaSave />
+                            </button>
+                          </div>
+                        </div>
                       </li>
                     ))}
                   </ul>
