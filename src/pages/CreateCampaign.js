@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { authFetch } from "../services/api";
 import { useWaba } from "../context/WabaContext";
+import { API_URL } from "../config";
 
 export default function CreateCampaign() {
   const navigate = useNavigate();
@@ -11,7 +12,12 @@ export default function CreateCampaign() {
   // Form state
   const [formName, setFormName] = useState("");
   const [formMessage, setFormMessage] = useState("");
+
+  // Image handling
+  const [imageMode, setImageMode] = useState("url"); // 'url' or 'file'
   const [headerImageUrl, setHeaderImageUrl] = useState("");
+  const [headerImageFile, setHeaderImageFile] = useState(null);
+
   const [expectedVariables, setExpectedVariables] = useState(0);
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
@@ -71,9 +77,7 @@ export default function CreateCampaign() {
     setSelectedTemplate(templateName);
     const template = templates.find((t) => t.name === templateName);
     if (template) {
-      const bodyComponent = template.components.find(
-        (c) => c.type === "BODY"
-      );
+      const bodyComponent = template.components.find((c) => c.type === "BODY");
       setFormMessage(bodyComponent ? bodyComponent.text : "");
     } else {
       setFormMessage("");
@@ -111,36 +115,56 @@ export default function CreateCampaign() {
       !selectedList ||
       !selectedPhoneNumber
     ) {
-      return alert('Please fill out all fields, including "Send From".');
+      return alert("Please fill out all fields.");
+    }
+
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append("name", formName);
+    formData.append("message", formMessage);
+    formData.append("templateName", selectedTemplateObject.name);
+    formData.append("templateLanguage", selectedTemplateObject.language);
+    formData.append("contactList", selectedList);
+    formData.append("phoneNumber", selectedPhoneNumber);
+    formData.append("expectedVariables", expectedVariables);
+    formData.append("spreadsheetId", spreadsheetId);
+
+    // Important: Append buttons as string because FormData handles text
+    formData.append("buttons", JSON.stringify(buttons));
+
+    if (scheduledFor) {
+      formData.append("scheduledFor", scheduledFor);
+    }
+
+    // Handle Image
+    if (imageMode === "file" && headerImageFile) {
+      formData.append("headerImage", headerImageFile);
+    } else if (imageMode === "url" && headerImageUrl) {
+      formData.append("headerImageUrl", headerImageUrl);
     }
 
     try {
-      const campaignData = {
-        name: formName,
-        message: formMessage,
-        templateName: selectedTemplateObject.name,
-        templateLanguage: selectedTemplateObject.language,
-        contactList: selectedList,
-        headerImageUrl,
-        expectedVariables: parseInt(expectedVariables, 10) || 0,
-        spreadsheetId,
-        buttons,
-        phoneNumber: selectedPhoneNumber,
-        ...(scheduledFor && {
-          scheduledFor: new Date(scheduledFor).toISOString(),
-        }),
-      };
+      // Note: We cannot use standard authFetch here easily because we need to
+      // let the browser set the Content-Type header for multipart/form-data.
+      // We will use fetch directly but add the auth token.
 
-      const data = await authFetch("/campaigns", {
+      const token = localStorage.getItem("authToken"); // Or however you store token
+      const response = await fetch(`${API_URL}/api/campaigns`, {
         method: "POST",
-        body: JSON.stringify(campaignData),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // DO NOT set Content-Type here, browser does it for FormData
+        },
+        body: formData,
       });
 
-      if (data.success) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         alert("Campaign created/scheduled successfully!");
         navigate("/");
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error || "Failed to create campaign"}`);
       }
     } catch (error) {
       console.error("Error creating campaign:", error);
@@ -148,11 +172,11 @@ export default function CreateCampaign() {
     }
   };
 
-const inputStyle =
-  "bg-[#2c3943] border border-gray-700 text-white text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
-const labelStyle = "block mb-2 text-sm font-medium text-white";
-const buttonStyle =
-  "w-full text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+  const inputStyle =
+    "bg-[#2c3943] border border-gray-700 text-white text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
+  const labelStyle = "block mb-2 text-sm font-medium text-white";
+  const buttonStyle =
+    "w-full text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
 
   // --- React Select custom dark styles ---
   const selectStyles = {
@@ -176,11 +200,11 @@ const buttonStyle =
       color: "#ffffff",
     }),
     placeholder: (base) => ({ ...base, color: "#ffffff" }),
-      input: (base) => ({
-    ...base,
-    color: "#ffffff",           // Text color while typing
-    caretColor: "#ffffff",      // Cursor color
-  }),
+    input: (base) => ({
+      ...base,
+      color: "#ffffff", // Text color while typing
+      caretColor: "#ffffff", // Cursor color
+    }),
   };
 
   return (
@@ -224,9 +248,7 @@ const buttonStyle =
                     }
                   : null
               }
-              onChange={(option) =>
-                setSelectedPhoneNumber(option?.value || "")
-              }
+              onChange={(option) => setSelectedPhoneNumber(option?.value || "")}
               placeholder="-- Select a Phone Number --"
               styles={selectStyles}
               isSearchable
@@ -314,13 +336,49 @@ const buttonStyle =
             className={`${inputStyle} h-28`}
             readOnly
           />
-          <input
-            type="text"
-            placeholder="Header Image URL (Optional)"
-            value={headerImageUrl}
-            onChange={(e) => setHeaderImageUrl(e.target.value)}
-            className={inputStyle}
-          />
+          {/* --- NEW IMAGE UPLOAD SECTION --- */}
+          <div className="p-3 border border-gray-700 rounded-lg">
+            <label className={labelStyle}>Header Image</label>
+            <div className="flex gap-4 mb-3">
+              <label className="text-white flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="imgMode"
+                  checked={imageMode === "url"}
+                  onChange={() => setImageMode("url")}
+                  className="mr-2"
+                />{" "}
+                Use URL
+              </label>
+              <label className="text-white flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="imgMode"
+                  checked={imageMode === "file"}
+                  onChange={() => setImageMode("file")}
+                  className="mr-2"
+                />{" "}
+                Upload File
+              </label>
+            </div>
+
+            {imageMode === "url" ? (
+              <input
+                type="text"
+                placeholder="https://example.com/image.jpg"
+                value={headerImageUrl}
+                onChange={(e) => setHeaderImageUrl(e.target.value)}
+                className={inputStyle}
+              />
+            ) : (
+              <input
+                type="file"
+                onChange={(e) => setHeaderImageFile(e.target.files[0])}
+                className="text-white text-sm w-full"
+                accept="image/*"
+              />
+            )}
+          </div>
           <input
             type="number"
             placeholder="Number of Body Variables"
