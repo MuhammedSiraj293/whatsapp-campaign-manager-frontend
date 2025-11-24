@@ -132,8 +132,11 @@ export default function CreateCampaign() {
     // Important: Append buttons as string because FormData handles text
     formData.append("buttons", JSON.stringify(buttons));
 
+    // --- THIS IS THE FIX ---
     if (scheduledFor) {
-      formData.append("scheduledFor", scheduledFor);
+        // Convert the local time (from input) to UTC format before sending
+        const utcDate = new Date(scheduledFor).toISOString();
+        formData.append('scheduledFor', utcDate);
     }
 
     // Handle Image
