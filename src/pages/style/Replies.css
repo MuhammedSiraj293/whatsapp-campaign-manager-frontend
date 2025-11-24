@@ -1,0 +1,137 @@
+/* frontend/src/pages/Replies.css */
+
+.chat-container {
+  display: flex;
+  height: 100vh;
+  background-color: #000000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.conversations-list {
+  flex: 0 0 30%;
+  border-right: 1px solid #000000;
+  overflow-y: auto;
+}
+
+.conversations-list h2 {
+  padding: 20px;
+  margin: 0;
+  background-color: #bcbebe;
+}
+
+.conversations-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.conversations-list li {
+  padding: 15px 20px;
+  border-bottom: 1px solid #000000;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.conversations-list li:hover {
+  background-color: #ffffff;
+}
+
+.conversations-list li.active {
+  background-color: #eeeeee;
+}
+
+.convo-id {
+  font-weight: bold;
+  color: #100000;
+  margin-bottom: 5px;
+}
+
+.convo-preview {
+  font-size: 0.9rem;
+  color: #2a3942;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-history {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-bubble {
+  background-color: #042401;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  max-width: 70%;
+  align-self: flex-start;
+}
+
+.message-bubble p {
+  margin: 0 0 5px 0;
+  color: #ffffff;
+  white-space: pre-wrap; /* Allows line breaks in messages */
+}
+
+.message-bubble span {
+  font-size: 0.75rem;
+  color: #ffffff;
+  text-align: right;
+  display: block;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #2a3942;
+  font-size: 1.2rem;
+}
+
+.message-bubble.outgoing {
+  background-color: #042401; /* WhatsApp's outgoing bubble color */
+  align-self: flex-end;
+}
+
+.message-input-area {
+  padding: 10px;
+  background-color: #202c33;
+  border-top: 1px solid #374248;
+}
+
+.message-input-area form {
+  display: flex;
+  gap: 10px;
+}
+
+.message-input-area input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 20px;
+  border: none;
+  background-color: #ffff;
+  color: #2a3942;
+  font-size: 1rem;
+}
+
+.message-input-area button {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  background-color: #00a884;
+  color: #111b21;
+  font-weight: bold;
+  cursor: pointer;
+}
