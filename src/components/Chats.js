@@ -9,9 +9,11 @@ function Chats({ conversations, onSelectConversation, activeConversationId }) {
   const [filterText, setFilterText] = useState("");
 
   // Filter conversations based on the search text (name or phone number)
-  const filteredConversations = conversations.filter((convo) =>
-    (convo.name && convo.name.toLowerCase().includes(filterText.toLowerCase())) ||
-    (convo._id && convo._id.includes(filterText))
+  const filteredConversations = conversations.filter(
+    (convo) =>
+      (convo.name &&
+        convo.name.toLowerCase().includes(filterText.toLowerCase())) ||
+      (convo._id && convo._id.includes(filterText))
   );
 
   return (
@@ -47,7 +49,17 @@ function Chats({ conversations, onSelectConversation, activeConversationId }) {
               name={convo.name}
               contact={convo._id}
               msg={convo.lastMessage}
-              time={new Date(convo.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              time={
+                convo.lastMessageTimestamp
+                  ? new Date(convo.lastMessageTimestamp).toLocaleTimeString(
+                      [],
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )
+                  : ""
+              }
               unreadMsgs={convo.unreadCount}
               active={convo._id === activeConversationId}
               onClick={() => onSelectConversation(convo._id)}

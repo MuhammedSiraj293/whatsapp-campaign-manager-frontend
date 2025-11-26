@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { authFetch, uploadFile } from "../services/api";
 import socket from "../services/socket";
+import Chats from "../components/Chats";
 import LeftMenu from "../components/LeftMenu";
 import ChatDetail from "../components/ChatDetail";
-import "./style/Replies.css";
+// import "./style/Replies.css"; // REMOVED
 import LoadingScreen from "../components/LoadingScreen";
+import { pp } from "../assets/whatsapp"; // <-- Import profile picture
 import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT THE WABA CONTEXT
 import { AuthContext } from "../context/AuthContext"; // To check user role
 
@@ -108,9 +110,37 @@ export default function Replies() {
     const handleNewMessage = (data) => {
       // Check if the message is for the currently selected business phone number
       if (data.recipientId === activeChatRef.current.businessPhone) {
+        // INCOMING MESSAGE (from customer to business)
+        console.log("Socket: Incoming message received", data);
         fetchConversations(activeChatRef.current.businessPhone);
         if (data.from === activeChatRef.current.customerPhone) {
-          setMessages((prevMessages) => [...prevMessages, data.message]);
+          setMessages((prevMessages) => {
+            // Prevent duplicates
+            if (prevMessages.some((m) => m._id === data.message._id)) {
+              console.warn(
+                "Socket: Duplicate incoming message ignored",
+                data.message._id
+              );
+              return prevMessages;
+            }
+            return [...prevMessages, data.message];
+          });
+        }
+      } else if (data.from === activeChatRef.current.businessPhone) {
+        // OUTGOING MESSAGE (from business to customer)
+        console.log("Socket: Outgoing message received", data);
+        if (data.recipientId === activeChatRef.current.customerPhone) {
+          setMessages((prevMessages) => {
+            // Prevent duplicates
+            if (prevMessages.some((m) => m._id === data.message._id)) {
+              console.warn(
+                "Socket: Duplicate outgoing message ignored",
+                data.message._id
+              );
+              return prevMessages;
+            }
+            return [...prevMessages, data.message];
+          });
         }
       }
     };
@@ -155,7 +185,7 @@ export default function Replies() {
   };
 
   // Send replies from the correct phone number
-  const handleSendReply = async (messageText) => {
+  const handleSendReply = async (messageText, context) => {
     if (!messageText.trim() || !activeConversationId || !selectedPhoneId)
       return;
     try {
@@ -163,11 +193,27 @@ export default function Replies() {
         `/replies/send/${activeConversationId}/${selectedPhoneId}`,
         {
           method: "POST",
-          body: JSON.stringify({ message: messageText }),
+          body: JSON.stringify({ message: messageText, context }),
         }
       );
     } catch (error) {
       console.error("Error sending reply:", error);
+    }
+  };
+
+  // Handle sending reactions
+  const handleReact = async (msg, emoji) => {
+    if (!activeConversationId || !selectedPhoneId) return;
+    try {
+      await authFetch(
+        `/replies/react/${activeConversationId}/${selectedPhoneId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ messageId: msg.messageId, emoji }),
+        }
+      );
+    } catch (error) {
+      console.error("Error sending reaction:", error);
     }
   };
 
@@ -193,20 +239,30 @@ export default function Replies() {
       {loading ? (
         <LoadingScreen progress={100} />
       ) : (
-        <div className="chat-container">
-          <div className="conversations-list">
+        <div className="flex h-screen bg-black rounded-lg overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-[#111b21] [&::-webkit-scrollbar-thumb]:bg-[#374045] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-[#111b21]">
+          <div className="flex-none w-[30%] border-r border-black overflow-y-auto flex flex-col">
+            {/* --- RESTORED HEADER --- */}
+            <div className="flex justify-between items-center bg-[#202d33] h-[60px] p-3 border-b border-neutral-700">
+              <img
+                src={pp}
+                alt="profile_picture"
+                className="rounded-full w-[40px]"
+              />
+            </div>
+
             {/* --- NEW ACCOUNT SELECTORS --- */}
             <div className="p-3 bg-[#111b21] border-b border-neutral-700">
               <label className="block mb-2 text-sm font-medium text-gray-400">
-                Select Phone Number
+                Business Phone
               </label>
               <select
                 value={selectedPhoneId}
                 onChange={(e) => setSelectedPhoneId(e.target.value)}
-                className={`${inputStyle} mt-2`}
-                disabled={availablePhones.length === 0}
+                className={inputStyle}
               >
-                <option value="">-- Select a Phone Number --</option>
+                <option value="" disabled>
+                  Select Phone Number
+                </option>
                 {availablePhones.map((phone) => (
                   <option key={phone._id} value={phone.phoneNumberId}>
                     {phone.phoneNumberName} ({phone.phoneNumberId})
@@ -215,26 +271,33 @@ export default function Replies() {
               </select>
             </div>
 
-            <LeftMenu
-              conversations={conversations}
-              onSelectConversation={handleConversationSelect}
-              activeConversationId={activeConversationId}
-            />
+            {/* --- CONVERSATION LIST --- */}
+            <div className="flex-1 overflow-hidden">
+              <Chats
+                conversations={conversations}
+                onSelectConversation={handleConversationSelect}
+                activeConversationId={activeConversationId}
+              />
+            </div>
           </div>
-          <div className="message-view">
+
+          <div className="flex-1 flex flex-col overflow-hidden bg-[#0a131a]">
             {activeConversationId ? (
               <ChatDetail
-                key={activeConversationId}
                 activeConversationId={activeConversationId}
                 messages={messages}
                 onSendMessage={handleSendReply}
                 onSendMedia={handleSendMedia}
+                onReact={handleReact}
               />
             ) : (
-              <div className="placeholder">
-                {activeWaba
-                  ? "Please select a phone number to view chats."
-                  : "Please select a WABA account from the navbar."}
+              <div className="flex items-center justify-center h-full text-[#8796a1]">
+                <div className="text-center">
+                  <h2 className="text-2xl font-light mb-4">
+                    WhatsApp Web Clone
+                  </h2>
+                  <p>Select a conversation to start chatting</p>
+                </div>
               </div>
             )}
           </div>
