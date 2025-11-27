@@ -113,9 +113,31 @@ export default function Replies() {
         // INCOMING MESSAGE (from customer to business)
         console.log("Socket: Incoming message received", data);
         fetchConversations(activeChatRef.current.businessPhone);
+
         if (data.from === activeChatRef.current.customerPhone) {
           setMessages((prevMessages) => {
-            // Prevent duplicates
+            // 1. Handle Reactions
+            if (data.message.type === "reaction") {
+              const targetMsgId = data.message.reaction.messageId;
+              return prevMessages.map((msg) => {
+                if (msg.messageId === targetMsgId || msg._id === targetMsgId) {
+                  // Add reaction to the target message
+                  const newReaction = {
+                    emoji: data.message.reaction.emoji,
+                    from: data.message.from,
+                  };
+                  return {
+                    ...msg,
+                    reactions: msg.reactions
+                      ? [...msg.reactions, newReaction]
+                      : [newReaction],
+                  };
+                }
+                return msg;
+              });
+            }
+
+            // 2. Handle Normal Messages (check for duplicates)
             if (prevMessages.some((m) => m._id === data.message._id)) {
               console.warn(
                 "Socket: Duplicate incoming message ignored",
@@ -123,7 +145,21 @@ export default function Replies() {
               );
               return prevMessages;
             }
-            return [...prevMessages, data.message];
+
+            // 3. Handle Replies (populate quotedMessage)
+            let newMessage = { ...data.message };
+            if (newMessage.context && newMessage.context.id) {
+              const quotedMsg = prevMessages.find(
+                (m) =>
+                  m.messageId === newMessage.context.id ||
+                  m._id === newMessage.context.id
+              );
+              if (quotedMsg) {
+                newMessage.quotedMessage = quotedMsg;
+              }
+            }
+
+            return [...prevMessages, newMessage];
           });
         }
       } else if (data.from === activeChatRef.current.businessPhone) {
@@ -131,7 +167,27 @@ export default function Replies() {
         console.log("Socket: Outgoing message received", data);
         if (data.recipientId === activeChatRef.current.customerPhone) {
           setMessages((prevMessages) => {
-            // Prevent duplicates
+            // 1. Handle Reactions (Outgoing)
+            if (data.message.type === "reaction") {
+              const targetMsgId = data.message.reaction.messageId;
+              return prevMessages.map((msg) => {
+                if (msg.messageId === targetMsgId || msg._id === targetMsgId) {
+                  const newReaction = {
+                    emoji: data.message.reaction.emoji,
+                    from: data.message.from,
+                  };
+                  return {
+                    ...msg,
+                    reactions: msg.reactions
+                      ? [...msg.reactions, newReaction]
+                      : [newReaction],
+                  };
+                }
+                return msg;
+              });
+            }
+
+            // 2. Handle Normal Messages (check for duplicates)
             if (prevMessages.some((m) => m._id === data.message._id)) {
               console.warn(
                 "Socket: Duplicate outgoing message ignored",
@@ -139,7 +195,21 @@ export default function Replies() {
               );
               return prevMessages;
             }
-            return [...prevMessages, data.message];
+
+            // 3. Handle Replies (populate quotedMessage)
+            let newMessage = { ...data.message };
+            if (newMessage.context && newMessage.context.id) {
+              const quotedMsg = prevMessages.find(
+                (m) =>
+                  m.messageId === newMessage.context.id ||
+                  m._id === newMessage.context.id
+              );
+              if (quotedMsg) {
+                newMessage.quotedMessage = quotedMsg;
+              }
+            }
+
+            return [...prevMessages, newMessage];
           });
         }
       }
