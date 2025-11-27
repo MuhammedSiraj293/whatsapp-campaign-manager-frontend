@@ -111,6 +111,10 @@ export default function FlowBuilder() {
               listItems: listItems,
               listButtonText: node.listButtonText || "Open Menu", // Default if missing
               saveToField: node.saveToField,
+              // Follow-Up Fields
+              followUpEnabled: node.followUpEnabled,
+              followUpDelay: node.followUpDelay,
+              followUpMessage: node.followUpMessage,
               // Store original ID for updates
               _id: node._id,
               nodeId: node.nodeId,
@@ -381,6 +385,10 @@ export default function FlowBuilder() {
           listButtonText: node.data.listButtonText || "Open Menu", // Save button text
           listSections: listSections, // Send sections instead of listItems
           nextNodeId: nextNodeId || node.data.nextNodeId, // Prefer visual connection
+          // Follow-Up Fields
+          followUpEnabled: node.data.followUpEnabled,
+          followUpDelay: node.data.followUpDelay,
+          followUpMessage: node.data.followUpMessage,
         };
       });
 
@@ -744,6 +752,74 @@ export default function FlowBuilder() {
                           </div>
                         </div>
                       )}
+
+                      {/* --- FOLLOW-UP SETTINGS --- */}
+                      <div className="pt-4 border-t border-gray-700">
+                        <h4 className="text-sm font-bold mb-2 text-emerald-500">
+                          Follow-Up Settings
+                        </h4>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={
+                                selectedNode.data.followUpEnabled || false
+                              }
+                              onChange={(e) =>
+                                updateNodeData(
+                                  "followUpEnabled",
+                                  e.target.checked
+                                )
+                              }
+                              className="form-checkbox h-4 w-4 text-emerald-500 rounded border-gray-700 bg-[#111b21]"
+                            />
+                            <span className="text-sm text-gray-300">
+                              Enable Follow-Up
+                            </span>
+                          </label>
+
+                          {selectedNode.data.followUpEnabled && (
+                            <>
+                              <div>
+                                <label className="block text-xs text-gray-400 mb-1">
+                                  Delay (minutes)
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={selectedNode.data.followUpDelay || 15}
+                                  onChange={(e) =>
+                                    updateNodeData(
+                                      "followUpDelay",
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="w-full bg-[#111b21] border border-gray-700 rounded p-2 text-sm text-white"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-400 mb-1">
+                                  Follow-Up Message
+                                </label>
+                                <textarea
+                                  rows="3"
+                                  value={
+                                    selectedNode.data.followUpMessage || ""
+                                  }
+                                  onChange={(e) =>
+                                    updateNodeData(
+                                      "followUpMessage",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full bg-[#111b21] border border-gray-700 rounded p-2 text-sm text-white"
+                                  placeholder="e.g. Are you still there?"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
 
                       <div className="pt-4 border-t border-gray-700 flex justify-between items-center">
                         <button
