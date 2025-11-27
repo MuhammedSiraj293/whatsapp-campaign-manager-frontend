@@ -21,9 +21,9 @@ import { FaSave, FaArrowLeft, FaMagic, FaTrash } from "react-icons/fa";
 import dagre from "dagre";
 
 // Node Types Configuration
-// const nodeTypes = {
-//   customNode: CustomNode,
-// };
+const nodeTypes = {
+  customNode: CustomNode,
+};
 
 // --- LAYOUT HELPER (Auto-arrange nodes) ---
 const getLayoutedElements = (nodes, edges, direction = "LR") => {
@@ -71,9 +71,6 @@ export default function FlowBuilder() {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Memoize nodeTypes to prevent React Flow warning
-  const nodeTypes = React.useMemo(() => ({ customNode: CustomNode }), []);
-
   // Selected Node for Editing
   const [selectedNode, setSelectedNode] = useState(null);
   // Selected Edge for Deletion
@@ -104,6 +101,8 @@ export default function FlowBuilder() {
       });
       setShowSettingsModal(false);
       alert("Flow settings saved!");
+      // Refresh nodes to show/hide the virtual node
+      fetchFlowData();
     } catch (error) {
       console.error("Error saving flow settings:", error);
       alert("Failed to save settings.");
@@ -118,10 +117,21 @@ export default function FlowBuilder() {
   const fetchFlowData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await authFetch(`/bot-flows/${flowId}/nodes`);
+      // Fetch both nodes and settings to ensure we have the latest settings for the virtual node
+      const [nodesResponse, settingsResponse] = await Promise.all([
+        authFetch(`/bot-flows/${flowId}/nodes`),
+        authFetch(`/bot-flows/${flowId}`),
+      ]);
 
-      if (response.success) {
-        const backendNodes = response.data;
+      if (settingsResponse.success) {
+        setFlowSettings(settingsResponse.data);
+      }
+
+      if (nodesResponse.success) {
+        const backendNodes = nodesResponse.data;
+        const currentSettings = settingsResponse.success
+          ? settingsResponse.data
+          : flowSettings;
 
         // 1. Transform Backend Nodes -> React Flow Nodes
         const initialNodes = backendNodes.map((node) => {
@@ -160,6 +170,26 @@ export default function FlowBuilder() {
             position: { x: 0, y: 0 }, // Initial position (will be layouted)
           };
         });
+
+        // --- INJECT VIRTUAL FOLLOW-UP NODE ---
+        if (currentSettings.completionFollowUpEnabled) {
+          initialNodes.push({
+            id: "FOLLOW_UP_NODE",
+            type: "customNode",
+            data: {
+              label: "FOLLOW UP",
+              messageText:
+                currentSettings.completionFollowUpMessage ||
+                "Did you find what you were looking for?",
+              messageType: "buttons",
+              buttons: [{ title: "Yes" }, { title: "No" }],
+              nodeId: "FOLLOW_UP_NODE",
+              isFollowUp: true, // Flag to identify virtual node
+            },
+            position: { x: 0, y: 0 },
+            style: { border: "2px dashed #10b981" }, // Visual distinction
+          });
+        }
 
         // 2. Transform Links -> React Flow Edges
         const initialEdges = [];
@@ -229,11 +259,12 @@ export default function FlowBuilder() {
       }
     } catch (error) {
       console.error("Error fetching flow:", error);
-      alert("Failed to load flow data.");
+      console.error("Error details:", error.message, error.stack);
+      alert(`Failed to load flow data: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [flowId, setNodes, setEdges]);
+  }, [flowId, setNodes, setEdges, flowSettings]); // Added flowSettings to dep array if used, but better to fetch fresh
 
   useEffect(() => {
     fetchFlowData();
@@ -306,6 +337,10 @@ export default function FlowBuilder() {
   );
 
   const onNodeClick = useCallback((event, node) => {
+    if (node.data.isFollowUp) {
+      setShowSettingsModal(true);
+      return;
+    }
     setSelectedNode(node);
     setSelectedEdge(null); // Deselect edge
   }, []);
@@ -331,8 +366,12 @@ export default function FlowBuilder() {
         throw new Error("Failed to fetch current nodes for sync.");
 
       const existingBackendNodes = response.data;
+
+      // Filter out virtual nodes from current frontend nodes
+      const realFrontendNodes = nodes.filter((n) => !n.data.isFollowUp);
+
       const currentFrontendNodeIds = new Set(
-        nodes.map((n) => n.data._id).filter((id) => id)
+        realFrontendNodes.map((n) => n.data._id).filter((id) => id)
       ); // Only existing IDs
 
       // 2. Identify nodes to delete (exist in backend but not in frontend)
@@ -351,7 +390,7 @@ export default function FlowBuilder() {
       }
 
       // 4. Convert React Flow Nodes/Edges -> Backend Format
-      const backendNodes = nodes.map((node) => {
+      const backendNodes = realFrontendNodes.map((node) => {
         // Find edges starting from this node
         const connectedEdges = edges.filter((e) => e.source === node.id);
 
