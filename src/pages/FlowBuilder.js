@@ -21,9 +21,9 @@ import { FaSave, FaArrowLeft, FaMagic, FaTrash } from "react-icons/fa";
 import dagre from "dagre";
 
 // Node Types Configuration
-const nodeTypes = {
-  customNode: CustomNode,
-};
+// const nodeTypes = {
+//   customNode: CustomNode,
+// };
 
 // --- LAYOUT HELPER (Auto-arrange nodes) ---
 const getLayoutedElements = (nodes, edges, direction = "LR") => {
@@ -70,6 +70,9 @@ export default function FlowBuilder() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Memoize nodeTypes to prevent React Flow warning
+  const nodeTypes = React.useMemo(() => ({ customNode: CustomNode }), []);
 
   // Selected Node for Editing
   const [selectedNode, setSelectedNode] = useState(null);
@@ -569,6 +572,11 @@ export default function FlowBuilder() {
               <FaArrowLeft />
             </Link>
             <h1 className="text-white font-bold text-lg">Flow Builder</h1>
+            {flowSettings.completionFollowUpEnabled && (
+              <span className="bg-emerald-600 text-white text-xs px-2 py-1 rounded-full">
+                Follow-Up On
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <button
