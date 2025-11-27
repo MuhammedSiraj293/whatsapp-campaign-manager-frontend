@@ -249,6 +249,32 @@ export default function FlowBuilder() {
           }
         });
 
+        // --- RESTORE EDGES FROM VIRTUAL FOLLOW-UP NODE ---
+        if (currentSettings.completionFollowUpEnabled) {
+          if (currentSettings.completionFollowUpYesNodeId) {
+            initialEdges.push({
+              id: `e-FOLLOW_UP_NODE-${currentSettings.completionFollowUpYesNodeId}-0`,
+              source: "FOLLOW_UP_NODE",
+              sourceHandle: "handle-btn-0", // Yes button
+              target: currentSettings.completionFollowUpYesNodeId,
+              animated: true,
+              label: "Yes",
+              style: { stroke: "#a855f7" },
+            });
+          }
+          if (currentSettings.completionFollowUpNoNodeId) {
+            initialEdges.push({
+              id: `e-FOLLOW_UP_NODE-${currentSettings.completionFollowUpNoNodeId}-1`,
+              source: "FOLLOW_UP_NODE",
+              sourceHandle: "handle-btn-1", // No button
+              target: currentSettings.completionFollowUpNoNodeId,
+              animated: true,
+              label: "No",
+              style: { stroke: "#a855f7" },
+            });
+          }
+        }
+
         // 3. Auto Layout
         const { nodes: layoutedNodes, edges: layoutedEdges } =
           getLayoutedElements(initialNodes, initialEdges);
@@ -484,6 +510,47 @@ export default function FlowBuilder() {
       }
 
       // 6. Refresh data to get new IDs
+
+      // --- SAVE FOLLOW-UP CONNECTIONS ---
+      // Find edges connected to the virtual FOLLOW_UP_NODE
+      const followUpEdges = edges.filter((e) => e.source === "FOLLOW_UP_NODE");
+
+      let followUpYesNodeId = "";
+      let followUpNoNodeId = "";
+
+      followUpEdges.forEach((edge) => {
+        // Helper to find target node's business ID (reused from above)
+        const getTargetNodeId = (targetId) => {
+          const targetNode = nodes.find((n) => n.id === targetId);
+          return targetNode ? targetNode.data.nodeId || targetNode.id : "";
+        };
+
+        if (edge.sourceHandle === "handle-btn-0") {
+          // Yes
+          followUpYesNodeId = getTargetNodeId(edge.target);
+        } else if (edge.sourceHandle === "handle-btn-1") {
+          // No
+          followUpNoNodeId = getTargetNodeId(edge.target);
+        }
+      });
+
+      // Update flow settings with these IDs
+      if (flowSettings.completionFollowUpEnabled) {
+        const updatedSettings = {
+          ...flowSettings,
+          completionFollowUpYesNodeId: followUpYesNodeId,
+          completionFollowUpNoNodeId: followUpNoNodeId,
+        };
+
+        await authFetch(`/bot-flows/${flowId}`, {
+          method: "PUT",
+          body: JSON.stringify(updatedSettings),
+        });
+
+        // Update local state
+        setFlowSettings(updatedSettings);
+      }
+
       await fetchFlowData();
       alert("Flow saved successfully!");
     } catch (error) {
