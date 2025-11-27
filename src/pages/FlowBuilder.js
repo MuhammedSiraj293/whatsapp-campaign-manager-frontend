@@ -76,6 +76,41 @@ export default function FlowBuilder() {
   // Selected Edge for Deletion
   const [selectedEdge, setSelectedEdge] = useState(null);
 
+  // --- FLOW SETTINGS STATE ---
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [flowSettings, setFlowSettings] = useState({});
+
+  // --- FETCH FLOW SETTINGS ---
+  const fetchFlowSettings = useCallback(async () => {
+    try {
+      const response = await authFetch(`/bot-flows/${flowId}`);
+      if (response.success) {
+        setFlowSettings(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching flow settings:", error);
+    }
+  }, [flowId]);
+
+  // --- SAVE FLOW SETTINGS ---
+  const saveFlowSettings = async () => {
+    try {
+      await authFetch(`/bot-flows/${flowId}`, {
+        method: "PUT",
+        body: JSON.stringify(flowSettings),
+      });
+      setShowSettingsModal(false);
+      alert("Flow settings saved!");
+    } catch (error) {
+      console.error("Error saving flow settings:", error);
+      alert("Failed to save settings.");
+    }
+  };
+
+  useEffect(() => {
+    fetchFlowSettings();
+  }, [fetchFlowSettings]);
+
   // --- FETCH & TRANSFORM DATA ---
   const fetchFlowData = useCallback(async () => {
     try {
@@ -548,8 +583,105 @@ export default function FlowBuilder() {
             >
               <FaSave /> Save Flow
             </button>
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2"
+            >
+              <FaMagic /> Flow Settings
+            </button>
           </div>
         </div>
+
+        {/* --- FLOW SETTINGS MODAL --- */}
+        {showSettingsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-[#202d33] p-6 rounded-lg w-96 text-white border border-gray-700 shadow-xl">
+              <h2 className="text-xl font-bold mb-4">Flow Settings</h2>
+
+              <div className="space-y-4">
+                <div className="border-t border-gray-600 pt-4">
+                  <h3 className="text-md font-semibold text-emerald-500 mb-2">
+                    Post-Completion Follow-Up
+                  </h3>
+                  <p className="text-xs text-gray-400 mb-3">
+                    Send a message after the user completes the flow (reaches
+                    END).
+                  </p>
+
+                  <label className="flex items-center gap-2 cursor-pointer mb-3">
+                    <input
+                      type="checkbox"
+                      checked={flowSettings.completionFollowUpEnabled || false}
+                      onChange={(e) =>
+                        setFlowSettings({
+                          ...flowSettings,
+                          completionFollowUpEnabled: e.target.checked,
+                        })
+                      }
+                      className="form-checkbox h-4 w-4 text-emerald-500 rounded border-gray-700 bg-[#111b21]"
+                    />
+                    <span className="text-sm">Enable Follow-Up</span>
+                  </label>
+
+                  {flowSettings.completionFollowUpEnabled && (
+                    <>
+                      <div className="mb-3">
+                        <label className="block text-xs text-gray-400 mb-1">
+                          Delay (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={flowSettings.completionFollowUpDelay || 60}
+                          onChange={(e) =>
+                            setFlowSettings({
+                              ...flowSettings,
+                              completionFollowUpDelay:
+                                parseInt(e.target.value) || 1,
+                            })
+                          }
+                          className="w-full bg-[#111b21] border border-gray-700 rounded p-2 text-sm text-white"
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-xs text-gray-400 mb-1">
+                          Message (Yes/No buttons added automatically)
+                        </label>
+                        <textarea
+                          rows="3"
+                          value={flowSettings.completionFollowUpMessage || ""}
+                          onChange={(e) =>
+                            setFlowSettings({
+                              ...flowSettings,
+                              completionFollowUpMessage: e.target.value,
+                            })
+                          }
+                          className="w-full bg-[#111b21] border border-gray-700 rounded p-2 text-sm text-white"
+                          placeholder="e.g. Did you find what you were looking for?"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="px-4 py-2 text-gray-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveFlowSettings}
+                  className="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700"
+                >
+                  Save Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 flex overflow-hidden">
           <ReactFlowProvider>
