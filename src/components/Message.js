@@ -12,6 +12,7 @@ function Message({
   status,
   onReply,
   onReact,
+  onDeleteMessage,
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -149,6 +150,10 @@ function Message({
     >
       <div
         className={`text-white py-2 px-3 rounded-lg max-w-[65%] w-fit relative ${messageBubbleClasses}`}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setShowMenu(true);
+        }}
       >
         {/* --- MENU TRIGGER --- */}
         {isHovered && (
@@ -189,6 +194,15 @@ function Message({
               className="w-full text-left px-4 py-2 hover:bg-[#182229] text-sm text-gray-300"
             >
               Copy
+            </button>
+            <button
+              onClick={() => {
+                if (onDeleteMessage) onDeleteMessage(msg._id);
+                setShowMenu(false);
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-[#182229] text-sm text-gray-300"
+            >
+              Delete
             </button>
           </div>
         )}

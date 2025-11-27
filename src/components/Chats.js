@@ -1,14 +1,58 @@
-// frontend/src/components/Chats.js
-
 import React, { useState } from "react";
 import Chat from "./Chat";
 import { ImFolderDownload } from "react-icons/im";
 
-// This component now handles its own search and filtering
-function Chats({ conversations, onSelectConversation, activeConversationId }) {
-  const [filterText, setFilterText] = useState("");
+// Helper function to format date
+const formatChatDate = (timestamp) => {
+  if (!timestamp) return { time: "", dateLabel: "" };
+  const date = new Date(timestamp);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
 
-  // Filter conversations based on the search text (name or phone number)
+  const timeOptions = { hour: "numeric", minute: "2-digit", hour12: true };
+  const timeString = date.toLocaleTimeString([], timeOptions);
+
+  // Check if today
+  if (date.toDateString() === now.toDateString()) {
+    return { time: timeString, dateLabel: "Today" };
+  }
+
+  // Check if yesterday
+  if (date.toDateString() === yesterday.toDateString()) {
+    return { time: timeString, dateLabel: "Yesterday" };
+  }
+
+  // Check if within last 7 days
+  const diffTime = Math.abs(now - date);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays <= 7) {
+    return {
+      time: timeString,
+      dateLabel: date.toLocaleDateString([], { weekday: "long" }),
+    };
+  }
+
+  // Older dates
+  return {
+    time: timeString,
+    dateLabel: date.toLocaleDateString([], {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }),
+  };
+};
+
+function Chats({
+  conversations,
+  onSelectConversation,
+  activeConversationId,
+  onDeleteConversation,
+}) {
+  const [filterText, setFilterText] = useState("");
+  const [contextMenu, setContextMenu] = useState(null);
+
   const filteredConversations = conversations.filter(
     (convo) =>
       (convo.name &&
@@ -16,8 +60,24 @@ function Chats({ conversations, onSelectConversation, activeConversationId }) {
       (convo._id && convo._id.includes(filterText))
   );
 
+  const handleContextMenu = (e, chat) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      chat,
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-[#111b21]">
+    <div
+      className="flex flex-col h-full bg-[#111b21]"
+      onClick={closeContextMenu}
+    >
       {/* Search and filter */}
       <div className="flex justify-between items-center h-[60px] p-2">
         <input
@@ -30,7 +90,7 @@ function Chats({ conversations, onSelectConversation, activeConversationId }) {
       </div>
 
       {/* Chats main container */}
-      <div className="flex-grow flex-col overflow-y-scroll cursor-pointer h-full">
+      <div className="flex-grow flex-col overflow-y-scroll cursor-pointer h-full relative">
         {/* Archived container (this is static for now) */}
         <div className="flex justify-between items-center w-full min-h-[55px] px-3 hover:bg-[#202d33]">
           <div className="flex items-center gap-4">
@@ -43,29 +103,57 @@ function Chats({ conversations, onSelectConversation, activeConversationId }) {
 
         {/* Map over the FILTERED conversation data */}
         {filteredConversations.map((convo) => {
+          const { time, dateLabel } = formatChatDate(
+            convo.lastMessageTimestamp
+          );
           return (
-            <Chat
+            <div
               key={convo._id}
-              name={convo.name}
-              contact={convo._id}
-              msg={convo.lastMessage}
-              time={
-                convo.lastMessageTimestamp
-                  ? new Date(convo.lastMessageTimestamp).toLocaleTimeString(
-                      [],
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }
-                    )
-                  : ""
-              }
-              unreadMsgs={convo.unreadCount}
-              active={convo._id === activeConversationId}
-              onClick={() => onSelectConversation(convo._id)}
-            />
+              onContextMenu={(e) => handleContextMenu(e, convo)}
+            >
+              <Chat
+                name={convo.name}
+                contact={convo._id}
+                msg={convo.lastMessage}
+                time={time}
+                dateLabel={dateLabel}
+                unreadMsgs={convo.unreadCount}
+                active={convo._id === activeConversationId}
+                onClick={() => onSelectConversation(convo._id)}
+              />
+            </div>
           );
         })}
+
+        {/* Context Menu */}
+        {contextMenu && (
+          <div
+            className="fixed bg-[#233138] text-white rounded-md shadow-lg z-50 py-2 w-40"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+          >
+            <div
+              className="px-4 py-2 hover:bg-[#182229] cursor-pointer"
+              onClick={() => {
+                // Close action: just deselect for now
+                onSelectConversation(null);
+                closeContextMenu();
+              }}
+            >
+              Close chat
+            </div>
+            <div
+              className="px-4 py-2 hover:bg-[#182229] cursor-pointer"
+              onClick={() => {
+                if (onDeleteConversation) {
+                  onDeleteConversation(contextMenu.chat._id);
+                }
+                closeContextMenu();
+              }}
+            >
+              Delete chat
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

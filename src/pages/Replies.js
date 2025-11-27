@@ -227,7 +227,43 @@ export default function Replies() {
       );
     } catch (error) {
       console.error("Error sending media:", error);
-      alert("Failed to send media file.");
+    }
+  };
+
+  // Handle deleting a conversation
+  const handleDeleteConversation = async (customerPhone) => {
+    if (!customerPhone || !selectedPhoneId) return;
+    try {
+      await authFetch(
+        `/replies/conversations/${customerPhone}/${selectedPhoneId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      // Refresh conversations
+      fetchConversations(selectedPhoneId);
+      // If the deleted chat was active, clear selection
+      if (activeConversationId === customerPhone) {
+        setActiveConversationId(null);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+    }
+  };
+
+  // Handle deleting a single message
+  const handleDeleteMessage = async (messageId) => {
+    if (!messageId) return;
+
+    try {
+      await authFetch(`/replies/messages/${messageId}`, {
+        method: "DELETE",
+      });
+      // Remove message from local state
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+    } catch (error) {
+      console.error("Error deleting message:", error);
     }
   };
 
@@ -277,25 +313,26 @@ export default function Replies() {
                 conversations={conversations}
                 onSelectConversation={handleConversationSelect}
                 activeConversationId={activeConversationId}
+                onDeleteConversation={handleDeleteConversation}
               />
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col overflow-hidden bg-[#0a131a]">
+          {/* --- RIGHT SIDE: CHAT DETAIL --- */}
+          <div className="flex-1 bg-[#222e35] h-full">
             {activeConversationId ? (
               <ChatDetail
-                activeConversationId={activeConversationId}
                 messages={messages}
+                activeConversationId={activeConversationId}
                 onSendMessage={handleSendReply}
                 onSendMedia={handleSendMedia}
+                onDeleteMessage={handleDeleteMessage}
                 onReact={handleReact}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-[#8796a1]">
+              <div className="flex items-center justify-center h-full flex-col text-[#8796a1]">
                 <div className="text-center">
-                  <h2 className="text-2xl font-light mb-4">
-                    WhatsApp Web Clone
-                  </h2>
+                  <h2 className="text-3xl font-light mb-4">WhatsApp Web</h2>
                   <p>Select a conversation to start chatting</p>
                 </div>
               </div>
