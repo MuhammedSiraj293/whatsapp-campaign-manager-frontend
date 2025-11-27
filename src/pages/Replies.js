@@ -108,6 +108,7 @@ export default function Replies() {
   // Setup Socket.IO listeners
   useEffect(() => {
     const handleNewMessage = (data) => {
+      console.log("🔌 Socket Event Received:", data);
       // Check if the message is for the currently selected business phone number
       if (data.recipientId === activeChatRef.current.businessPhone) {
         // INCOMING MESSAGE (from customer to business)
