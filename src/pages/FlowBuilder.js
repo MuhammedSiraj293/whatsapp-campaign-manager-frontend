@@ -167,7 +167,7 @@ export default function FlowBuilder() {
               _id: node._id,
               nodeId: node.nodeId,
             },
-            position: { x: 0, y: 0 }, // Initial position (will be layouted)
+            position: { x: 0, y: 0 },
           };
         });
 
@@ -223,7 +223,6 @@ export default function FlowBuilder() {
           }
 
           // Edges from List Items
-          // We need to reconstruct edges based on the flattened listItems
           let listItems = [];
           if (node.listSections && node.listSections.length > 0) {
             node.listSections.forEach((section) => {
@@ -259,12 +258,11 @@ export default function FlowBuilder() {
       }
     } catch (error) {
       console.error("Error fetching flow:", error);
-      console.error("Error details:", error.message, error.stack);
       alert(`Failed to load flow data: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [flowId, setNodes, setEdges, flowSettings]); // Added flowSettings to dep array if used, but better to fetch fresh
+  }, [flowId, setNodes, setEdges]);
 
   useEffect(() => {
     fetchFlowData();
