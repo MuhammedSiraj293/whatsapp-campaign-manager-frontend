@@ -170,9 +170,224 @@ export default function CampaignAnalytics() {
         </div>
         <p className="text-xs text-gray-400 mt-2">
           **Reminder**: You must share your Google Sheet with the service
-          account email from your `credentials.json` file.
+          account email `sheets-manager@whatsapp-crm-472112.iam.gserviceaccount.com`.
         </p>
       </div>
+
+      {/* --- NEW DETAILED ANALYTICS TABLE --- */}
+      <DetailedAnalyticsTable campaignId={campaignId} />
     </div>
   );
 }
+
+// Sub-component for Detailed Analytics Table
+const DetailedAnalyticsTable = ({ campaignId }) => {
+  const [details, setDetails] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10); // Default limit
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounce search
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when filters or limit change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter, limit, campaignId]);
+
+  // Fetch data when dependencies change
+  useEffect(() => {
+    fetchDetails(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedSearch, statusFilter, limit, campaignId]);
+
+  const fetchDetails = async (currentPage) => {
+    try {
+      setLoading(true);
+      const res = await authFetch(
+        `/analytics/${campaignId}/details?page=${currentPage}&limit=${limit}&status=${statusFilter}&search=${encodeURIComponent(
+          debouncedSearch
+        )}`
+      );
+      if (res.success) {
+        setDetails(res.data);
+        setTotalPages(res.pagination.pages);
+        setTotalRecords(res.pagination.total);
+      }
+    } catch (error) {
+      console.error("Error fetching details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLimitChange = (e) => {
+    setLimit(parseInt(e.target.value));
+  };
+
+  return (
+    <div className="mt-12">
+      <h2 className="text-2xl text-white mb-6">Detailed Analytics</h2>
+
+      {/* --- FILTER & CONTROLS SECTION --- */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+        <div className="flex gap-4 w-full md:w-auto">
+          <input
+            type="text"
+            placeholder="Search by Name or Phone..."
+            className="bg-[#202d33] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full md:w-64"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <select
+            className="bg-[#202d33] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Statuses</option>
+            <option value="delivered">Delivered</option>
+            <option value="read">Read</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-[#202d33] rounded-lg shadow-lg overflow-x-auto">
+        <table className="min-w-full text-left text-sm text-gray-400">
+          <thead className="bg-[#2a3942] text-xs uppercase text-gray-300">
+            <tr>
+              <th className="px-6 py-3">Phone Number</th>
+              <th className="px-6 py-3">Contact Name</th>
+              <th className="px-6 py-3">Message ID</th>
+              <th className="px-6 py-3">Status</th>
+              <th className="px-6 py-3">Failure Reason</th>
+              <th className="px-6 py-3">Last Updated</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {loading && details.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="6"
+                  className="px-6 py-4 text-center text-emerald-500"
+                >
+                  Loading...
+                </td>
+              </tr>
+            ) : details.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center">
+                  No data found matching your filters.
+                </td>
+              </tr>
+            ) : (
+              details.map((item) => (
+                <tr key={item._id} className="hover:bg-[#2a3942]">
+                  <td className="px-6 py-4 text-white font-medium">
+                    {item.phoneNumber}
+                  </td>
+                  <td className="px-6 py-4">{item.contactName}</td>
+                  <td
+                    className="px-6 py-4 truncate max-w-xs"
+                    title={item.wamid}
+                  >
+                    {item.wamid}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-semibold
+                        ${
+                          item.status === "read"
+                            ? "bg-green-500/20 text-green-500"
+                            : item.status === "delivered"
+                            ? "bg-blue-500/20 text-blue-500"
+                            : item.status === "failed"
+                            ? "bg-red-500/20 text-red-500"
+                            : "bg-gray-500/20 text-gray-500"
+                        }`}
+                    >
+                      {item.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-red-400">
+                    {item.failureReason}
+                  </td>
+                  <td className="px-6 py-4">
+                    {new Date(item.updatedAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* --- FOOTER / PAGINATION --- */}
+      <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm">
+        <div className="mb-2 md:mb-0">
+          Total Records:{" "}
+          <span className="text-white font-bold">{totalRecords}</span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span>Records per page:</span>
+            <select
+              className="bg-[#202d33] text-white px-2 py-1 rounded outline-none focus:ring-1 focus:ring-emerald-500"
+              value={limit}
+              onChange={handleLimitChange}
+            >
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="100">100</option>
+              <option value="500">500</option>
+              <option value="1000">1000</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className={`px-3 py-1 rounded ${
+                page === 1
+                  ? "text-gray-600 cursor-not-allowed"
+                  : "text-emerald-500 hover:text-emerald-400"
+              }`}
+            >
+              PREVIOUS
+            </button>
+            <span>
+              Page <span className="text-white">{page}</span> of{" "}
+              {totalPages || 1}
+            </span>
+            <button
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page === totalPages || totalPages === 0}
+              className={`px-3 py-1 rounded ${
+                page === totalPages || totalPages === 0
+                  ? "text-gray-600 cursor-not-allowed"
+                  : "text-emerald-500 hover:text-emerald-400"
+              }`}
+            >
+              NEXT
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
