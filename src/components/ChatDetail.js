@@ -154,11 +154,11 @@ export default function ChatDetail({
   // --- RECORDING STATE ---
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [audioPreview, setAudioPreview] = useState(null); // URL for preview
+  const [audioFile, setAudioFile] = useState(null); // File to send
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
-
-  // ... existing handlers ...
 
   // --- AUDIO RECORDING HANDLERS ---
   const handleStartRecording = async () => {
@@ -174,15 +174,24 @@ export default function ChatDetail({
       };
 
       mediaRecorderRef.current.onstop = () => {
+        // Create blob from chunks (prefer webm/ogg for browser support)
         const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/mp3",
+          type: "audio/webm",
         });
-        const audioFile = new File([audioBlob], "voice_message.mp3", {
-          type: "audio/mp3",
-        });
-        onSendMedia(audioFile);
+        const url = URL.createObjectURL(audioBlob);
 
-        // Stop all tracks to release microphone
+        // Check duration (approximate via timer or just use the rule)
+        // If we stopped manually via mouseUp, we check recordingDuration in the stop handler
+        // But here we just process the data.
+
+        const file = new File([audioBlob], "voice_message.webm", {
+          type: "audio/webm",
+        });
+
+        setAudioPreview(url);
+        setAudioFile(file);
+
+        // Stop all tracks
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -201,10 +210,32 @@ export default function ChatDetail({
 
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      if (recordingDuration < 2) {
+        // Discard if less than 2 seconds
+        mediaRecorderRef.current.stop();
+        setIsRecording(false);
+        clearInterval(timerRef.current);
+        setAudioPreview(null);
+        setAudioFile(null);
+        return;
+      }
+
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       clearInterval(timerRef.current);
     }
+  };
+
+  const handleSendAudio = () => {
+    if (audioFile) {
+      onSendMedia(audioFile);
+      handleDiscardAudio();
+    }
+  };
+
+  const handleDiscardAudio = () => {
+    setAudioPreview(null);
+    setAudioFile(null);
   };
 
   // Format seconds to MM:SS
@@ -218,8 +249,8 @@ export default function ChatDetail({
     <div className="flex flex-col h-full bg-[#0a131a]">
       {/* ... Header ... */}
       <div className="flex justify-between bg-[#202d33] h-[60px] p-3 sticky top-0 z-20">
-        {/* ... (Keep existing Header Content) ... */}
         <div className="flex items-center gap-2">
+          {/* --- BACK BUTTON (Mobile Only) --- */}
           <button
             onClick={onBack}
             className="md:hidden text-[#8796a1] hover:text-white mr-1"
@@ -301,73 +332,108 @@ export default function ChatDetail({
 
       {/* ... Footer / Input Area ... */}
       <div className="flex items-center bg-[#202d33] w-full h-[70px] p-2 relative">
-        {showEmojiPicker && (
-          <div
-            className="absolute bottom-[70px] left-0 z-50"
-            ref={emojiPickerRef}
-          >
-            <EmojiPicker onEmojiClick={onEmojiClick} theme="dark" />
-          </div>
-        )}
-        <button
-          className="text-[#8796a1] text-2xl p-2"
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-        >
-          <BsEmojiSmile />
-        </button>
-        <button
-          className="text-[#8796a1] text-2xl p-2"
-          onClick={handleAttachmentClick}
-        >
-          <AiOutlinePaperClip />
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          style={{ display: "none" }}
-          accept="image/*,video/*,audio/*,.pdf"
-        />
-
-        {/* INPUT FIELD or RECORDING STATUS */}
-        {isRecording ? (
-          <div className="flex items-center w-full mx-2 text-red-500 animate-pulse">
-            <span className="mr-2">●</span>
-            <span className="font-medium">
-              Recording {formatTime(recordingDuration)}...
-            </span>
+        {/* --- AUDIO PREVIEW UI --- */}
+        {audioPreview ? (
+          <div className="flex items-center w-full justify-between px-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDiscardAudio}
+                className="text-red-500 p-2 hover:bg-[#182229] rounded-full"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                >
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
+                </svg>
+              </button>
+              <audio
+                src={audioPreview}
+                controls
+                className="h-[40px] w-[200px]"
+              />
+            </div>
+            <button
+              onClick={handleSendAudio}
+              className="bg-[#00a884] p-3 rounded-full text-white shadow-lg hover:bg-[#008f6f]"
+            >
+              <MdSend />
+            </button>
           </div>
         ) : (
-          <input
-            type="text"
-            placeholder="Type a message"
-            className="w-full bg-[#2a3942] text-white text-base md:text-sm rounded-lg px-4 py-2 mx-2 focus:outline-none"
-            onChange={handleInputChange}
-            ref={inputRef}
-          />
-        )}
+          <>
+            {showEmojiPicker && (
+              <div
+                className="absolute bottom-[70px] left-0 z-50"
+                ref={emojiPickerRef}
+              >
+                <EmojiPicker onEmojiClick={onEmojiClick} theme="dark" />
+              </div>
+            )}
+            {/* ... Normal Input UI ... */}
+            <button
+              className="text-[#8796a1] text-2xl p-2"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <BsEmojiSmile />
+            </button>
+            <button
+              className="text-[#8796a1] text-2xl p-2"
+              onClick={handleAttachmentClick}
+            >
+              <AiOutlinePaperClip />
+            </button>
 
-        {typing && !isRecording ? (
-          <button
-            className="text-[#8796a1] text-2xl p-2"
-            onClick={handleInputSubmit}
-          >
-            <MdSend />
-          </button>
-        ) : (
-          /* MIC BUTTON with Press & Hold */
-          <button
-            className={`text-2xl p-2 transition-colors duration-200 ${
-              isRecording ? "text-red-500 scale-110" : "text-[#8796a1]"
-            }`}
-            onMouseDown={handleStartRecording}
-            onMouseUp={handleStopRecording}
-            onMouseLeave={handleStopRecording} // Stop if mouse leaves button
-            onTouchStart={handleStartRecording}
-            onTouchEnd={handleStopRecording}
-          >
-            <BsFillMicFill />
-          </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+              accept="image/*,video/*,audio/*,.pdf"
+            />
+
+            {isRecording ? (
+              <div className="flex items-center w-full mx-2 text-red-500 animate-pulse">
+                <span className="mr-2">●</span>
+                <span className="font-medium">
+                  Recording {formatTime(recordingDuration)}...
+                </span>
+              </div>
+            ) : (
+              <input
+                type="text"
+                placeholder="Type a message"
+                className="w-full bg-[#2a3942] text-white text-base md:text-sm rounded-lg px-4 py-2 mx-2 focus:outline-none"
+                onChange={handleInputChange}
+                ref={inputRef}
+              />
+            )}
+
+            {typing && !isRecording ? (
+              <button
+                className="text-[#8796a1] text-2xl p-2"
+                onClick={handleInputSubmit}
+              >
+                <MdSend />
+              </button>
+            ) : (
+              /* MIC BUTTON with Press & Hold */
+              <button
+                className={`text-2xl p-2 transition-colors duration-200 ${
+                  isRecording ? "text-red-500 scale-110" : "text-[#8796a1]"
+                }`}
+                onMouseDown={handleStartRecording}
+                onMouseUp={handleStopRecording}
+                onMouseLeave={handleStopRecording}
+                onTouchStart={handleStartRecording}
+                onTouchEnd={handleStopRecording}
+              >
+                <BsFillMicFill />
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
