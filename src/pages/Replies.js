@@ -1,6 +1,12 @@
 // frontend/src/pages/Replies.js
 
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+  useCallback,
+} from "react";
 import { authFetch, uploadFile } from "../services/api";
 import socket from "../services/socket";
 import Chats from "../components/Chats";
@@ -87,45 +93,67 @@ export default function Replies() {
   }, [activeWaba, wabaAccounts]);
 
   // Fetch conversations for the selected business phone number
-  const fetchConversations = async (recipientId, page = 1, search = "") => {
-    if (!recipientId) return;
-    setLoadingConvos(true);
-    try {
-      const limit = 20;
-      // encodeURIComponent for safety
-      const query = `/replies/conversations/${recipientId}?page=${page}&limit=${limit}&search=${encodeURIComponent(
-        search
-      )}`;
-      const data = await authFetch(query);
+  const fetchConversations = useCallback(
+    async (recipientId, page = 1, search = "") => {
+      if (!recipientId) return;
+      setLoadingConvos(true);
+      try {
+        const limit = 20;
+        // encodeURIComponent for safety
+        const query = `/replies/conversations/${recipientId}?page=${page}&limit=${limit}&search=${encodeURIComponent(
+          search
+        )}`;
+        const data = await authFetch(query);
 
-      if (data.success) {
-        if (page === 1) {
-          setConversations(data.data);
-        } else {
-          setConversations((prev) => {
-            // Filter out potential duplicates based on _id (customer phone)
-            const newConvos = data.data.filter(
-              (newC) => !prev.some((existing) => existing._id === newC._id)
-            );
-            return [...prev, ...newConvos];
-          });
+        if (data.success) {
+          if (page === 1) {
+            setConversations(data.data);
+          } else {
+            setConversations((prev) => {
+              // Filter out potential duplicates based on _id (customer phone)
+              const newConvos = data.data.filter(
+                (newC) => !prev.some((existing) => existing._id === newC._id)
+              );
+              return [...prev, ...newConvos];
+            });
+          }
+          // If we got fewer than limit, there are no more to load
+          setHasMoreConvos(data.data.length === limit);
         }
-        // If we got fewer than limit, there are no more to load
-        setHasMoreConvos(data.data.length === limit);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+      } finally {
+        setLoadingConvos(false);
       }
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-    } finally {
-      setLoadingConvos(false);
-    }
-  };
+    },
+    []
+  );
 
-  const handleLoadMoreConversations = () => {
+  // --- SEARCH STATE ---
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearch = useCallback(
+    (query) => {
+      setSearchTerm(query);
+      setConvoPage(1); // Reset to first page
+      fetchConversations(selectedPhoneId, 1, query);
+    },
+    [selectedPhoneId, fetchConversations]
+  );
+
+  const handleLoadMoreConversations = useCallback(() => {
     if (!hasMoreConvos || loadingConvos) return;
     const nextPage = convoPage + 1;
     setConvoPage(nextPage);
-    fetchConversations(selectedPhoneId, nextPage);
-  };
+    fetchConversations(selectedPhoneId, nextPage, searchTerm);
+  }, [
+    hasMoreConvos,
+    loadingConvos,
+    convoPage,
+    selectedPhoneId,
+    searchTerm,
+    fetchConversations,
+  ]);
 
   // Fetch messages for the selected chat
   const fetchMessages = async (customerPhone, recipientId, page = 1) => {

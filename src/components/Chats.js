@@ -25,9 +25,15 @@ export default function Chats({
   });
 
   const scrollRef = useRef(null);
+  const isMounted = useRef(false);
 
   // Debounce Search
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+
     const delayDebounceFn = setTimeout(() => {
       if (onSearch) {
         onSearch(searchTerm);
