@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useLayoutEffect,
+} from "react";
 import Message from "./Message";
 import { MdSend } from "react-icons/md";
 import { AiOutlinePaperClip } from "react-icons/ai";
@@ -51,23 +57,90 @@ export default function ChatDetail({
   onSendMedia,
   onDeleteMessage,
   onReact,
-  onBack, // <--- New Prop
+  onBack,
   contactName,
+  onLoadMore, // Pagination
+  hasMore,
+  loading,
 }) {
   const [typing, setTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef(null);
+  const messagesContainerRef = useRef(null); // Ref for scroll container
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
 
+  // Scroll Preservation Refs
+  const prevScrollHeightRef = useRef(0);
+  const firstMessageIdRef = useRef(null);
+  const lastMessageIdRef = useRef(null);
+
   const [replyingToMessage, setReplyingToMessage] = useState(null);
+
+  // --- RECORDING STATE ---
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [audioPreview, setAudioPreview] = useState(null); // URL for preview
+  const [audioFile, setAudioFile] = useState(null); // File to send
+
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const timerRef = useRef(null);
+  const longPressTimeoutRef = useRef(null); // Ref for long press delay
 
   // Filter out reaction messages so they don't appear as bubbles
   const filteredMessages = messages.filter((msg) => msg.type !== "reaction");
 
   // Group the messages by date
   const groupedMessages = groupMessagesByDate(filteredMessages);
+
+  // --- SCROLL PRESERVATION LOGIC ---
+  useLayoutEffect(() => {
+    if (!messagesContainerRef.current) return;
+    const container = messagesContainerRef.current;
+
+    const currentScrollHeight = container.scrollHeight;
+    const currentFirstMsgId =
+      filteredMessages.length > 0 ? filteredMessages[0]._id : null;
+    const currentLastMsgId =
+      filteredMessages.length > 0
+        ? filteredMessages[filteredMessages.length - 1]._id
+        : null;
+
+    // 1. Detect PREPEND (History Load): First message changed, list got longer
+    if (
+      prevScrollHeightRef.current > 0 &&
+      currentFirstMsgId !== firstMessageIdRef.current &&
+      currentLastMsgId === lastMessageIdRef.current // Last message didn't change (roughly) or handled handled separately
+    ) {
+      // Restore scroll position
+      const diff = currentScrollHeight - prevScrollHeightRef.current;
+      container.scrollTop = diff; // Jump down by amount of added content
+    }
+
+    // 2. Detect APPEND (New Message): Last message changed
+    if (currentLastMsgId !== lastMessageIdRef.current) {
+      // Scroll to bottom
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Update refs for next render
+    prevScrollHeightRef.current = currentScrollHeight;
+    firstMessageIdRef.current = currentFirstMsgId;
+    lastMessageIdRef.current = currentLastMsgId;
+  }, [filteredMessages]); // Run when messages change
+
+  // --- INFINITE SCROLL HANDLER ---
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop } = messagesContainerRef.current;
+
+    // If scrolled to top (within 50px)
+    if (scrollTop < 50 && hasMore && !loading) {
+      if (onLoadMore) onLoadMore();
+    }
+  };
 
   const handleInputChange = () => {
     if (inputRef.current.value.length > 0) setTyping(true);
@@ -135,8 +208,8 @@ export default function ChatDetail({
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Only scroll to bottom on initial mount or very specific updates handled by useLayoutEffect
+  }, []);
 
   useEffect(() => {
     const listener = (e) => {
@@ -155,17 +228,6 @@ export default function ChatDetail({
       }
     };
   }, [handleInputSubmit]);
-
-  // --- RECORDING STATE ---
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const [audioPreview, setAudioPreview] = useState(null); // URL for preview
-  const [audioFile, setAudioFile] = useState(null); // File to send
-
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const timerRef = useRef(null);
-  const longPressTimeoutRef = useRef(null); // Ref for long press delay
 
   // Helper to determine the best supported MIME type
   const getMimeType = () => {
@@ -248,9 +310,6 @@ export default function ChatDetail({
 
         setAudioPreview(url);
         setAudioFile(file);
-
-        // Stop all tracks
-        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorderRef.current.start();
@@ -260,9 +319,8 @@ export default function ChatDetail({
       timerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
-    } catch (error) {
-      console.error("Error accessing microphone:", error);
-      alert("Microphone access denied or not available.");
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
     }
   };
 
@@ -284,13 +342,6 @@ export default function ChatDetail({
     }
   };
 
-  const handleSendAudio = () => {
-    if (audioFile) {
-      onSendMedia(audioFile);
-      handleDiscardAudio();
-    }
-  };
-
   const handleDiscardAudio = () => {
     // Clean up URL object
     if (audioPreview) {
@@ -298,6 +349,15 @@ export default function ChatDetail({
     }
     setAudioPreview(null);
     setAudioFile(null);
+    setIsRecording(false);
+    setRecordingDuration(0);
+  };
+
+  const handleSendAudio = () => {
+    if (audioFile) {
+      onSendMedia(audioFile);
+      handleDiscardAudio();
+    }
   };
 
   // Format seconds to MM:SS
@@ -330,9 +390,18 @@ export default function ChatDetail({
 
       {/* ... Messages Area ... */}
       <div
-        className="bg-[#0a131a] bg-chat-bg bg-contain overflow-y-scroll h-full flex flex-col"
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="bg-[#0a131a] bg-chat-bg bg-contain overflow-y-scroll h-full flex flex-col custom-scrollbar"
         style={{ padding: "12px 7%" }}
       >
+        {/* Loading Spinner at Top (History) */}
+        {loading && (
+          <div className="flex justify-center py-2 h-10">
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-emerald-500"></div>
+          </div>
+        )}
+
         {/* ... (Keep existing Messages Map) ... */}
         {Object.keys(groupedMessages).map((dateKey) => (
           <div key={dateKey} className="relative">

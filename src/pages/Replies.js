@@ -18,6 +18,15 @@ export default function Replies() {
   // const [isLoading, setIsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
+  // --- PAGINATION STATE ---
+  const [convoPage, setConvoPage] = useState(1);
+  const [hasMoreConvos, setHasMoreConvos] = useState(true);
+  const [loadingConvos, setLoadingConvos] = useState(false);
+
+  const [msgPage, setMsgPage] = useState(1);
+  const [hasMoreMsgs, setHasMoreMsgs] = useState(true);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+
   const { activeWaba } = useWaba(); // <-- 2. GET THE GLOBALLY ACTIVE WABA
   const { user } = useContext(AuthContext); // Get user for role check
 
@@ -73,37 +82,84 @@ export default function Replies() {
     setConversations([]);
     setMessages([]);
     setActiveConversationId(null);
+    setConvoPage(1);
+    setHasMoreConvos(true);
   }, [activeWaba, wabaAccounts]);
 
   // Fetch conversations for the selected business phone number
-  const fetchConversations = async (recipientId) => {
+  const fetchConversations = async (recipientId, page = 1) => {
     if (!recipientId) return;
+    setLoadingConvos(true);
     try {
-      const data = await authFetch(`/replies/conversations/${recipientId}`);
+      const limit = 20;
+      const data = await authFetch(
+        `/replies/conversations/${recipientId}?page=${page}&limit=${limit}`
+      );
       if (data.success) {
-        setConversations(data.data);
+        if (page === 1) {
+          setConversations(data.data);
+        } else {
+          setConversations((prev) => {
+            // Filter out potential duplicates based on _id (customer phone)
+            const newConvos = data.data.filter(
+              (newC) => !prev.some((existing) => existing._id === newC._id)
+            );
+            return [...prev, ...newConvos];
+          });
+        }
+        // If we got fewer than limit, there are no more to load
+        setHasMoreConvos(data.data.length === limit);
       }
     } catch (error) {
       console.error("Error fetching conversations:", error);
+    } finally {
+      setLoadingConvos(false);
     }
   };
 
+  const handleLoadMoreConversations = () => {
+    if (!hasMoreConvos || loadingConvos) return;
+    const nextPage = convoPage + 1;
+    setConvoPage(nextPage);
+    fetchConversations(selectedPhoneId, nextPage);
+  };
+
   // Fetch messages for the selected chat
-  const fetchMessages = async (customerPhone, recipientId) => {
+  const fetchMessages = async (customerPhone, recipientId, page = 1) => {
     if (!customerPhone || !recipientId) return;
-    // setIsLoading(true);
+    setLoadingMsgs(true);
     try {
+      const limit = 50;
       const data = await authFetch(
-        `/replies/messages/${customerPhone}/${recipientId}`
+        `/replies/messages/${customerPhone}/${recipientId}?page=${page}&limit=${limit}`
       );
       if (data.success) {
-        setMessages(data.data);
+        if (page === 1) {
+          setMessages(data.data);
+        } else {
+          setMessages((prev) => {
+            // Prepend new (older) messages
+            // Filter duplicates just in case
+            const newMsgs = data.data.filter(
+              (newM) => !prev.some((existing) => existing._id === newM._id)
+            );
+            return [...newMsgs, ...prev];
+          });
+        }
+        setHasMoreMsgs(data.data.length === limit);
       }
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
-      // setIsLoading(false);
+      setLoadingMsgs(false);
     }
+  };
+
+  const handleLoadMoreMessages = () => {
+    if (!hasMoreMsgs || loadingMsgs) return;
+    const nextPage = msgPage + 1;
+    setMsgPage(nextPage);
+    fetchMessages(activeConversationId, selectedPhoneId, nextPage);
   };
 
   // Setup Socket.IO listeners
@@ -227,14 +283,17 @@ export default function Replies() {
   // Fetch conversations when selectedPhoneId (business phone) changes
   useEffect(() => {
     if (selectedPhoneId) {
-      fetchConversations(selectedPhoneId);
+      setConvoPage(1); // Reset page on phone switch
+      fetchConversations(selectedPhoneId, 1);
     }
   }, [selectedPhoneId]);
 
   // Fetch messages when activeConversationId (customer phone) changes
   useEffect(() => {
     if (activeConversationId && selectedPhoneId) {
-      fetchMessages(activeConversationId, selectedPhoneId);
+      setMsgPage(1); // Reset page on chat switch
+      setHasMoreMsgs(true);
+      fetchMessages(activeConversationId, selectedPhoneId, 1);
     } else {
       setMessages([]);
     }
@@ -401,6 +460,10 @@ export default function Replies() {
                 onSelectConversation={handleConversationSelect}
                 activeConversationId={activeConversationId}
                 onDeleteConversation={handleDeleteConversation}
+                // Pagination props
+                onLoadMore={handleLoadMoreConversations}
+                hasMore={hasMoreConvos}
+                loading={loadingConvos}
               />
             </div>
           </div>
@@ -429,6 +492,10 @@ export default function Replies() {
                 onDeleteMessage={handleDeleteMessage}
                 onReact={handleReact}
                 onBack={handleBackToList} // Pass back handler
+                // Pagination props
+                onLoadMore={handleLoadMoreMessages}
+                hasMore={hasMoreMsgs}
+                loading={loadingMsgs}
               />
             ) : (
               <div className="flex items-center justify-center h-full flex-col text-[#8796a1]">

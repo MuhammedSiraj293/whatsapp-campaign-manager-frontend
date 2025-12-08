@@ -1,162 +1,199 @@
-import React, { useState } from "react";
-import Chat from "./Chat";
-import { ImFolderDownload } from "react-icons/im";
+import React, { useRef, useEffect } from "react";
+import {
+  BsThreeDotsVertical,
+  BsTrash,
+  BsCheck,
+  BsCheckAll,
+} from "react-icons/bs";
 
-// Helper function to format date
-const formatChatDate = (timestamp) => {
-  if (!timestamp) return { time: "", dateLabel: "" };
-  const date = new Date(timestamp);
-  const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const timeOptions = { hour: "numeric", minute: "2-digit", hour12: true };
-  const timeString = date.toLocaleTimeString([], timeOptions);
-
-  // Check if today
-  if (date.toDateString() === now.toDateString()) {
-    return { time: timeString, dateLabel: "Today" };
-  }
-
-  // Check if yesterday
-  if (date.toDateString() === yesterday.toDateString()) {
-    return { time: timeString, dateLabel: "Yesterday" };
-  }
-
-  // Check if within last 7 days
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  if (diffDays <= 7) {
-    return {
-      time: timeString,
-      dateLabel: date.toLocaleDateString([], { weekday: "long" }),
-    };
-  }
-
-  // Older dates
-  return {
-    time: timeString,
-    dateLabel: date.toLocaleDateString([], {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }),
-  };
-};
-
-function Chats({
+export default function Chats({
   conversations,
   onSelectConversation,
   activeConversationId,
   onDeleteConversation,
+  onLoadMore, // New prop
+  hasMore, // New prop
+  loading, // New prop
 }) {
-  const [filterText, setFilterText] = useState("");
-  const [contextMenu, setContextMenu] = useState(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [contextMenu, setContextMenu] = React.useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    convoId: null,
+  });
 
-  const filteredConversations = conversations.filter(
-    (convo) =>
-      (convo.name &&
-        convo.name.toLowerCase().includes(filterText.toLowerCase())) ||
-      (convo._id && convo._id.includes(filterText))
-  );
+  const scrollRef = useRef(null);
 
-  const handleContextMenu = (e, chat) => {
+  // Filter conversations
+  const filteredConversations = conversations.filter((convo) => {
+    const term = searchTerm.toLowerCase();
+    const nameMatch = convo.name && convo.name.toLowerCase().includes(term);
+    const phoneMatch = convo._id.includes(term);
+    return nameMatch || phoneMatch;
+  });
+
+  // Handle right-click context menu
+  const handleContextMenu = (e, convoId) => {
     e.preventDefault();
     setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      chat,
+      visible: true,
+      x: e.pageX,
+      y: e.pageY,
+      convoId,
     });
   };
 
+  // Close context menu
   const closeContextMenu = () => {
-    setContextMenu(null);
+    if (contextMenu.visible) {
+      setContextMenu({ ...contextMenu, visible: false, convoId: null });
+    }
+  };
+
+  // Format timestamp
+  const formatChatDate = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const now = new Date();
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    if (isToday) {
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    return date.toLocaleDateString(); // e.g., 10/24/2023
+  };
+
+  // --- SCROLL DETECTION ---
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+
+    // Check if scrolled to bottom with 50px buffer
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+      if (hasMore && !loading && onLoadMore) {
+        onLoadMore();
+      }
+    }
   };
 
   return (
     <div
-      className="flex flex-col h-full bg-[#111b21]"
-      onClick={closeContextMenu}
+      className="h-full flex flex-col relative"
+      onClick={closeContextMenu} // Click anywhere to close menu
+      onContextMenu={(e) => {
+        // Prevent context menu on non-item areas if needed,
+        // but generally we want it only on items.
+        // We'll let native bubbles up unless caught.
+      }}
     >
-      {/* Search and filter */}
-      <div className="flex justify-between items-center h-[60px] p-2">
+      {/* Search Input */}
+      <div className="p-2 bg-[#111b21] border-b border-neutral-700 shrink-0">
         <input
           type="text"
-          placeholder="Search or start a new chat"
-          className="rounded-lg bg-[#202d33] text-[#8796a1] text-sm font-light outline-none px-4 py-2 w-full h-[35px] placeholder:text-[#8796a1] placeholder:text-sm placeholder:font-light"
-          value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
+          placeholder="Search or start new chat"
+          className="w-full bg-[#202d33] text-sm text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600 placeholder-gray-500"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Chats main container */}
-      <div className="flex-grow flex-col overflow-y-scroll cursor-pointer h-full relative">
-        {/* Archived container (this is static for now) */}
-        <div className="flex justify-between items-center w-full min-h-[55px] px-3 hover:bg-[#202d33]">
-          <div className="flex items-center gap-4">
-            <span className="text-emerald-500 text-lg">
-              <ImFolderDownload />
-            </span>
-            <h1 className="text-white">Archived</h1>
-          </div>
-        </div>
-
-        {/* Map over the FILTERED conversation data */}
+      {/* Conversation List */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto custom-scrollbar"
+      >
         {filteredConversations.map((convo) => {
-          const { time, dateLabel } = formatChatDate(
-            convo.lastMessageTimestamp
-          );
+          const isActive = convo._id === activeConversationId;
           return (
             <div
               key={convo._id}
-              onContextMenu={(e) => handleContextMenu(e, convo)}
+              onClick={() => onSelectConversation(convo._id)}
+              onContextMenu={(e) => handleContextMenu(e, convo._id)}
+              className={`
+                flex items-center p-3 cursor-pointer border-b border-[#202d33]/50 hover:bg-[#202d33] transition-colors
+                ${isActive ? "bg-[#2a3942]" : ""}
+              `}
             >
-              <Chat
-                name={convo.name}
-                contact={convo._id}
-                msg={convo.lastMessage}
-                time={time}
-                dateLabel={dateLabel}
-                unreadMsgs={convo.unreadCount}
-                active={convo._id === activeConversationId}
-                onClick={() => onSelectConversation(convo._id)}
-              />
+              {/* Avatar (Placeholder) */}
+              <div className="w-[45px] h-[45px] rounded-full bg-gray-500 flex-shrink-0 mr-3 overflow-hidden">
+                <img
+                  src={`https://ui-avatars.com/api/?name=${
+                    convo.name || "User"
+                  }&background=random`}
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-baseline mb-0.5">
+                  <h3 className="text-[#e9edef] text-base font-normal truncate">
+                    {convo.name || convo._id}
+                  </h3>
+                  <span className="text-xs text-[#8696a0] flex-shrink-0 ml-2">
+                    {formatChatDate(convo.lastMessageTimestamp)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-[#8696a0] truncate flex-1 mr-2">
+                    {convo.lastMessage}
+                  </p>
+                  {convo.unreadCount > 0 && (
+                    <span className="bg-[#00a884] text-black text-[10px] font-bold px-[5px] py-[2px] rounded-full min-w-[18px] text-center">
+                      {convo.unreadCount}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           );
         })}
 
-        {/* Context Menu */}
-        {contextMenu && (
-          <div
-            className="fixed bg-[#233138] text-white rounded-md shadow-lg z-50 py-2 w-40"
-            style={{ top: contextMenu.y, left: contextMenu.x }}
-          >
-            <div
-              className="px-4 py-2 hover:bg-[#182229] cursor-pointer"
-              onClick={() => {
-                // Close action: just deselect for now
-                onSelectConversation(null);
-                closeContextMenu();
-              }}
-            >
-              Close chat
-            </div>
-            <div
-              className="px-4 py-2 hover:bg-[#182229] cursor-pointer"
-              onClick={() => {
-                if (onDeleteConversation) {
-                  onDeleteConversation(contextMenu.chat._id);
-                }
-                closeContextMenu();
-              }}
-            >
-              Delete chat
-            </div>
+        {/* Loading Spinner at Bottom */}
+        {loading && (
+          <div className="flex justify-center p-4">
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-emerald-500"></div>
           </div>
         )}
       </div>
+
+      {/* Custom Context Menu */}
+      {contextMenu.visible && (
+        <div
+          className="fixed bg-[#233138] shadow-lg rounded py-2 z-50 text-[#d1d7db] text-sm"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()} // Stop click from closing immediately
+        >
+          <div
+            className="px-4 py-2 hover:bg-[#182229] cursor-pointer"
+            onClick={() => {
+              // Logic to "Close chat" - maybe just deselect
+              onSelectConversation(null);
+              closeContextMenu();
+            }}
+          >
+            Close chat
+          </div>
+          <div
+            className="px-4 py-2 hover:bg-[#182229] cursor-pointer text-red-400"
+            onClick={() => {
+              onDeleteConversation(contextMenu.convoId);
+              closeContextMenu();
+            }}
+          >
+            Delete chat
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default Chats;
