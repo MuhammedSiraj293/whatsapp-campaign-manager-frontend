@@ -121,8 +121,11 @@ export default function ChatDetail({
 
     // 2. Detect APPEND (New Message): Last message changed
     if (currentLastMsgId !== lastMessageIdRef.current) {
-      // Scroll to bottom
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      // Determine behavior: 'auto' (instant) for initial load, 'smooth' for new incoming text
+      const isInitial = lastMessageIdRef.current === null;
+      bottomRef.current?.scrollIntoView({
+        behavior: isInitial ? "auto" : "smooth",
+      });
     }
 
     // Update refs for next render

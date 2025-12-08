@@ -11,9 +11,10 @@ export default function Chats({
   onSelectConversation,
   activeConversationId,
   onDeleteConversation,
-  onLoadMore, // New prop
-  hasMore, // New prop
-  loading, // New prop
+  onLoadMore,
+  hasMore,
+  loading,
+  onSearch, // New prop
 }) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [contextMenu, setContextMenu] = React.useState({
@@ -25,13 +26,19 @@ export default function Chats({
 
   const scrollRef = useRef(null);
 
-  // Filter conversations
-  const filteredConversations = conversations.filter((convo) => {
-    const term = searchTerm.toLowerCase();
-    const nameMatch = convo.name && convo.name.toLowerCase().includes(term);
-    const phoneMatch = convo._id.includes(term);
-    return nameMatch || phoneMatch;
-  });
+  // Debounce Search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (onSearch) {
+        onSearch(searchTerm);
+      }
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, onSearch]);
+
+  // Use conversations directly (server filters them)
+  const displayConversations = conversations;
 
   // Handle right-click context menu
   const handleContextMenu = (e, convoId) => {
@@ -51,23 +58,37 @@ export default function Chats({
     }
   };
 
-  // Format timestamp
-  const formatChatDate = (isoString) => {
+  // Helper: Get Time String
+  const getChatTime = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  // Helper: Get Date Label
+  const getChatDateLabel = (isoString) => {
     if (!isoString) return "";
     const date = new Date(isoString);
     const now = new Date();
-    const isToday =
-      date.getDate() === now.getDate() &&
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    if (isToday) {
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+    if (date.toDateString() === now.toDateString()) {
+      return ""; // No date label for today
     }
-    return date.toLocaleDateString(); // e.g., 10/24/2023
+    if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    }
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays <= 7) {
+      return date.toLocaleDateString([], { weekday: "long" });
+    }
+    return date.toLocaleDateString();
   };
 
   // --- SCROLL DETECTION ---
@@ -88,9 +109,7 @@ export default function Chats({
       className="h-full flex flex-col relative"
       onClick={closeContextMenu} // Click anywhere to close menu
       onContextMenu={(e) => {
-        // Prevent context menu on non-item areas if needed,
-        // but generally we want it only on items.
-        // We'll let native bubbles up unless caught.
+        // Prevent context menu on non-item areas if needed
       }}
     >
       {/* Search Input */}
@@ -110,8 +129,11 @@ export default function Chats({
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto custom-scrollbar"
       >
-        {filteredConversations.map((convo) => {
+        {displayConversations.map((convo) => {
           const isActive = convo._id === activeConversationId;
+          const timeString = getChatTime(convo.lastMessageTimestamp);
+          const dateLabel = getChatDateLabel(convo.lastMessageTimestamp);
+
           return (
             <div
               key={convo._id}
@@ -123,7 +145,7 @@ export default function Chats({
               `}
             >
               {/* Avatar (Placeholder) */}
-              <div className="w-[45px] h-[45px] rounded-full bg-gray-500 flex-shrink-0 mr-3 overflow-hidden">
+              <div className="w-[49px] h-[49px] rounded-full bg-gray-500 flex-shrink-0 mr-3 overflow-hidden">
                 <img
                   src={`https://ui-avatars.com/api/?name=${
                     convo.name || "User"
@@ -134,21 +156,34 @@ export default function Chats({
               </div>
 
               {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-baseline mb-0.5">
-                  <h3 className="text-[#e9edef] text-base font-normal truncate">
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex justify-between items-center mb-0.5">
+                  <h3 className="text-[#e9edef] text-[17px] font-normal truncate leading-tight">
                     {convo.name || convo._id}
                   </h3>
-                  <span className="text-xs text-[#8696a0] flex-shrink-0 ml-2">
-                    {formatChatDate(convo.lastMessageTimestamp)}
-                  </span>
+                  {/* Stacked Time/Date */}
+                  <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                    <span className="text-[12px] text-[#00a884] font-normal leading-tight">
+                      {timeString}
+                    </span>
+                    {dateLabel && (
+                      <span className="text-[12px] text-[#8696a0] font-normal leading-tight mt-[2px]">
+                        {dateLabel}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <p className="text-sm text-[#8696a0] truncate flex-1 mr-2">
-                    {convo.lastMessage}
+                  <p
+                    className="text-sm text-[#8696a0] flex-1 mr-6 leading-tight"
+                    title={convo.lastMessage}
+                  >
+                    {convo.lastMessage.length > 30
+                      ? convo.lastMessage.substring(0, 30) + "..."
+                      : convo.lastMessage}
                   </p>
                   {convo.unreadCount > 0 && (
-                    <span className="bg-[#00a884] text-black text-[10px] font-bold px-[5px] py-[2px] rounded-full min-w-[18px] text-center">
+                    <span className="bg-[#00a884] text-[#111b21] text-[11px] font-bold px-[6px] py-[1px] rounded-full min-w-[18px] text-center mt-1">
                       {convo.unreadCount}
                     </span>
                   )}

@@ -87,14 +87,17 @@ export default function Replies() {
   }, [activeWaba, wabaAccounts]);
 
   // Fetch conversations for the selected business phone number
-  const fetchConversations = async (recipientId, page = 1) => {
+  const fetchConversations = async (recipientId, page = 1, search = "") => {
     if (!recipientId) return;
     setLoadingConvos(true);
     try {
       const limit = 20;
-      const data = await authFetch(
-        `/replies/conversations/${recipientId}?page=${page}&limit=${limit}`
-      );
+      // encodeURIComponent for safety
+      const query = `/replies/conversations/${recipientId}?page=${page}&limit=${limit}&search=${encodeURIComponent(
+        search
+      )}`;
+      const data = await authFetch(query);
+
       if (data.success) {
         if (page === 1) {
           setConversations(data.data);
@@ -412,7 +415,6 @@ export default function Replies() {
       ) : (
         <div className="relative flex h-[100dvh] md:h-screen bg-[#111b21] md:bg-black md:rounded-lg rounded-none overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-[#111b21] [&::-webkit-scrollbar-thumb]:bg-[#374045] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-[#111b21]">
           {/* --- LEFT SIDE: CHAT LIST --- */}
-          {/* Mobile: Absolute, full width. Slides OUT to the LEFT when chat is active. */}
           <div
             className={`
               absolute top-0 left-0 w-full h-full z-10 
@@ -422,17 +424,16 @@ export default function Replies() {
               ${activeConversationId ? "-translate-x-full" : "translate-x-0"}
             `}
           >
-            {/* --- RESTORED HEADER --- */}
+            {/* Header */}
             <div className="flex justify-between items-center bg-[#202d33] h-[60px] p-3 border-b border-neutral-700 shrink-0">
               <img
                 src={pp}
                 alt="profile_picture"
                 className="rounded-full w-[40px]"
               />
-              {/* Optional: Add status/menu icons here if needed */}
             </div>
 
-            {/* --- NEW ACCOUNT SELECTORS --- */}
+            {/* Account Selector */}
             <div className="p-3 bg-[#111b21] border-b border-neutral-700 shrink-0">
               <label className="block mb-2 text-sm font-medium text-gray-400">
                 Business Phone
@@ -453,23 +454,22 @@ export default function Replies() {
               </select>
             </div>
 
-            {/* --- CONVERSATION LIST --- */}
+            {/* Conversation List */}
             <div className="flex-1 overflow-hidden relative">
               <Chats
                 conversations={conversations}
                 onSelectConversation={handleConversationSelect}
                 activeConversationId={activeConversationId}
                 onDeleteConversation={handleDeleteConversation}
-                // Pagination props
                 onLoadMore={handleLoadMoreConversations}
                 hasMore={hasMoreConvos}
                 loading={loadingConvos}
+                onSearch={handleSearch}
               />
             </div>
           </div>
 
           {/* --- RIGHT SIDE: CHAT DETAIL --- */}
-          {/* Mobile: Absolute, full width. Slides IN from the RIGHT when chat is active. */}
           <div
             className={`
               absolute top-0 left-0 w-full h-full z-20 
@@ -481,6 +481,7 @@ export default function Replies() {
           >
             {activeConversationId ? (
               <ChatDetail
+                key={activeConversationId} // Force remount
                 messages={messages}
                 activeConversationId={activeConversationId}
                 contactName={
@@ -491,8 +492,7 @@ export default function Replies() {
                 onSendMedia={handleSendMedia}
                 onDeleteMessage={handleDeleteMessage}
                 onReact={handleReact}
-                onBack={handleBackToList} // Pass back handler
-                // Pagination props
+                onBack={handleBackToList}
                 onLoadMore={handleLoadMoreMessages}
                 hasMore={hasMoreMsgs}
                 loading={loadingMsgs}
