@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { authFetch, uploadFile } from "../services/api";
 import socket from "../services/socket";
 import Chats from "../components/Chats";
-import LeftMenu from "../components/LeftMenu";
 import ChatDetail from "../components/ChatDetail";
 // import "./style/Replies.css"; // REMOVED
 import LoadingScreen from "../components/LoadingScreen";
@@ -64,7 +63,9 @@ export default function Replies() {
     if (activeWaba && wabaAccounts.length > 0) {
       const account = wabaAccounts.find((acc) => acc._id === activeWaba);
       setAvailablePhones(account ? account.phoneNumbers : []);
-      setSelectedPhoneId(""); // Reset phone selection
+      if (selectedPhoneId !== "") {
+        setSelectedPhoneId(""); // Reset phone selection only if not empty
+      }
     } else {
       setAvailablePhones([]);
     }
@@ -323,6 +324,10 @@ export default function Replies() {
     }
   };
 
+  const handleBackToList = () => {
+    setActiveConversationId(null);
+  };
+
   // Handle deleting a single message
   const handleDeleteMessage = async (messageId) => {
     if (!messageId) return;
@@ -339,26 +344,37 @@ export default function Replies() {
   };
 
   const inputStyle =
-    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
+    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-base md:text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
 
   return (
     <>
       {loading ? (
         <LoadingScreen progress={100} />
       ) : (
-        <div className="flex h-screen bg-black rounded-lg overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-[#111b21] [&::-webkit-scrollbar-thumb]:bg-[#374045] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-[#111b21]">
-          <div className="flex-none w-[30%] border-r border-black overflow-y-auto flex flex-col">
+        <div className="relative flex h-[100dvh] md:h-screen bg-[#111b21] md:bg-black md:rounded-lg rounded-none overflow-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-[#111b21] [&::-webkit-scrollbar-thumb]:bg-[#374045] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-[#111b21]">
+          {/* --- LEFT SIDE: CHAT LIST --- */}
+          {/* Mobile: Absolute, full width. Slides OUT to the LEFT when chat is active. */}
+          <div
+            className={`
+              absolute top-0 left-0 w-full h-full z-10 
+              transition-transform duration-300 ease-out 
+              md:static md:w-[30%] md:translate-x-0 md:z-auto
+              bg-[#111b21] border-r border-[#202d33] flex flex-col shrink-0
+              ${activeConversationId ? "-translate-x-full" : "translate-x-0"}
+            `}
+          >
             {/* --- RESTORED HEADER --- */}
-            <div className="flex justify-between items-center bg-[#202d33] h-[60px] p-3 border-b border-neutral-700">
+            <div className="flex justify-between items-center bg-[#202d33] h-[60px] p-3 border-b border-neutral-700 shrink-0">
               <img
                 src={pp}
                 alt="profile_picture"
                 className="rounded-full w-[40px]"
               />
+              {/* Optional: Add status/menu icons here if needed */}
             </div>
 
             {/* --- NEW ACCOUNT SELECTORS --- */}
-            <div className="p-3 bg-[#111b21] border-b border-neutral-700">
+            <div className="p-3 bg-[#111b21] border-b border-neutral-700 shrink-0">
               <label className="block mb-2 text-sm font-medium text-gray-400">
                 Business Phone
               </label>
@@ -379,7 +395,7 @@ export default function Replies() {
             </div>
 
             {/* --- CONVERSATION LIST --- */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden relative">
               <Chats
                 conversations={conversations}
                 onSelectConversation={handleConversationSelect}
@@ -390,7 +406,16 @@ export default function Replies() {
           </div>
 
           {/* --- RIGHT SIDE: CHAT DETAIL --- */}
-          <div className="flex-1 bg-[#222e35] h-full">
+          {/* Mobile: Absolute, full width. Slides IN from the RIGHT when chat is active. */}
+          <div
+            className={`
+              absolute top-0 left-0 w-full h-full z-20 
+              transition-transform duration-300 ease-out 
+              md:static md:flex-1 md:translate-x-0 md:z-auto
+              bg-[#222e35] flex flex-col shrink-0
+              ${activeConversationId ? "translate-x-0" : "translate-x-full"}
+            `}
+          >
             {activeConversationId ? (
               <ChatDetail
                 messages={messages}
@@ -399,6 +424,7 @@ export default function Replies() {
                 onSendMedia={handleSendMedia}
                 onDeleteMessage={handleDeleteMessage}
                 onReact={handleReact}
+                onBack={handleBackToList} // Pass back handler
               />
             ) : (
               <div className="flex items-center justify-center h-full flex-col text-[#8796a1]">

@@ -5,7 +5,13 @@ import { AiOutlinePaperClip } from "react-icons/ai";
 import { BsFillMicFill } from "react-icons/bs";
 import Avatar from "./Avatar";
 import EmojiPicker from "emoji-picker-react";
-import { BsEmojiSmile } from "react-icons/bs";
+import {
+  BsCheck,
+  BsCheckAll,
+  BsChevronDown,
+  BsEmojiSmile,
+} from "react-icons/bs";
+import { BsArrowLeft } from "react-icons/bs";
 
 // --- NEW HELPER FUNCTION to group messages by date ---
 const groupMessagesByDate = (messages) => {
@@ -45,6 +51,7 @@ export default function ChatDetail({
   onSendMedia,
   onDeleteMessage,
   onReact,
+  onBack, // <--- New Prop
 }) {
   const [typing, setTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -145,8 +152,16 @@ export default function ChatDetail({
 
   return (
     <div className="flex flex-col h-full bg-[#0a131a]">
-      <div className="flex justify-between bg-[#202d33] h-[60px] p-3">
-        <div className="flex items-center">
+      <div className="flex justify-between bg-[#202d33] h-[60px] p-3 sticky top-0 z-20">
+        <div className="flex items-center gap-2">
+          {/* --- BACK BUTTON (Mobile Only) --- */}
+          <button
+            onClick={onBack}
+            className="md:hidden text-[#8796a1] hover:text-white mr-1"
+          >
+            <BsArrowLeft size={24} />
+          </button>
+
           <Avatar contactId={activeConversationId} />
           <div className="flex flex-col">
             <h1 className="text-white font-medium">{activeConversationId}</h1>
@@ -251,7 +266,7 @@ export default function ChatDetail({
         <input
           type="text"
           placeholder="Type a message"
-          className="w-full bg-[#2a3942] text-white text-sm rounded-lg px-4 py-2 mx-2 focus:outline-none"
+          className="w-full bg-[#2a3942] text-white text-base md:text-sm rounded-lg px-4 py-2 mx-2 focus:outline-none"
           onChange={handleInputChange}
           ref={inputRef}
         />

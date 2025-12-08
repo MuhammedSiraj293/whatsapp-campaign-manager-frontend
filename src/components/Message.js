@@ -149,7 +149,7 @@ function Message({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`text-white py-2 px-3 rounded-lg max-w-[65%] w-fit relative ${messageBubbleClasses}`}
+        className={`text-white py-2 px-3 rounded-lg max-w-[85%] md:max-w-[65%] w-fit relative ${messageBubbleClasses}`}
         onContextMenu={(e) => {
           e.preventDefault();
           setShowMenu(true);
