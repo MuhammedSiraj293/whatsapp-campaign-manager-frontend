@@ -175,9 +175,10 @@ export default function ChatDetail({
     if (MediaRecorder.isTypeSupported("audio/ogg")) {
       return { type: "audio/ogg", ext: "ogg" };
     }
-    // WhatsApp supports 'audio/opus'. WebM audio is often Opus.
+    // WhatsApp supports 'audio/opus'. WebM audio is often Opus, but the container is WebM.
+    // We will send it as .webm and let the backend force it to be a "Document" so it sends reliably.
     if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-      return { type: "audio/webm;codecs=opus", ext: "opus" };
+      return { type: "audio/webm;codecs=opus", ext: "webm" };
     }
     // Fallback
     if (MediaRecorder.isTypeSupported("audio/webm")) {
@@ -234,9 +235,11 @@ export default function ChatDetail({
         const audioBlob = new Blob(audioChunksRef.current, { type: blobType });
         const url = URL.createObjectURL(audioBlob);
 
-        // WhatsApp API specific checks
+        // We do NOT rename to .opus anymore because WhatsApp validated the WebM container and failed.
+        // We now intentionally send as .webm. The backend will catch this and send as "Document" type.
+        // This ensures the file is delivered (playable file attachment).
+
         let fileType = blobType;
-        if (ext === "opus") fileType = "audio/ogg"; // Common workaround for WA
         if (ext === "mp4") fileType = "audio/mp4";
 
         const file = new File([audioBlob], `voice_message.${ext}`, {
