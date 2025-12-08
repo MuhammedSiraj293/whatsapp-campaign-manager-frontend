@@ -156,11 +156,39 @@ export default function ChatDetail({
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioPreview, setAudioPreview] = useState(null); // URL for preview
   const [audioFile, setAudioFile] = useState(null); // File to send
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const longPressTimeoutRef = useRef(null); // Ref for long press delay
 
   // --- AUDIO RECORDING HANDLERS ---
+
+  // 1. TRIGGER: User Presses Button
+  const handleStartInteraction = () => {
+    // Clear any existing timeout
+    if (longPressTimeoutRef.current) clearTimeout(longPressTimeoutRef.current);
+
+    // Set a delay: Recording only starts if held for 500ms
+    longPressTimeoutRef.current = setTimeout(() => {
+      handleStartRecording();
+    }, 500);
+  };
+
+  // 2. TRIGGER: User Releases Button
+  const handleStopInteraction = () => {
+    // If release happens BEFORE 500ms, clear timeout -> No recording starts (Accidental tap blocked)
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+
+    // If recording IS active, stop it
+    if (isRecording) {
+      handleStopRecording();
+    }
+  };
+
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -179,10 +207,6 @@ export default function ChatDetail({
           type: "audio/webm",
         });
         const url = URL.createObjectURL(audioBlob);
-
-        // Check duration (approximate via timer or just use the rule)
-        // If we stopped manually via mouseUp, we check recordingDuration in the stop handler
-        // But here we just process the data.
 
         const file = new File([audioBlob], "voice_message.webm", {
           type: "audio/webm",
@@ -211,10 +235,12 @@ export default function ChatDetail({
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       if (recordingDuration < 2) {
-        // Discard if less than 2 seconds
+        // Discard if less than 2 seconds (handled by not setting preview/file if logic was here,
+        // but since we want to give feedback or just silent fail, silent fail is better for UX here)
         mediaRecorderRef.current.stop();
         setIsRecording(false);
         clearInterval(timerRef.current);
+        // Clear immediately
         setAudioPreview(null);
         setAudioFile(null);
         return;
@@ -234,6 +260,10 @@ export default function ChatDetail({
   };
 
   const handleDiscardAudio = () => {
+    // Clean up URL object to avoid memory leaks
+    if (audioPreview) {
+      URL.revokeObjectURL(audioPreview);
+    }
     setAudioPreview(null);
     setAudioFile(null);
   };
@@ -419,16 +449,16 @@ export default function ChatDetail({
                 <MdSend />
               </button>
             ) : (
-              /* MIC BUTTON with Press & Hold */
+              /* MIC BUTTON with Press & Hold (Long Press) */
               <button
                 className={`text-2xl p-2 transition-colors duration-200 ${
                   isRecording ? "text-red-500 scale-110" : "text-[#8796a1]"
                 }`}
-                onMouseDown={handleStartRecording}
-                onMouseUp={handleStopRecording}
-                onMouseLeave={handleStopRecording}
-                onTouchStart={handleStartRecording}
-                onTouchEnd={handleStopRecording}
+                onMouseDown={handleStartInteraction}
+                onMouseUp={handleStopInteraction}
+                onMouseLeave={handleStopInteraction}
+                onTouchStart={handleStartInteraction}
+                onTouchEnd={handleStopInteraction}
               >
                 <BsFillMicFill />
               </button>
