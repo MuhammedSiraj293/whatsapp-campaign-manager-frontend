@@ -113,8 +113,8 @@ export default function BotStudio() {
   };
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-emerald-500 text-center mb-8">
+    <div className="p-4 md:p-8 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black">
+      <h1 className="text-3xl font-bold text-white text-center mb-8">
         Bot Studio
       </h1>
 

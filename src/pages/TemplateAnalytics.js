@@ -71,7 +71,9 @@ export default function TemplateAnalytics() {
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8">
-      <h1 className="text-3xl  text-white">Template Analytics</h1>
+      <h1 className="text-3xl font-bold text-white text-center mb-8">
+        Template Analytics
+      </h1>
       <h2 className="text-xl text-gray-200 text-center mb-8">
         {formatTemplateName(analytics.templateName)}
       </h2>
