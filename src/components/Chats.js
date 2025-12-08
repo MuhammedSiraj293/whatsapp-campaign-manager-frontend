@@ -184,9 +184,9 @@ export default function Chats({
                     className="text-sm text-[#8696a0] flex-1 mr-6 leading-tight"
                     title={convo.lastMessage}
                   >
-                    {convo.lastMessage.length > 30
-                      ? convo.lastMessage.substring(0, 30) + "..."
-                      : convo.lastMessage}
+                    {(convo.lastMessage || "").length > 30
+                      ? (convo.lastMessage || "").substring(0, 30) + "..."
+                      : convo.lastMessage || "Media"}
                   </p>
                   {convo.unreadCount > 0 && (
                     <span className="bg-[#00a884] text-[#111b21] text-[11px] font-bold px-[6px] py-[1px] rounded-full min-w-[18px] text-center mt-1">
