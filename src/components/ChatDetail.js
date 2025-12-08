@@ -52,6 +52,7 @@ export default function ChatDetail({
   onDeleteMessage,
   onReact,
   onBack, // <--- New Prop
+  contactName,
 }) {
   const [typing, setTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -162,10 +163,10 @@ export default function ChatDetail({
             <BsArrowLeft size={24} />
           </button>
 
-          <Avatar contactId={activeConversationId} />
+          <Avatar contactId={activeConversationId} name={contactName} />
           <div className="flex flex-col">
-            <h1 className="text-white font-medium">{activeConversationId}</h1>
-            <p className="text-[#8796a1] text-xs">online</p>
+            <h1 className="text-white font-medium">{contactName || activeConversationId}</h1>
+            <p className="text-[#8796a1] text-xs">{activeConversationId}</p>
           </div>
         </div>
       </div>

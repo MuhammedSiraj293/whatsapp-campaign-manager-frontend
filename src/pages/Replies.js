@@ -420,6 +420,10 @@ export default function Replies() {
               <ChatDetail
                 messages={messages}
                 activeConversationId={activeConversationId}
+                contactName={
+                  conversations.find((c) => c._id === activeConversationId)
+                    ?.name
+                }
                 onSendMessage={handleSendReply}
                 onSendMedia={handleSendMedia}
                 onDeleteMessage={handleDeleteMessage}
