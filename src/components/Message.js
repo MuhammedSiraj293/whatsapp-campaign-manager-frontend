@@ -3,6 +3,24 @@ import { API_URL } from "../config";
 import MessageStatus from "./MessageStatus";
 import { BsCheck, BsCheckAll, BsChevronDown } from "react-icons/bs";
 
+// Helper to format text with bold (*) and italic (_)
+const formatMessage = (text) => {
+  if (!text) return null;
+  // Split by bold (*...*) or italic (_..._)
+  // Using capturing parentheses so the delimiters/content are included in the result array
+  const parts = text.split(/(\*.*?\*|_.*?_)/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith("*") && part.endsWith("*") && part.length >= 2) {
+      return <strong key={index}>{part.slice(1, -1)}</strong>;
+    }
+    if (part.startsWith("_") && part.endsWith("_") && part.length >= 2) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
 function Message({
   msg,
   time,
@@ -236,7 +254,7 @@ function Message({
         {msg.body && (
           // Add margin-right to make space for the timestamp and ticks
           <p className="text-sm mr-16" style={{ whiteSpace: "pre-wrap" }}>
-            {msg.body}
+            {formatMessage(msg.body)}
           </p>
         )}
 
