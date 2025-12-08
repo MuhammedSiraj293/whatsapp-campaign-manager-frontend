@@ -82,6 +82,11 @@ export default function ChatDetail({
       setShowEmojiPicker(false);
       setReplyingToMessage(null);
     }
+    // Ensure existing timeouts are cleared if any interaction was ongoing
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
   }, [onSendMessage, replyingToMessage]);
 
   const handleReply = (msg) => {
@@ -162,6 +167,25 @@ export default function ChatDetail({
   const timerRef = useRef(null);
   const longPressTimeoutRef = useRef(null); // Ref for long press delay
 
+  // Helper to determine the best supported MIME type
+  const getMimeType = () => {
+    if (MediaRecorder.isTypeSupported("audio/mp4")) {
+      return { type: "audio/mp4", ext: "mp4" };
+    }
+    if (MediaRecorder.isTypeSupported("audio/ogg")) {
+      return { type: "audio/ogg", ext: "ogg" };
+    }
+    // WhatsApp supports 'audio/opus'. WebM audio is often Opus.
+    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+      return { type: "audio/webm;codecs=opus", ext: "opus" };
+    }
+    // Fallback
+    if (MediaRecorder.isTypeSupported("audio/webm")) {
+      return { type: "audio/webm", ext: "webm" };
+    }
+    return { type: "", ext: "" };
+  };
+
   // --- AUDIO RECORDING HANDLERS ---
 
   // 1. TRIGGER: User Presses Button
@@ -192,7 +216,10 @@ export default function ChatDetail({
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const { type, ext } = getMimeType();
+
+      const options = type ? { mimeType: type } : undefined;
+      mediaRecorderRef.current = new MediaRecorder(stream, options);
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -202,14 +229,18 @@ export default function ChatDetail({
       };
 
       mediaRecorderRef.current.onstop = () => {
-        // Create blob from chunks (prefer webm/ogg for browser support)
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
+        // Create blob using the same type we recorded with
+        const blobType = type || "audio/webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: blobType });
         const url = URL.createObjectURL(audioBlob);
 
-        const file = new File([audioBlob], "voice_message.webm", {
-          type: "audio/webm",
+        // WhatsApp API specific checks
+        let fileType = blobType;
+        if (ext === "opus") fileType = "audio/ogg"; // Common workaround for WA
+        if (ext === "mp4") fileType = "audio/mp4";
+
+        const file = new File([audioBlob], `voice_message.${ext}`, {
+          type: fileType,
         });
 
         setAudioPreview(url);
@@ -235,12 +266,10 @@ export default function ChatDetail({
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       if (recordingDuration < 2) {
-        // Discard if less than 2 seconds (handled by not setting preview/file if logic was here,
-        // but since we want to give feedback or just silent fail, silent fail is better for UX here)
+        // Discard if less than 2 seconds
         mediaRecorderRef.current.stop();
         setIsRecording(false);
         clearInterval(timerRef.current);
-        // Clear immediately
         setAudioPreview(null);
         setAudioFile(null);
         return;
@@ -260,7 +289,7 @@ export default function ChatDetail({
   };
 
   const handleDiscardAudio = () => {
-    // Clean up URL object to avoid memory leaks
+    // Clean up URL object
     if (audioPreview) {
       URL.revokeObjectURL(audioPreview);
     }
