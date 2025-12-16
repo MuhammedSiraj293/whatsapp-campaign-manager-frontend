@@ -31,6 +31,7 @@ export default function CreateCampaign() {
   // Selected values
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedList, setSelectedList] = useState("");
+  const [selectedExclusionList, setSelectedExclusionList] = useState("");
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
 
   // Filtered data
@@ -125,6 +126,7 @@ export default function CreateCampaign() {
     formData.append("templateName", selectedTemplateObject.name);
     formData.append("templateLanguage", selectedTemplateObject.language);
     formData.append("contactList", selectedList);
+    formData.append("exclusionList", selectedExclusionList);
     formData.append("phoneNumber", selectedPhoneNumber);
     formData.append("expectedVariables", expectedVariables);
     formData.append("spreadsheetId", spreadsheetId);
@@ -134,9 +136,9 @@ export default function CreateCampaign() {
 
     // --- THIS IS THE FIX ---
     if (scheduledFor) {
-        // Convert the local time (from input) to UTC format before sending
-        const utcDate = new Date(scheduledFor).toISOString();
-        formData.append('scheduledFor', utcDate);
+      // Convert the local time (from input) to UTC format before sending
+      const utcDate = new Date(scheduledFor).toISOString();
+      formData.append("scheduledFor", utcDate);
     }
 
     // Handle Image
@@ -283,6 +285,38 @@ export default function CreateCampaign() {
               placeholder="-- Select a Contact List --"
               styles={selectStyles}
               isSearchable
+            />
+          </div>
+
+          {/* --- Send To (Exclusion) --- */}
+          <div>
+            <label htmlFor="exclusionList" className={labelStyle}>
+              Exclude List (Optional)
+            </label>
+            <Select
+              id="exclusionList"
+              options={contactLists.map((list) => ({
+                value: list._id,
+                label: `${list.name} (${list.contacts?.length || 0})`,
+              }))}
+              value={
+                selectedExclusionList
+                  ? {
+                      value: selectedExclusionList,
+                      label:
+                        contactLists.find(
+                          (l) => l._id === selectedExclusionList
+                        )?.name || "",
+                    }
+                  : null
+              }
+              onChange={(option) =>
+                setSelectedExclusionList(option?.value || "")
+              }
+              placeholder="-- Select an Exclusion List --"
+              styles={selectStyles}
+              isSearchable
+              isClearable
             />
           </div>
 
