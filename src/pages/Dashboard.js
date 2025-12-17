@@ -24,6 +24,7 @@ const getStatusClass = (status) => {
 export default function Dashboard() {
   const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(""); // <-- New Search State
 
   // const [recipientCounts, setRecipientCounts] = useState({}); // 4. REMOVED - No longer needed
   const navigate = useNavigate();
@@ -136,14 +137,24 @@ export default function Dashboard() {
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full">
       <div className="p-4 md:p-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <h1 className="text-3xl font-semibold text-white">Campaigns</h1>
-          <button
-            onClick={() => navigate("/create-campaign")}
-            className={buttonStyle}
-          >
-            + Create New Campaign
-          </button>
+
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-center">
+            <input
+              type="text"
+              placeholder="Search campaigns..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-[#2c3943] border border-gray-700 text-white text-sm rounded-lg focus:ring-emerald-500 block w-full md:w-64 p-2.5"
+            />
+            <button
+              onClick={() => navigate("/create-campaign")}
+              className={`${buttonStyle} whitespace-nowrap`}
+            >
+              + Create New Campaign
+            </button>
+          </div>
         </div>
 
         <div className="list-container">
@@ -155,65 +166,71 @@ export default function Dashboard() {
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {campaigns.map((campaign) => (
-                <div
-                  key={campaign._id}
-                  className="bg-gradient-to-br from-slate-900 via-slate-800 to-black p-6 rounded-lg shadow-lg flex flex-col justify-between"
-                >
-                  <div>
-                    <h2 className="text-xl font-bold text-white uppercase truncate">
-                      {campaign.name}
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {getCampaignDate(campaign)}
-                    </p>
-                    <p className="text-gray-400 text-sm mt-4 h-20 overflow-hidden">
-                      "{campaign.message}"
-                    </p>
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="flex justify-between items-center text-xs text-gray-400">
-                      <span>STATUS</span>
-                      <span>RECIPIENTS</span>
+              {campaigns
+                .filter((campaign) =>
+                  campaign.name
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())
+                )
+                .map((campaign) => (
+                  <div
+                    key={campaign._id}
+                    className="bg-gradient-to-br from-slate-900 via-slate-800 to-black p-6 rounded-lg shadow-lg flex flex-col justify-between"
+                  >
+                    <div>
+                      <h2 className="text-xl font-bold text-white uppercase truncate">
+                        {campaign.name}
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {getCampaignDate(campaign)}
+                      </p>
+                      <p className="text-gray-400 text-sm mt-4 h-20 overflow-hidden">
+                        "{campaign.message}"
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center font-medium text-white">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusClass(
-                          campaign.status
-                        )}`}
-                      >
-                        {campaign.status}
-                      </span>
-                      <span>{campaign.contactCount || 0}</span>
-                    </div>
-                  </div>
 
-                  <div className="mt-6 flex gap-2">
-                    {campaign.status !== "sent" ? (
+                    <div className="mt-4">
+                      <div className="flex justify-between items-center text-xs text-gray-400">
+                        <span>STATUS</span>
+                        <span>RECIPIENTS</span>
+                      </div>
+                      <div className="flex justify-between items-center font-medium text-white">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusClass(
+                            campaign.status
+                          )}`}
+                        >
+                          {campaign.status}
+                        </span>
+                        <span>{campaign.contactCount || 0}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex gap-2">
+                      {campaign.status !== "sent" ? (
+                        <button
+                          className={`${buttonStyle} w-full`}
+                          onClick={() => handleSendCampaign(campaign._id)}
+                        >
+                          Send Now
+                        </button>
+                      ) : (
+                        <Link
+                          to={`/analytics/${campaign._id}`}
+                          className={`${analyticsButtonStyle} w-full`}
+                        >
+                          Analytics
+                        </Link>
+                      )}
                       <button
-                        className={`${buttonStyle} w-full`}
-                        onClick={() => handleSendCampaign(campaign._id)}
+                        className={`${deleteButtonStyle} w-full`}
+                        onClick={() => handleDeleteCampaign(campaign._id)}
                       >
-                        Send Now
+                        Delete
                       </button>
-                    ) : (
-                      <Link
-                        to={`/analytics/${campaign._id}`}
-                        className={`${analyticsButtonStyle} w-full`}
-                      >
-                        Analytics
-                      </Link>
-                    )}
-                    <button
-                      className={`${deleteButtonStyle} w-full`}
-                      onClick={() => handleDeleteCampaign(campaign._id)}
-                    >
-                      Delete
-                    </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </div>
