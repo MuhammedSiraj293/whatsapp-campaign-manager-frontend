@@ -433,6 +433,38 @@ export default function Replies() {
     }
   };
 
+  // --- NEW: Handle Manual Unsubscribe/Resubscribe ---
+  const handleToggleSubscription = async (phoneNumber, newStatus) => {
+    if (!phoneNumber) return;
+
+    // Optimistic UI update (optional, but good for UX)
+    setConversations((prev) =>
+      prev.map((c) =>
+        c._id === phoneNumber ? { ...c, isSubscribed: newStatus } : c
+      )
+    );
+
+    try {
+      const result = await authFetch(`/replies/subscription/${phoneNumber}`, {
+        method: "POST",
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (result.success) {
+        // alert(result.message); // Silent update requested, so maybe skip alert or show toast
+        console.log(result.message);
+        // Refresh conversations to ensure backend state is synced
+        fetchConversations(selectedPhoneId, convoPage, searchTerm);
+      } else {
+        alert("Action failed: " + result.error || "Unknown error");
+        // Revert optimistic update if needed (refreshing list essentially handles this)
+      }
+    } catch (error) {
+      console.error("Error toggling subscription:", error);
+      alert("Error updating subscription status.");
+    }
+  };
+
   const inputStyle =
     "bg-[#2c3943] border border-gray-700 text-neutral-200 text-base md:text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
 
@@ -493,6 +525,7 @@ export default function Replies() {
                 hasMore={hasMoreConvos}
                 loading={loadingConvos}
                 onSearch={handleSearch}
+                onToggleSubscription={handleToggleSubscription} // Pass the handler
               />
             </div>
           </div>

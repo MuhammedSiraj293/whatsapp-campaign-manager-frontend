@@ -14,7 +14,9 @@ export default function Chats({
   onLoadMore,
   hasMore,
   loading,
+  loading,
   onSearch, // New prop
+  onToggleSubscription, // New prop for manual unsubscribe/resubscribe
 }) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [contextMenu, setContextMenu] = React.useState({
@@ -54,6 +56,15 @@ export default function Chats({
       x: e.pageX,
       y: e.pageY,
       convoId,
+    });
+    // Find the conversation object to check subscription status
+    const convo = conversations.find((c) => c._id === convoId);
+    setContextMenu({
+      visible: true,
+      x: e.pageX,
+      y: e.pageY,
+      convoId,
+      isSubscribed: convo?.isSubscribed !== false, // Default to true if undefined
     });
   };
 
@@ -231,7 +242,25 @@ export default function Chats({
               closeContextMenu();
             }}
           >
-            Delete chat
+            Delete chat Delete chat
+          </div>
+
+          {/* Unsubscribe / Resubscribe Option */}
+          <div
+            className={`px-4 py-2 hover:bg-[#182229] cursor-pointer ${
+              !contextMenu.isSubscribed ? "text-emerald-400" : "text-yellow-400"
+            }`}
+            onClick={() => {
+              if (onToggleSubscription) {
+                // If currently subscribed (true), we want to set status to false (Unsubscribe)
+                // If currently unsubscribed (false), we want to set status to true (Resubscribe)
+                const newStatus = !contextMenu.isSubscribed;
+                onToggleSubscription(contextMenu.convoId, newStatus);
+              }
+              closeContextMenu();
+            }}
+          >
+            {contextMenu.isSubscribed ? "Unsubscribe" : "Resubscribe"}
           </div>
         </div>
       )}
