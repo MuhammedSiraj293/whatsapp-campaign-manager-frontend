@@ -13,7 +13,6 @@ export default function Chats({
   onDeleteConversation,
   onLoadMore,
   hasMore,
-  hasMore,
   loading,
   onSearch, // New prop
   onToggleSubscription, // New prop for manual unsubscribe/resubscribe
@@ -242,7 +241,7 @@ export default function Chats({
               closeContextMenu();
             }}
           >
-            Delete chat Delete chat
+            Delete chat
           </div>
 
           {/* Unsubscribe / Resubscribe Option */}
