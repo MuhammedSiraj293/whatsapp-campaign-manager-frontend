@@ -13,7 +13,7 @@ export default function Chats({
   onDeleteConversation,
   onLoadMore,
   hasMore,
-  loading,
+  hasMore,
   loading,
   onSearch, // New prop
   onToggleSubscription, // New prop for manual unsubscribe/resubscribe
