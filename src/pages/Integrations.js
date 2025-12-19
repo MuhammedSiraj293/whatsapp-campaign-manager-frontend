@@ -196,34 +196,42 @@ export default function Integrations() {
   // 🚀 EMBEDDED SIGNUP (CONNECT WHATSAPP)
   // ---------------------------------------------
 
-  const [isSdkLoaded, setIsSdkLoaded] = useState(false); // <-- NEW STATE
+  const [isSdkLoaded, setIsSdkLoaded] = useState(false);
 
   useEffect(() => {
-    // Load Facebook SDK
-    window.fbAsyncInit = function () {
-      window.FB.init({
-        appId: process.env.REACT_APP_FACEBOOK_APP_ID,
-        autoLogAppEvents: true,
-        xfbml: true,
-        version: "v20.0",
-      });
-      setIsSdkLoaded(true); // <-- SET LOADED
+    // Function to initialize the SDK
+    const initFacebook = () => {
+      if (window.FB) {
+        try {
+          window.FB.init({
+            appId: process.env.REACT_APP_FACEBOOK_APP_ID,
+            cookie: true, // <-- Added per Meta docs
+            xfbml: true,
+            version: "v20.0",
+          });
+          window.FB.AppEvents.logPageView(); // <-- Added per Meta docs
+          setIsSdkLoaded(true);
+        } catch (e) {
+          console.error("FB Init Failed", e);
+        }
+      }
     };
 
-    // Load the SDK script asynchronously
-    (function (d, s, id) {
-      if (d.getElementById(id)) {
-        // If script already exists, check if FB is already available
-        if (window.FB) setIsSdkLoaded(true);
-        return;
+    // If scripts are already loaded (e.g. from HMR), init immediately
+    if (window.FB) {
+      initFacebook();
+    } else {
+      // Otherwise set the callback
+      window.fbAsyncInit = initFacebook;
+
+      // And inject script if not present
+      if (!document.getElementById("facebook-jssdk")) {
+        const js = document.createElement("script");
+        js.id = "facebook-jssdk";
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        document.body.appendChild(js);
       }
-      var js,
-        fjs = d.getElementsByTagName(s)[0];
-      js = d.createElement(s);
-      js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    })(document, "script", "facebook-jssdk");
+    }
   }, []);
 
   const launchWhatsAppSignup = () => {
