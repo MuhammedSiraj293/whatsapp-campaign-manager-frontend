@@ -1,25 +1,24 @@
-// frontend/src/App.js
-
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Replies from './pages/Replies';
-import Contacts from './pages/Contacts';
-import Enquiries from './pages/Enquiries.js';
-import CreateCampaign from './pages/CreateCampaign';
-import Analytics from './pages/Analytics';
-import CampaignAnalytics from './pages/CampaignAnalytics';
-import TemplateAnalytics from './pages/TemplateAnalytics.js';
-import Logs from './pages/Logs';
-import Users from './pages/Users';
-import Profile from './pages/Profile';
-import Integrations from './pages/Integrations';
-import BotStudio from './pages/BotStudio';   // <-- 1. IMPORT
-import FlowBuilder from './pages/FlowBuilder';
-import Navbar from './components/Navbar';
-import ProtectedRoute from './components/ProtectedRoute';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Replies from "./pages/Replies";
+import Contacts from "./pages/Contacts";
+import Enquiries from "./pages/Enquiries.js";
+import CreateCampaign from "./pages/CreateCampaign";
+import Analytics from "./pages/Analytics";
+import CampaignAnalytics from "./pages/CampaignAnalytics";
+import TemplateAnalytics from "./pages/TemplateAnalytics.js";
+import Logs from "./pages/Logs";
+import Users from "./pages/Users";
+import Profile from "./pages/Profile";
+import Integrations from "./pages/Integrations";
+import BotStudio from "./pages/BotStudio";
+import FlowBuilder from "./pages/FlowBuilder";
+import AutoReply from "./pages/AutoReply"; // <-- NEW IMPORT
+import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
+import "./App.css";
 
 function App() {
   return (
@@ -28,115 +27,139 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/login" element={<Login />} />
-          
+
           {/* --- NEW ROLE-BASED ROUTES --- */}
-          
+
           {/* Viewer, Manager, & Admin Routes */}
-          <Route 
-            path="/replies" 
+          <Route
+            path="/replies"
             element={
-              <ProtectedRoute roles={['admin', 'manager', 'viewer']}>
+              <ProtectedRoute roles={["admin", "manager", "viewer"]}>
                 <Replies />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/profile" 
+          <Route
+            path="/profile"
             element={
-              <ProtectedRoute roles={['admin', 'manager', 'viewer']}>
+              <ProtectedRoute roles={["admin", "manager", "viewer"]}>
                 <Profile />
               </ProtectedRoute>
-            } 
+            }
           />
           {/* --- 2. ADD NEW ENQUIRIES ROUTE (ALL ROLES) --- */}
-          <Route 
-            path="/enquiries" 
+          <Route
+            path="/enquiries"
             element={
-              <ProtectedRoute roles={['admin', 'manager', 'viewer']}>
+              <ProtectedRoute roles={["admin", "manager", "viewer"]}>
                 <Enquiries />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Manager & Admin Routes */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
-              <ProtectedRoute roles={['admin', 'manager']}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/contacts" 
+          <Route
+            path="/contacts"
             element={
-              <ProtectedRoute roles={['admin', 'manager']}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <Contacts />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/create-campaign" 
+          <Route
+            path="/create-campaign"
             element={
-              <ProtectedRoute roles={['admin', 'manager']}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <CreateCampaign />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/analytics" 
+          <Route
+            path="/analytics"
             element={
-              <ProtectedRoute roles={['admin', 'manager']}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <Analytics />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/analytics/:campaignId" 
+          <Route
+            path="/analytics/:campaignId"
             element={
-              <ProtectedRoute roles={['admin', 'manager']}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <CampaignAnalytics />
               </ProtectedRoute>
-            } 
+            }
           />
           {/* This is the new route for a specific template */}
-          <Route 
-            path="/analytics/template/:templateName" 
+          <Route
+            path="/analytics/template/:templateName"
             element={
-              <ProtectedRoute roles={['admin', 'manager']}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <TemplateAnalytics />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Admin Only Routes */}
-          <Route 
-            path="/logs" 
+          <Route
+            path="/logs"
             element={
-              <ProtectedRoute roles={['admin']}>
+              <ProtectedRoute roles={["admin"]}>
                 <Logs />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/users" 
+          <Route
+            path="/users"
             element={
-              <ProtectedRoute roles={['admin']}>
+              <ProtectedRoute roles={["admin"]}>
                 <Users />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/integrations" 
+          <Route
+            path="/integrations"
             element={
-              <ProtectedRoute roles={['admin']}>
+              <ProtectedRoute roles={["admin"]}>
                 <Integrations />
               </ProtectedRoute>
-            } 
+            }
           />
-        {/* --- 2. ADD NEW BOT ROUTES --- */}
-          <Route path="/bot-studio" element={<ProtectedRoute roles={['admin']}><BotStudio /></ProtectedRoute>} />
-          <Route path="/bot-studio/:flowId" element={<ProtectedRoute roles={['admin']}><FlowBuilder /></ProtectedRoute>} />
+          {/* --- 2. ADD NEW BOT ROUTES --- */}
+          <Route
+            path="/bot-studio"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <BotStudio />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bot-studio/:flowId"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <FlowBuilder />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* --- NEW AUTO-REPLY ROUTE --- */}
+          <Route
+            path="/auto-reply"
+            element={
+              <ProtectedRoute roles={["admin", "manager"]}>
+                <AutoReply />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>

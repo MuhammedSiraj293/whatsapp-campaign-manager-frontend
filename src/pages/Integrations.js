@@ -193,16 +193,111 @@ export default function Integrations() {
   };
 
   // ---------------------------------------------
+  // 🚀 EMBEDDED SIGNUP (CONNECT WHATSAPP)
+  // ---------------------------------------------
+
+  useEffect(() => {
+    // Load Facebook SDK
+    window.fbAsyncInit = function () {
+      window.FB.init({
+        appId: process.env.REACT_APP_FACEBOOK_APP_ID, // NEED THIS IN .ENV
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: "v20.0",
+      });
+    };
+
+    // Load the SDK script asynchronously
+    (function (d, s, id) {
+      var js,
+        fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) {
+        return;
+      }
+      js = d.createElement(s);
+      js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    })(document, "script", "facebook-jssdk");
+  }, []);
+
+  const launchWhatsAppSignup = () => {
+    if (!window.FB) {
+      alert("Facebook SDK is loading... please wait.");
+      return;
+    }
+
+    // Launch Facebook Login with Configuration ID for Embedded Signup
+    window.FB.login(
+      function (response) {
+        if (response.authResponse && response.authResponse.code) {
+          const code = response.authResponse.code;
+          // Send code to backend
+          handleEmbeddedSignup(code);
+        } else {
+          console.log("User cancelled login or did not fully authorize.");
+        }
+      },
+      {
+        config_id: process.env.REACT_APP_FACEBOOK_CONFIG_ID, // NEED THIS IN .ENV
+        response_type: "code",
+        override_default_response_type: true,
+        extras: {
+          setup: {}, // Triggers Embedded Signup
+        },
+      }
+    );
+  };
+
+  const handleEmbeddedSignup = async (code) => {
+    try {
+      const res = await authFetch("/waba/connect", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      });
+      if (res.success) {
+        alert("WhatsApp Connected Successfully!");
+        fetchAllData(); // Refresh list
+      } else {
+        alert("Connection failed: " + (res.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Connection error: " + err.message);
+    }
+  };
+
+  // ---------------------------------------------
   // ✨ UI
   // ---------------------------------------------
   return (
     <div className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black">
       {/* LEFT COLUMN — Add Accounts & Phones */}
       <div className="flex flex-col gap-8">
-        {/* Add WABA Account */}
+        {/* 🆕 CONNECT WHATSAPP (Embedded Signup) */}
+        <div className="bg-[#202d33] p-6 rounded-lg shadow-lg border border-emerald-600/30">
+          <h2 className="text-xl font-bold text-white mb-2">
+            Connect WhatsApp
+          </h2>
+          <p className="text-sm text-gray-400 mb-4">
+            Use your Facebook account to automatically connect your WhatsApp
+            Business number.
+          </p>
+          <button
+            onClick={launchWhatsAppSignup}
+            className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded flex items-center justify-center gap-2"
+          >
+            {/* Facebook Icon */}
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+            </svg>
+            Connect with Facebook
+          </button>
+        </div>
+
+        {/* Add WABA Account (Manual) */}
         <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-bold text-white mb-4">
-            Add New WABA Account
+            Manually Add WABA Account
           </h2>
 
           <form onSubmit={handleAddAccount} className="flex flex-col gap-4">
