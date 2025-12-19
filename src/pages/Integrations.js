@@ -203,13 +203,17 @@ export default function Integrations() {
     const initFacebook = () => {
       if (window.FB) {
         try {
+          console.log("Initializing FB SDK...", {
+            appId: process.env.REACT_APP_FACEBOOK_APP_ID,
+          });
           window.FB.init({
             appId: process.env.REACT_APP_FACEBOOK_APP_ID,
-            cookie: true, // <-- Added per Meta docs
+            cookie: true,
             xfbml: true,
             version: "v20.0",
           });
-          window.FB.AppEvents.logPageView(); // <-- Added per Meta docs
+          console.log("FB.init called successfully.");
+          window.FB.AppEvents.logPageView();
           setIsSdkLoaded(true);
         } catch (e) {
           console.error("FB Init Failed", e);
