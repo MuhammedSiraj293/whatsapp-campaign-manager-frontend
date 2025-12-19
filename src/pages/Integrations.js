@@ -196,24 +196,29 @@ export default function Integrations() {
   // 🚀 EMBEDDED SIGNUP (CONNECT WHATSAPP)
   // ---------------------------------------------
 
+  const [isSdkLoaded, setIsSdkLoaded] = useState(false); // <-- NEW STATE
+
   useEffect(() => {
     // Load Facebook SDK
     window.fbAsyncInit = function () {
       window.FB.init({
-        appId: process.env.REACT_APP_FACEBOOK_APP_ID, // NEED THIS IN .ENV
+        appId: process.env.REACT_APP_FACEBOOK_APP_ID,
         autoLogAppEvents: true,
         xfbml: true,
         version: "v20.0",
       });
+      setIsSdkLoaded(true); // <-- SET LOADED
     };
 
     // Load the SDK script asynchronously
     (function (d, s, id) {
-      var js,
-        fjs = d.getElementsByTagName(s)[0];
       if (d.getElementById(id)) {
+        // If script already exists, check if FB is already available
+        if (window.FB) setIsSdkLoaded(true);
         return;
       }
+      var js,
+        fjs = d.getElementsByTagName(s)[0];
       js = d.createElement(s);
       js.id = id;
       js.src = "https://connect.facebook.net/en_US/sdk.js";
@@ -222,7 +227,7 @@ export default function Integrations() {
   }, []);
 
   const launchWhatsAppSignup = () => {
-    if (!window.FB) {
+    if (!isSdkLoaded || !window.FB) {
       alert("Facebook SDK is loading... please wait.");
       return;
     }
@@ -284,7 +289,10 @@ export default function Integrations() {
           </p>
           <button
             onClick={launchWhatsAppSignup}
-            className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded flex items-center justify-center gap-2"
+            disabled={!isSdkLoaded}
+            className={`w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded flex items-center justify-center gap-2 ${
+              !isSdkLoaded ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             {/* Facebook Icon */}
             <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
