@@ -353,7 +353,9 @@ const Properties = () => {
                   <label className="block mb-2 text-sm font-medium text-gray-300">
                     Highlights / Badges
                   </label>
-                  <div className="flex flex-wrap gap-2">
+
+                  {/* Preset Toggles */}
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {[
                       {
                         label: "Hot Deal 🔥",
@@ -387,8 +389,8 @@ const Properties = () => {
                         onClick={() => {
                           setFormData((prev) => {
                             const newTags = prev.tags.includes(tag.value)
-                              ? prev.tags.filter((t) => t !== tag.value) // Remove
-                              : [...prev.tags, tag.value]; // Add
+                              ? prev.tags.filter((t) => t !== tag.value)
+                              : [...prev.tags, tag.value];
                             return { ...prev, tags: newTags };
                           });
                         }}
@@ -402,6 +404,71 @@ const Properties = () => {
                       </button>
                     ))}
                   </div>
+
+                  {/* Custom Tag Input */}
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      placeholder="Type custom tag (e.g. Offplan, Rental)..."
+                      className="bg-[#2c3943] border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 placeholder-gray-500"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const val = e.target.value.trim();
+                          if (val && !formData.tags.includes(val)) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              tags: [...prev.tags, val],
+                            }));
+                            e.target.value = "";
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="text-gray-400 text-sm"
+                      onClick={(e) => {
+                        const input = e.target.previousSibling;
+                        const val = input.value.trim();
+                        if (val && !formData.tags.includes(val)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            tags: [...prev.tags, val],
+                          }));
+                          input.value = "";
+                        }
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  {/* Active Tags Display (Removable) */}
+                  {formData.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-3 bg-[#111b21] rounded-lg border border-gray-700">
+                      {formData.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-white border border-gray-600"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                tags: prev.tags.filter((t) => t !== tag),
+                              }))
+                            }
+                            className="text-gray-400 hover:text-white ml-1"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}
