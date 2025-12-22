@@ -28,7 +28,8 @@ const getNavigation = (userRole) => {
     { name: "Users", href: "/users", roles: ["admin"] },
     { name: "Integrations", href: "/integrations", roles: ["admin"] }, // <-- NEW LINK
     { name: "Bot Studio", href: "/bot-studio", roles: ["admin"] },
-    { name: "Automation", href: "/auto-reply", roles: ["admin", "manager"] }, // <-- NEW LINK
+    { name: "Automation", href: "/auto-reply", roles: ["admin", "manager"] },
+    { name: "Properties", href: "/properties", roles: ["admin", "manager"] }, // <-- NEW LINK
   ];
   // Filter the routes based on the current user's role
   return allRoutes.filter((route) => route.roles.includes(userRole));

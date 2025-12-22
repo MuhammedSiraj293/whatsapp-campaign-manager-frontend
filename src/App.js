@@ -15,7 +15,8 @@ import Profile from "./pages/Profile";
 import Integrations from "./pages/Integrations";
 import BotStudio from "./pages/BotStudio";
 import FlowBuilder from "./pages/FlowBuilder";
-import AutoReply from "./pages/AutoReply"; // <-- NEW IMPORT
+import AutoReply from "./pages/AutoReply";
+import Properties from "./pages/Properties"; // <-- NEW IMPORT
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
@@ -157,6 +158,15 @@ function App() {
             element={
               <ProtectedRoute roles={["admin", "manager"]}>
                 <AutoReply />
+              </ProtectedRoute>
+            }
+          />
+          {/* --- NEW PROPERTIES ROUTE --- */}
+          <Route
+            path="/properties"
+            element={
+              <ProtectedRoute roles={["admin", "manager"]}>
+                <Properties />
               </ProtectedRoute>
             }
           />
