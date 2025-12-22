@@ -19,6 +19,7 @@ const Properties = () => {
     unitType: "",
     handoverDate: "",
     description: "",
+    tags: [],
     isActive: true,
   });
 
@@ -55,6 +56,7 @@ const Properties = () => {
         unitType: property.unitType || "",
         handoverDate: property.handoverDate || "",
         description: property.description || "",
+        tags: property.tags || [],
         isActive: property.isActive,
       });
       setCurrentId(property._id);
@@ -70,6 +72,7 @@ const Properties = () => {
         unitType: "",
         handoverDate: "",
         description: "",
+        tags: [],
         isActive: true,
       });
       setIsEdit(false);
@@ -146,8 +149,26 @@ const Properties = () => {
                     key={p._id}
                     className="border-b border-gray-700 hover:bg-[#2a373f]"
                   >
-                    <td className="px-6 py-4 font-medium text-white">
-                      {p.name}
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-white">{p.name}</div>
+                      {p.tags && p.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {p.tags.map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                                tag.includes("Hot")
+                                  ? "text-red-400 border-red-400 bg-red-400/10"
+                                  : tag.includes("New")
+                                  ? "text-green-400 border-green-400 bg-green-400/10"
+                                  : "text-blue-400 border-blue-400 bg-blue-400/10"
+                              }`}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">{p.developer}</td>
                     <td className="px-6 py-4">
@@ -325,6 +346,62 @@ const Properties = () => {
                     onChange={handleChange}
                     className="bg-[#2c3943] border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 placeholder-gray-500"
                   />
+                </div>
+
+                {/* Highlights / Tags */}
+                <div className="col-span-1 md:col-span-2">
+                  <label className="block mb-2 text-sm font-medium text-gray-300">
+                    Highlights / Badges
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      {
+                        label: "Hot Deal 🔥",
+                        value: "Hot Deal",
+                        color: "text-red-400 border-red-400",
+                      },
+                      {
+                        label: "Super Hot 🔫",
+                        value: "Super Hot Deal",
+                        color: "text-orange-400 border-orange-400",
+                      },
+                      {
+                        label: "New Listing 🆕",
+                        value: "New Listing",
+                        color: "text-green-400 border-green-400",
+                      },
+                      {
+                        label: "New Launch 🚀",
+                        value: "New Launch",
+                        color: "text-purple-400 border-purple-400",
+                      },
+                      {
+                        label: "Direct Developer 🏗️",
+                        value: "Direct from Developer",
+                        color: "text-blue-400 border-blue-400",
+                      },
+                    ].map((tag) => (
+                      <button
+                        key={tag.value}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => {
+                            const newTags = prev.tags.includes(tag.value)
+                              ? prev.tags.filter((t) => t !== tag.value) // Remove
+                              : [...prev.tags, tag.value]; // Add
+                            return { ...prev, tags: newTags };
+                          });
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                          formData.tags.includes(tag.value)
+                            ? `bg-opacity-20 bg-white ${tag.color}`
+                            : "border-gray-600 text-gray-400 hover:border-gray-500"
+                        }`}
+                      >
+                        {tag.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Description */}
