@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import config from "../config";
+import { API_URL } from "../config";
 import {
   Box,
   Button,
@@ -49,7 +49,7 @@ const Properties = () => {
   // Fetch Properties
   const fetchProperties = async () => {
     try {
-      const res = await axios.get(`${config.API_URL}/api/properties`);
+      const res = await axios.get(`${API_URL}/api/properties`);
       setProperties(res.data);
     } catch (err) {
       console.error("Error fetching properties:", err);
@@ -114,12 +114,9 @@ const Properties = () => {
   const handleSubmit = async () => {
     try {
       if (isEdit) {
-        await axios.put(
-          `${config.API_URL}/api/properties/${currentId}`,
-          formData
-        );
+        await axios.put(`${API_URL}/api/properties/${currentId}`, formData);
       } else {
-        await axios.post(`${config.API_URL}/api/properties`, formData);
+        await axios.post(`${API_URL}/api/properties`, formData);
       }
       fetchProperties();
       handleClose();
@@ -133,7 +130,7 @@ const Properties = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this property?")) {
       try {
-        await axios.delete(`${config.API_URL}/api/properties/${id}`);
+        await axios.delete(`${API_URL}/api/properties/${id}`);
         fetchProperties();
       } catch (err) {
         console.error("Error deleting property:", err);
