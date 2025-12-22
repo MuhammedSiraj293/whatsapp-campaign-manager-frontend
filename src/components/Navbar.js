@@ -1,39 +1,10 @@
-// frontend/src/components/Navbar.js
-
 import React, { useContext, useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Disclosure, Menu } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AuthContext } from "../context/AuthContext";
-import { useWaba } from "../context/WabaContext"; // <-- 1. IMPORT WABA CONTEXT
-import { authFetch } from "../services/api"; // <-- 2. IMPORT AUTH FETCH
-
-// This is a helper function to determine which links a user can see
-const getNavigation = (userRole) => {
-  const allRoutes = [
-    { name: "Dashboard", href: "/", roles: ["admin", "manager"] },
-    {
-      name: "Replies",
-      href: "/replies",
-      roles: ["admin", "manager", "viewer"],
-    },
-    {
-      name: "Enquiries",
-      href: "/enquiries",
-      roles: ["admin", "manager", "viewer"],
-    }, // <-- NEW LINK
-    { name: "Contacts", href: "/contacts", roles: ["admin", "manager"] },
-    { name: "Analytics", href: "/analytics", roles: ["admin", "manager"] },
-    { name: "Logs", href: "/logs", roles: ["admin"] },
-    { name: "Users", href: "/users", roles: ["admin"] },
-    { name: "Integrations", href: "/integrations", roles: ["admin"] }, // <-- NEW LINK
-    { name: "Bot Studio", href: "/bot-studio", roles: ["admin"] },
-    { name: "Automation", href: "/auto-reply", roles: ["admin", "manager"] },
-    { name: "Properties", href: "/properties", roles: ["admin", "manager"] }, // <-- NEW LINK
-  ];
-  // Filter the routes based on the current user's role
-  return allRoutes.filter((route) => route.roles.includes(userRole));
-};
+import { useWaba } from "../context/WabaContext";
+import { authFetch } from "../services/api";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -41,44 +12,38 @@ function classNames(...classes) {
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
-  const { activeWaba, selectWaba } = useWaba(); // <-- 3. USE WABA CONTEXT
-  const [wabaAccounts, setWabaAccounts] = useState([]); // <-- 4. STATE FOR ACCOUNTS
+  const { activeWaba, selectWaba } = useWaba();
+  const [wabaAccounts, setWabaAccounts] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get the navigation items that are allowed for the current user's role
-  const navigation = user ? getNavigation(user.role) : [];
-
-  // 5. FETCH ALL WABA ACCOUNTS ON LOAD
   useEffect(() => {
     if (user) {
-      // Only fetch if user is logged in
       const fetchAccounts = async () => {
         try {
           const data = await authFetch("/waba/accounts");
           if (data.success) {
             setWabaAccounts(data.data);
-            // If no WABA is active, select the first one by default
             if (!activeWaba && data.data.length > 0) {
               selectWaba(data.data[0]._id);
             }
           }
         } catch (error) {
-          console.error("Error fetching WABA accounts for navbar:", error);
+          console.error("Error fetching WABA accounts:", error);
         }
       };
       fetchAccounts();
     }
-  }, [user, activeWaba, selectWaba]); // Rerun if user logs in
+  }, [user, activeWaba, selectWaba]);
 
   const handleLogout = () => {
     logout();
-    selectWaba(null); // Clear active WABA on logout
+    selectWaba(null);
     navigate("/login");
   };
+
   const handleWabaChange = (wabaId) => {
     selectWaba(wabaId);
-    // Reload the page to force all components to refetch data
     window.location.reload();
   };
 
@@ -86,11 +51,58 @@ export default function Navbar() {
     wabaAccounts.find((a) => a._id === activeWaba)?.accountName ||
     "Select Account";
 
-  return (
-    <Disclosure
-      as="nav"
-      className="relative bg-black after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10"
+  // Shared Helper for Hover Dropdowns
+  const NavDropdown = ({ title, active, children }) => (
+    <div className="relative group h-full flex items-center px-1">
+      <button
+        className={classNames(
+          active
+            ? "text-white bg-gray-900"
+            : "text-gray-300 hover:text-white hover:bg-gray-800",
+          "rounded-md px-3 py-2 text-sm font-medium flex items-center gap-1 transition-colors duration-200"
+        )}
+      >
+        {title}
+        <svg
+          className="w-4 h-4 text-gray-400 group-hover:text-white transition-transform duration-200 group-hover:rotate-180"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {/* Dropdown Menu - Hover Logic */}
+      <div className="absolute top-full left-0 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-out transform group-hover:translate-y-0 translate-y-2 z-50">
+        <div className="bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden ring-1 ring-black ring-opacity-5">
+          <div className="py-1">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const DropdownItem = ({ to, children }) => (
+    <Link
+      to={to}
+      className={classNames(
+        location.pathname === to
+          ? "bg-gray-700 text-white"
+          : "text-gray-300 hover:bg-gray-700 hover:text-white",
+        "block px-4 py-2 text-sm transition-colors duration-150"
+      )}
     >
+      {children}
+    </Link>
+  );
+
+  return (
+    <Disclosure as="nav" className="relative bg-black border-b border-gray-800">
       {({ open }) => (
         <>
           <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -107,56 +119,135 @@ export default function Navbar() {
                 </Disclosure.Button>
               </div>
 
-              {/* Logo + navigation */}
+              {/* Logo + Navigation */}
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="flex shrink-0 items-center">
                   <img
                     alt="Logo"
                     src="https://thecapitalavenue.com/wp-content/uploads/2025/09/Capital-Avenue-White.png"
-                    className="h-8 w-auto"
+                    className="h-8 w-auto hover:opacity-90 transition-opacity cursor-pointer"
+                    onClick={() => navigate("/")}
                   />
                 </div>
                 {user && (
                   <div className="hidden sm:ml-6 sm:block">
-                    <div className="flex space-x-4">
-                      {navigation.map((item) => (
+                    <div className="flex space-x-1 h-full items-center">
+                      {/* 1. DASHBOARD */}
+                      {user.role !== "viewer" && (
                         <Link
-                          key={item.name}
-                          to={item.href}
+                          to="/"
                           className={classNames(
-                            location.pathname === item.href
-                              ? "bg-gray-950/50 text-white"
-                              : "text-gray-300 hover:bg-white/5 hover:text-white",
-                            "rounded-md px-3 py-2 text-sm font-medium"
+                            location.pathname === "/"
+                              ? "bg-gray-900 text-white"
+                              : "text-gray-300 hover:bg-gray-800 hover:text-white",
+                            "rounded-md px-3 py-2 text-sm font-medium transition-colors"
                           )}
                         >
-                          {item.name}
+                          Dashboard
                         </Link>
-                      ))}
+                      )}
+
+                      {/* 2. REPLIES */}
+                      <Link
+                        to="/replies"
+                        className={classNames(
+                          location.pathname === "/replies"
+                            ? "bg-gray-900 text-white"
+                            : "text-gray-300 hover:bg-gray-800 hover:text-white",
+                          "rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                        )}
+                      >
+                        Replies
+                      </Link>
+
+                      {/* 3. CRM DROPDOWN */}
+                      <NavDropdown
+                        title="CRM"
+                        active={[
+                          "/enquiries",
+                          "/contacts",
+                          "/properties",
+                        ].includes(location.pathname)}
+                      >
+                        <DropdownItem to="/enquiries">Enquiries</DropdownItem>
+                        {user.role !== "viewer" && (
+                          <>
+                            <DropdownItem to="/contacts">Contacts</DropdownItem>
+                            <DropdownItem to="/properties">
+                              Properties
+                            </DropdownItem>
+                          </>
+                        )}
+                      </NavDropdown>
+
+                      {/* 4. AUTOMATION DROPDOWN */}
+                      {user.role !== "viewer" && (
+                        <NavDropdown
+                          title="Automation"
+                          active={["/auto-reply", "/bot-studio"].includes(
+                            location.pathname
+                          )}
+                        >
+                          <DropdownItem to="/auto-reply">
+                            Auto-Reply
+                          </DropdownItem>
+                          {user.role === "admin" && (
+                            <DropdownItem to="/bot-studio">
+                              Bot Studio
+                            </DropdownItem>
+                          )}
+                        </NavDropdown>
+                      )}
+
+                      {/* 5. ADMIN DROPDOWN */}
+                      {user.role !== "viewer" && (
+                        <NavDropdown
+                          title="Admin"
+                          active={[
+                            "/analytics",
+                            "/users",
+                            "/logs",
+                            "/integrations",
+                          ].includes(location.pathname)}
+                        >
+                          <DropdownItem to="/analytics">Analytics</DropdownItem>
+                          {user.role === "admin" && (
+                            <>
+                              <DropdownItem to="/users">Users</DropdownItem>
+                              <DropdownItem to="/logs">Logs</DropdownItem>
+                              <DropdownItem to="/integrations">
+                                Integrations
+                              </DropdownItem>
+                            </>
+                          )}
+                        </NavDropdown>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Right side */}
+              {/* Right Side: WABA & Profile */}
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 {user ? (
                   <>
-                    {/* --- 6. NEW WABA SELECTOR DROPDOWN --- */}
+                    {/* WABA Dropdown (Click is better for selection) */}
                     <Menu as="div" className="relative ml-3">
-                      <Menu.Button className="relative flex rounded-md bg-fuchsia-900 capitalize px-4 py-2 text-sm text-gray-100 hover:bg-pink-950">
+                      <Menu.Button className="relative flex rounded-md bg-fuchsia-900/80 capitalize px-4 py-2 text-sm text-gray-100 hover:bg-fuchsia-800 transition-colors border border-fuchsia-700 shadow-md backdrop-blur-sm">
                         <span className="sr-only">Select WABA</span>
                         {activeWabaName}
                       </Menu.Button>
-                      <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-[#202d33] py-1 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-700">
                         {wabaAccounts.map((account) => (
                           <Menu.Item key={account._id}>
                             {({ active }) => (
                               <button
                                 onClick={() => handleWabaChange(account._id)}
                                 className={classNames(
-                                  active ? "bg-white/5" : "",
-                                  "block w-full text-left px-4 py-2 text-sm capitalize text-gray-300"
+                                  active
+                                    ? "bg-[#2a373f] text-white"
+                                    : "text-gray-300",
+                                  "block w-full text-left px-4 py-2 text-sm capitalize transition-colors"
                                 )}
                               >
                                 {account.accountName}
@@ -166,51 +257,56 @@ export default function Navbar() {
                         ))}
                       </Menu.Items>
                     </Menu>
+
+                    {/* Profile Dropdown */}
                     <Menu as="div" className="relative ml-3">
-                      <Menu.Button className="relative flex rounded-full">
+                      <Menu.Button className="relative flex rounded-full ring-2 ring-transparent hover:ring-gray-500 transition-all">
                         <span className="sr-only">Open user menu</span>
                         <img
                           alt="profile"
                           src="https://thecapitalavenue.com/wp-content/uploads/2025/08/Group-3.svg"
-                          className="size-8 rounded-full bg-gray-100"
+                          className="size-9 rounded-full bg-gray-100"
                         />
                       </Menu.Button>
-                      <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                        <div className="px-4 py-2 text-sm text-white border-b border-gray-700">
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-gray-400 capitalize">
+                      <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-[#202d33] py-1 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-700">
+                        <div className="px-4 py-3 text-sm text-white border-b border-gray-700/50 bg-[#1a252a]/50">
+                          <p className="font-semibold">{user.name}</p>
+                          <p className="text-gray-400 capitalize text-xs mt-0.5">
                             {user.role}
                           </p>
                         </div>
-
-                        {/* --- THIS IS THE NEW LINK --- */}
-                        <Menu.Item>
-                          {({ active }) => (
-                            <Link
-                              to="/profile"
-                              className={classNames(
-                                active ? "bg-white/5" : "",
-                                "block px-4 py-2 text-sm text-gray-300"
-                              )}
-                            >
-                              My Profile
-                            </Link>
-                          )}
-                        </Menu.Item>
-
-                        <Menu.Item>
-                          {({ active }) => (
-                            <button
-                              onClick={handleLogout}
-                              className={classNames(
-                                active ? "bg-white/5" : "",
-                                "block w-full text-left px-4 py-2 text-sm text-gray-300"
-                              )}
-                            >
-                              Logout
-                            </button>
-                          )}
-                        </Menu.Item>
+                        <div className="py-1">
+                          <Menu.Item>
+                            {({ active }) => (
+                              <Link
+                                to="/profile"
+                                className={classNames(
+                                  active
+                                    ? "bg-[#2a373f] text-white"
+                                    : "text-gray-300",
+                                  "block px-4 py-2 text-sm transition-colors"
+                                )}
+                              >
+                                My Profile
+                              </Link>
+                            )}
+                          </Menu.Item>
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={handleLogout}
+                                className={classNames(
+                                  active
+                                    ? "bg-[#2a373f] text-orange-400"
+                                    : "text-gray-300",
+                                  "block w-full text-left px-4 py-2 text-sm transition-colors"
+                                )}
+                              >
+                                Logout
+                              </button>
+                            )}
+                          </Menu.Item>
+                        </div>
                       </Menu.Items>
                     </Menu>
                   </>
@@ -226,25 +322,38 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile menu */}
+          {/* Mobile Menu */}
           {user && (
-            <Disclosure.Panel className="sm:hidden">
+            <Disclosure.Panel className="sm:hidden bg-[#111b21] border-b border-gray-800">
               <div className="space-y-1 px-2 pt-2 pb-3">
-                {navigation.map((item) => (
-                  <Disclosure.Button
-                    as={Link}
-                    key={item.name}
-                    to={item.href}
-                    className={classNames(
-                      location.pathname === item.href
-                        ? "bg-gray-950/50 text-white"
-                        : "text-gray-300 hover:bg-white/5 hover:text-white",
-                      "block rounded-md px-3 py-2 text-base font-medium"
-                    )}
-                  >
-                    {item.name}
-                  </Disclosure.Button>
-                ))}
+                <Disclosure.Button
+                  as={Link}
+                  to="/"
+                  className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                >
+                  Dashboard
+                </Disclosure.Button>
+                <Disclosure.Button
+                  as={Link}
+                  to="/replies"
+                  className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                >
+                  Replies
+                </Disclosure.Button>
+                <Disclosure.Button
+                  as={Link}
+                  to="/enquiries"
+                  className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                >
+                  Enquiries
+                </Disclosure.Button>
+                <Disclosure.Button
+                  as={Link}
+                  to="/contacts"
+                  className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                >
+                  Contacts
+                </Disclosure.Button>
                 <Disclosure.Button
                   as="button"
                   onClick={handleLogout}
