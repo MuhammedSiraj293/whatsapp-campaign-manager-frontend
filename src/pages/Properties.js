@@ -159,9 +159,9 @@ const Properties = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
+    <div className="p-2 md:p-4 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-white">
             Properties & Projects
           </h1>
@@ -174,7 +174,7 @@ const Properties = () => {
         </div>
 
         {/* --- FILTERS SECTION --- */}
-        <div className="bg-[#202d33] p-4 rounded-lg shadow-lg mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-[#202d33] p-3 rounded-lg shadow-lg mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Search */}
           <div className="col-span-1 md:col-span-1">
             <input
@@ -418,10 +418,10 @@ const Properties = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Name */}
                 <div className="col-span-1">
-                  <label className="block mb-2 text-sm font-medium text-gray-300">
+                  <label className="block mb-1 text-sm font-medium text-gray-300">
                     Project Name *
                   </label>
                   <input
@@ -435,7 +435,7 @@ const Properties = () => {
                 </div>
                 {/* Developer */}
                 <div className="col-span-1">
-                  <label className="block mb-2 text-sm font-medium text-gray-300">
+                  <label className="block mb-1 text-sm font-medium text-gray-300">
                     Developer
                   </label>
                   <input
@@ -449,7 +449,7 @@ const Properties = () => {
 
                 {/* Type */}
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-300">
+                  <label className="block mb-1 text-sm font-medium text-gray-300">
                     Property Type
                   </label>
                   <input
@@ -463,7 +463,7 @@ const Properties = () => {
                 </div>
                 {/* Unit Type */}
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-300">
+                  <label className="block mb-1 text-sm font-medium text-gray-300">
                     Unit Type
                   </label>
                   <input
@@ -567,6 +567,46 @@ const Properties = () => {
                         label: "Direct Developer 🏗️",
                         value: "Direct from Developer",
                         color: "text-blue-400 border-blue-400",
+                      },
+                      {
+                        label: "Ready to Move 🔑",
+                        value: "Ready to Move",
+                        color: "text-emerald-400 border-emerald-400",
+                      },
+                      {
+                        label: "High ROI 📈",
+                        value: "High ROI",
+                        color: "text-yellow-400 border-yellow-400",
+                      },
+                      {
+                        label: "Off Plan 🏗️",
+                        value: "Off Plan",
+                        color: "text-cyan-400 border-cyan-400",
+                      },
+                      {
+                        label: "Rental 🏠",
+                        value: "Rental",
+                        color: "text-indigo-400 border-indigo-400",
+                      },
+                      {
+                        label: "Leasing 📝",
+                        value: "Leasing",
+                        color: "text-slate-300 border-slate-300",
+                      },
+                      {
+                        label: "Payment Plan 💳",
+                        value: "Payment Plan",
+                        color: "text-pink-400 border-pink-400",
+                      },
+                      {
+                        label: "Luxury ✨",
+                        value: "Luxury",
+                        color: "text-amber-200 border-amber-200",
+                      },
+                      {
+                        label: "Waterfront 🌊",
+                        value: "Waterfront",
+                        color: "text-teal-400 border-teal-400",
                       },
                     ].map((tag) => (
                       <button
