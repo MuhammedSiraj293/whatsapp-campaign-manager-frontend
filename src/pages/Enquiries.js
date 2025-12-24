@@ -76,9 +76,6 @@ export default function Enquiries() {
                   Phone
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
                   Project
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
@@ -115,9 +112,6 @@ export default function Enquiries() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {enquiry.phoneNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {enquiry.email || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {enquiry.projectName || "N/A"}
