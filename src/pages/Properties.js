@@ -160,7 +160,7 @@ const Properties = () => {
 
   return (
     <div className="p-2 md:p-4 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full px-2 md:px-4">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-white">
             Properties & Projects
@@ -405,7 +405,7 @@ const Properties = () => {
       {/* Modal Overlay (Unchanged Form Logic) */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4 overflow-y-auto backdrop-blur-sm">
-          <div className="bg-[#202d33] rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700">
+          <div className="bg-[#202d33] rounded-xl shadow-2xl w-full max-w-4xl border border-gray-700">
             <div className="flex justify-between items-center p-5 border-b border-gray-700">
               <h3 className="text-xl font-bold text-white">
                 {isEdit ? "Edit Property" : "Add New Property"}
@@ -418,9 +418,9 @@ const Properties = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Name */}
-                <div className="col-span-1">
+                <div className="col-span-1 md:col-span-3">
                   <label className="block mb-1 text-sm font-medium text-gray-300">
                     Project Name *
                   </label>
@@ -535,7 +535,7 @@ const Properties = () => {
                 </div>
 
                 {/* Highlights / Tags */}
-                <div className="col-span-1 md:col-span-2">
+                <div className="col-span-1 md:col-span-3">
                   <label className="block mb-2 text-sm font-medium text-gray-300">
                     Highlights / Badges
                   </label>
@@ -698,7 +698,7 @@ const Properties = () => {
                 </div>
 
                 {/* Description */}
-                <div className="col-span-1 md:col-span-2">
+                <div className="col-span-1 md:col-span-3">
                   <label className="block mb-2 text-sm font-medium text-gray-300">
                     Description / Selling Points
                   </label>
@@ -713,7 +713,7 @@ const Properties = () => {
                 </div>
 
                 {/* Active Toggle */}
-                <div className="col-span-1 md:col-span-2 flex items-center">
+                <div className="col-span-1 md:col-span-3 flex items-center">
                   <input
                     type="checkbox"
                     id="isActive"
