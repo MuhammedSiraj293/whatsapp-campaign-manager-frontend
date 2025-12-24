@@ -1,12 +1,27 @@
+// frontend/src/pages/Properties.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+
+  // Pagination & Filter State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  const [search, setSearch] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -23,18 +38,49 @@ const Properties = () => {
     isActive: true,
   });
 
-  const fetchProperties = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/api/properties`);
-      setProperties(res.data);
-    } catch (err) {
-      console.error("Error fetching properties:", err);
-    }
-  };
+  // Debounce Search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1); // Reset to page 1 on new search
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
+  // Fetch when filters change
   useEffect(() => {
     fetchProperties();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, debouncedSearch, locationFilter, typeFilter, statusFilter]);
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page,
+        limit,
+        search: debouncedSearch,
+        location: locationFilter,
+        propertyType: typeFilter,
+        status: statusFilter,
+      });
+
+      const res = await axios.get(`${API_URL}/api/properties?${params}`);
+
+      // Handle both new paginated response and old array response (fallback)
+      if (res.data.pagination) {
+        setProperties(res.data.data);
+        setTotalPages(res.data.pagination.totalPages);
+        setTotalRecords(res.data.count);
+      } else {
+        setProperties(res.data); // Fallback if backend not updated yet
+      }
+    } catch (err) {
+      console.error("Error fetching properties:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -115,7 +161,7 @@ const Properties = () => {
   return (
     <div className="p-4 md:p-8 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <h1 className="text-3xl font-bold text-white">
             Properties & Projects
           </h1>
@@ -125,6 +171,64 @@ const Properties = () => {
           >
             <span>+</span> Add Property
           </button>
+        </div>
+
+        {/* --- FILTERS SECTION --- */}
+        <div className="bg-[#202d33] p-4 rounded-lg shadow-lg mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Search */}
+          <div className="col-span-1 md:col-span-1">
+            <input
+              type="text"
+              placeholder="Search Project / Tag..."
+              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <input
+              type="text"
+              placeholder="Filter Location..."
+              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              value={locationFilter}
+              onChange={(e) => {
+                setLocationFilter(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Type */}
+          <div>
+            <input
+              type="text"
+              placeholder="Filter Type (Villa...)"
+              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Status */}
+          <div>
+            <select
+              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+          </div>
         </div>
 
         {/* Table Container */}
@@ -143,85 +247,167 @@ const Properties = () => {
                   <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {properties.map((p) => (
-                  <tr
-                    key={p._id}
-                    className="border-b border-gray-700 hover:bg-[#2a373f]"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-white">{p.name}</div>
-                      {p.tags && p.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {p.tags.map((tag, idx) => (
-                            <span
-                              key={idx}
-                              className={`text-[10px] px-2 py-0.5 rounded-full border ${
-                                tag.includes("Hot")
-                                  ? "text-red-400 border-red-400 bg-red-400/10"
-                                  : tag.includes("New")
-                                  ? "text-green-400 border-green-400 bg-green-400/10"
-                                  : "text-blue-400 border-blue-400 bg-blue-400/10"
-                              }`}
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">{p.developer}</td>
-                    <td className="px-6 py-4">
-                      {p.propertyType} {p.unitType ? `(${p.unitType})` : ""}
-                    </td>
-                    <td className="px-6 py-4">{p.location}</td>
-                    <td className="px-6 py-4">{p.priceRange}</td>
-                    <td className="px-6 py-4">{p.handoverDate}</td>
-                    <td className="px-6 py-4">
-                      {p.isActive ? (
-                        <span className="text-green-400">Active</span>
-                      ) : (
-                        <span className="text-red-400">Inactive</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleOpen(p)}
-                        className="font-medium text-sky-400 hover:underline mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p._id)}
-                        className="font-medium text-red-500 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {properties.length === 0 && (
+              <tbody className="divide-y divide-gray-700">
+                {loading ? (
                   <tr>
                     <td
                       colSpan="8"
-                      className="px-6 py-10 text-center text-gray-500"
+                      className="px-6 py-8 text-center text-emerald-500 animate-pulse"
                     >
-                      No properties found. Add your first project!
+                      Loading properties...
                     </td>
                   </tr>
+                ) : properties.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="8"
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
+                      No properties found.
+                    </td>
+                  </tr>
+                ) : (
+                  properties.map((p) => (
+                    <tr
+                      key={p._id}
+                      className="border-b border-gray-700 hover:bg-[#2a373f] transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-white text-base">
+                          {p.name}
+                        </div>
+                        {p.tags && p.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {p.tags.map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                                  tag.toLowerCase().includes("hot")
+                                    ? "text-red-400 border-red-400 bg-red-400/10"
+                                    : tag.toLowerCase().includes("new")
+                                    ? "text-green-400 border-green-400 bg-green-400/10"
+                                    : "text-blue-400 border-blue-400 bg-blue-400/10"
+                                }`}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-gray-300">
+                        {p.developer || "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-gray-700/50 px-2 py-1 rounded text-xs">
+                          {p.propertyType} {p.unitType ? `(${p.unitType})` : ""}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">{p.location}</td>
+                      <td className="px-6 py-4 font-medium text-emerald-400">
+                        {p.priceRange || "-"}
+                      </td>
+                      <td className="px-6 py-4">{p.handoverDate || "-"}</td>
+                      <td className="px-6 py-4">
+                        {p.isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-400 border border-green-900">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>{" "}
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-400 border border-red-900">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>{" "}
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleOpen(p)}
+                          className="font-medium text-sky-400 hover:text-sky-300 hover:underline mr-4 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p._id)}
+                          className="font-medium text-red-500 hover:text-red-400 hover:underline transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* --- PAGINATION --- */}
+        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm">
+          <div className="mb-2 md:mb-0">
+            Total Properties:{" "}
+            <span className="text-white font-bold">{totalRecords}</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <select
+                className="bg-[#202d33] text-white px-2 py-1 rounded outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                value={limit}
+                onChange={(e) => {
+                  setLimit(parseInt(e.target.value));
+                  setPage(1);
+                }}
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className={`px-3 py-1 rounded transition-colors ${
+                  page === 1
+                    ? "text-gray-600 cursor-not-allowed"
+                    : "text-emerald-500 hover:bg-emerald-500/10"
+                }`}
+              >
+                PREVIOUS
+              </button>
+              <span>
+                Page <span className="text-white font-medium">{page}</span> of{" "}
+                {totalPages || 1}
+              </span>
+              <button
+                onClick={() =>
+                  setPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={page === totalPages || totalPages === 0}
+                className={`px-3 py-1 rounded transition-colors ${
+                  page === totalPages || totalPages === 0
+                    ? "text-gray-600 cursor-not-allowed"
+                    : "text-emerald-500 hover:bg-emerald-500/10"
+                }`}
+              >
+                NEXT
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Modal Overlay */}
+      {/* Modal Overlay (Unchanged Form Logic) */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4 overflow-y-auto">
-          <div className="bg-[#202d33] rounded-lg shadow-2xl w-full max-w-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-[#202d33] rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700">
             <div className="flex justify-between items-center p-5 border-b border-gray-700">
-              <h3 className="text-xl font-semibold text-white">
+              <h3 className="text-xl font-bold text-white">
                 {isEdit ? "Edit Property" : "Add New Property"}
               </h3>
               <button
