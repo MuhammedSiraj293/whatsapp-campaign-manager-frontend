@@ -502,6 +502,34 @@ export default function Integrations() {
                           </button>
                         </div>
                       </div>
+
+                      {/* AI Agent Toggle */}
+                      <div className="mt-3 flex items-center justify-between bg-[#1a262b] p-2 rounded">
+                        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                          🤖 AI Assistant
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={phone.isAiEnabled || false}
+                            onChange={async (e) => {
+                              try {
+                                await authFetch(`/waba/phones/${phone._id}`, {
+                                  method: "PUT",
+                                  body: JSON.stringify({
+                                    isAiEnabled: e.target.checked,
+                                  }),
+                                });
+                                fetchAllData(); // Refresh
+                              } catch (err) {
+                                alert(err.message);
+                              }
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
                     </div>
                   ))}
 
