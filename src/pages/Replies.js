@@ -92,9 +92,12 @@ export default function Replies() {
     setHasMoreConvos(true);
   }, [activeWaba, wabaAccounts]);
 
+  // --- FILTER STATE ---
+  const [filterMode, setFilterMode] = useState("all"); // 'all' | 'unread'
+
   // Fetch conversations for the selected business phone number
   const fetchConversations = useCallback(
-    async (recipientId, page = 1, search = "") => {
+    async (recipientId, page = 1, search = "", unread = false) => {
       if (!recipientId) return;
       setLoadingConvos(true);
       try {
@@ -102,7 +105,7 @@ export default function Replies() {
         // encodeURIComponent for safety
         const query = `/replies/conversations/${recipientId}?page=${page}&limit=${limit}&search=${encodeURIComponent(
           search
-        )}`;
+        )}&unread=${unread}`;
         const data = await authFetch(query);
 
         if (data.success) {
@@ -130,22 +133,27 @@ export default function Replies() {
   );
 
   // --- SEARCH STATE ---
-  const [searchTerm, setSearchTerm] = useState("");
-
   const handleSearch = useCallback(
     (query) => {
       setSearchTerm(query);
       setConvoPage(1); // Reset to first page
-      fetchConversations(selectedPhoneId, 1, query);
+      fetchConversations(selectedPhoneId, 1, query, filterMode === "unread");
     },
-    [selectedPhoneId, fetchConversations]
+    [selectedPhoneId, fetchConversations, filterMode]
   );
+
+
+  const handleFilterChange = (mode) => {
+    setFilterMode(mode);
+    setConvoPage(1);
+    fetchConversations(selectedPhoneId, 1, searchTerm, mode === "unread");
+  };
 
   const handleLoadMoreConversations = useCallback(() => {
     if (!hasMoreConvos || loadingConvos) return;
     const nextPage = convoPage + 1;
     setConvoPage(nextPage);
-    fetchConversations(selectedPhoneId, nextPage, searchTerm);
+    fetchConversations(selectedPhoneId, nextPage, searchTerm, filterMode === "unread");
   }, [
     hasMoreConvos,
     loadingConvos,
@@ -153,7 +161,16 @@ export default function Replies() {
     selectedPhoneId,
     searchTerm,
     fetchConversations,
+    filterMode
   ]);
+
+  // Fetch conversations when selectedPhoneId (business phone) changes
+  useEffect(() => {
+    if (selectedPhoneId) {
+      setConvoPage(1); // Reset page on phone switch
+      fetchConversations(selectedPhoneId, 1, searchTerm, filterMode === "unread");
+    }
+  }, [selectedPhoneId, filterMode]); // Added filterMode dependency
 
   // Fetch messages for the selected chat
   const fetchMessages = async (customerPhone, recipientId, page = 1) => {
@@ -201,7 +218,13 @@ export default function Replies() {
       if (data.recipientId === activeChatRef.current.businessPhone) {
         // INCOMING MESSAGE (from customer to business)
         console.log("Socket: Incoming message received", data);
-        fetchConversations(activeChatRef.current.businessPhone);
+        // Refresh conversations (preserving current filter & search)
+        // Ideally we might just prepend if it matches filter, but simple refresh is safer
+        // fetchConversations(activeChatRef.current.businessPhone, 1, searchTerm, filterMode === "unread");
+        // Actually, just fetching page 1 might mess up pagination if user scrolled far.
+        // For now, let's just let it be or find a smarter update strategy.
+        // Re-fetching page 1 to just get the latest changes at top:
+        fetchConversations(activeChatRef.current.businessPhone, 1, searchTerm, filterMode === "unread");
 
         if (data.from === activeChatRef.current.customerPhone) {
           setMessages((prevMessages) => {
@@ -309,15 +332,10 @@ export default function Replies() {
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, []);
+  }, [searchTerm, filterMode, fetchConversations]); // Added dependencies
 
   // Fetch conversations when selectedPhoneId (business phone) changes
-  useEffect(() => {
-    if (selectedPhoneId) {
-      setConvoPage(1); // Reset page on phone switch
-      fetchConversations(selectedPhoneId, 1);
-    }
-  }, [selectedPhoneId]);
+  // REMOVED DUPLICATE useEffect
 
   // Fetch messages when activeConversationId (customer phone) changes
   useEffect(() => {
@@ -339,7 +357,9 @@ export default function Replies() {
         await authFetch(`/replies/read/${customerPhone}/${selectedPhoneId}`, {
           method: "PATCH",
         });
-        await fetchConversations(selectedPhoneId); // Refresh list
+        // Refresh list to update unread count UI
+        // We use fetchConversations so it respects current filter
+        await fetchConversations(selectedPhoneId, convoPage, searchTerm, filterMode === "unread");
       } catch (error) {
         console.error("Error marking messages as read:", error);
       }
@@ -403,7 +423,7 @@ export default function Replies() {
         }
       );
       // Refresh conversations
-      fetchConversations(selectedPhoneId);
+      fetchConversations(selectedPhoneId, convoPage, searchTerm, filterMode === "unread");
       // If the deleted chat was active, clear selection
       if (activeConversationId === customerPhone) {
         setActiveConversationId(null);
@@ -454,7 +474,7 @@ export default function Replies() {
         // alert(result.message); // Silent update requested, so maybe skip alert or show toast
         console.log(result.message);
         // Refresh conversations to ensure backend state is synced
-        fetchConversations(selectedPhoneId, convoPage, searchTerm);
+        fetchConversations(selectedPhoneId, convoPage, searchTerm, filterMode === "unread");
       } else {
         alert("Action failed: " + result.error || "Unknown error");
         // Revert optimistic update if needed (refreshing list essentially handles this)
@@ -526,9 +546,12 @@ export default function Replies() {
                 loading={loadingConvos}
                 onSearch={handleSearch}
                 onToggleSubscription={handleToggleSubscription} // Pass the handler
+                filterMode={filterMode} // Pass filter mode
+                onFilterChange={handleFilterChange} // Pass filter handler
               />
             </div>
           </div>
+
 
           {/* --- RIGHT SIDE: CHAT DETAIL --- */}
           <div

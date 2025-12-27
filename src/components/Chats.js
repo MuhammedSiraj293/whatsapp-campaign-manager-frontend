@@ -14,8 +14,10 @@ export default function Chats({
   onLoadMore,
   hasMore,
   loading,
-  onSearch, // New prop
-  onToggleSubscription, // New prop for manual unsubscribe/resubscribe
+  onSearch,
+  onToggleSubscription,
+  filterMode, // Received from parent
+  onFilterChange, // Received from parent
 }) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [contextMenu, setContextMenu] = React.useState({
@@ -24,8 +26,6 @@ export default function Chats({
     y: 0,
     convoId: null,
   });
-
-  const [filterMode, setFilterMode] = React.useState("all"); // 'all' | 'unread'
 
   const scrollRef = useRef(null);
   const isMounted = useRef(false);
@@ -47,13 +47,7 @@ export default function Chats({
   }, [searchTerm, onSearch]);
 
   // Use conversations directly (server filters them)
-  // Apply local filtering for "Unread" mode
-  const displayConversations = conversations.filter((c) => {
-    if (filterMode === "unread") {
-      return c.unreadCount > 0;
-    }
-    return true;
-  });
+  const displayConversations = conversations;
 
   // Handle right-click context menu
   const handleContextMenu = (e, convoId) => {
@@ -151,7 +145,7 @@ export default function Chats({
         {/* Filter Chips */}
         <div className="flex gap-2 px-3 pb-2 pt-1 overflow-x-auto no-scrollbar">
           <button
-            onClick={() => setFilterMode("all")}
+            onClick={() => onFilterChange("all")}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMode === "all"
                 ? "bg-[#0a332c] text-[#00a884] ring-1 ring-[#00a884]"
                 : "bg-[#202d33] text-[#8696a0] hover:bg-[#2a3942]"
@@ -160,7 +154,7 @@ export default function Chats({
             All
           </button>
           <button
-            onClick={() => setFilterMode("unread")}
+            onClick={() => onFilterChange("unread")}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMode === "unread"
                 ? "bg-[#0a332c] text-[#00a884] ring-1 ring-[#00a884]"
                 : "bg-[#202d33] text-[#8696a0] hover:bg-[#2a3942]"
