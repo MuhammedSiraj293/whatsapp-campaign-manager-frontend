@@ -97,15 +97,26 @@ export default function Replies() {
 
   // Fetch conversations for the selected business phone number
   const fetchConversations = useCallback(
-    async (recipientId, page = 1, search = "", unread = false) => {
+    async (
+      recipientId,
+      page = 1,
+      search = "",
+      unread = false,
+      activeId = null
+    ) => {
       if (!recipientId) return;
       setLoadingConvos(true);
       try {
         const limit = 20;
         // encodeURIComponent for safety
-        const query = `/replies/conversations/${recipientId}?page=${page}&limit=${limit}&search=${encodeURIComponent(
+        let query = `/replies/conversations/${recipientId}?page=${page}&limit=${limit}&search=${encodeURIComponent(
           search
         )}&unread=${unread}`;
+
+        if (activeId) {
+          query += `&activeId=${activeId}`;
+        }
+
         const data = await authFetch(query);
 
         if (data.success) {
@@ -139,23 +150,41 @@ export default function Replies() {
     (query) => {
       setSearchTerm(query);
       setConvoPage(1); // Reset to first page
-      fetchConversations(selectedPhoneId, 1, query, filterMode === "unread");
+      fetchConversations(
+        selectedPhoneId,
+        1,
+        query,
+        filterMode === "unread",
+        activeConversationId
+      );
     },
-    [selectedPhoneId, fetchConversations, filterMode]
+    [selectedPhoneId, fetchConversations, filterMode, activeConversationId]
   );
 
 
   const handleFilterChange = (mode) => {
     setFilterMode(mode);
     setConvoPage(1);
-    fetchConversations(selectedPhoneId, 1, searchTerm, mode === "unread");
+    fetchConversations(
+      selectedPhoneId,
+      1,
+      searchTerm,
+      mode === "unread",
+      activeConversationId
+    );
   };
 
   const handleLoadMoreConversations = useCallback(() => {
     if (!hasMoreConvos || loadingConvos) return;
     const nextPage = convoPage + 1;
     setConvoPage(nextPage);
-    fetchConversations(selectedPhoneId, nextPage, searchTerm, filterMode === "unread");
+    fetchConversations(
+      selectedPhoneId,
+      nextPage,
+      searchTerm,
+      filterMode === "unread",
+      activeConversationId
+    );
   }, [
     hasMoreConvos,
     loadingConvos,
@@ -163,16 +192,23 @@ export default function Replies() {
     selectedPhoneId,
     searchTerm,
     fetchConversations,
-    filterMode
+    filterMode,
+    activeConversationId,
   ]);
 
   // Fetch conversations when selectedPhoneId (business phone) changes
   useEffect(() => {
     if (selectedPhoneId) {
       setConvoPage(1); // Reset page on phone switch
-      fetchConversations(selectedPhoneId, 1, searchTerm, filterMode === "unread");
+      fetchConversations(
+        selectedPhoneId,
+        1,
+        searchTerm,
+        filterMode === "unread",
+        activeConversationId
+      );
     }
-  }, [selectedPhoneId, filterMode]); // Added filterMode dependency
+  }, [selectedPhoneId, filterMode, activeConversationId]); // Added filterMode dependency
 
   // Fetch messages for the selected chat
   const fetchMessages = async (customerPhone, recipientId, page = 1) => {
@@ -226,7 +262,13 @@ export default function Replies() {
         // Actually, just fetching page 1 might mess up pagination if user scrolled far.
         // For now, let's just let it be or find a smarter update strategy.
         // Re-fetching page 1 to just get the latest changes at top:
-        fetchConversations(activeChatRef.current.businessPhone, 1, searchTerm, filterMode === "unread");
+        fetchConversations(
+          activeChatRef.current.businessPhone,
+          1,
+          searchTerm,
+          filterMode === "unread",
+          activeChatRef.current.customerPhone
+        );
 
         if (data.from === activeChatRef.current.customerPhone) {
           setMessages((prevMessages) => {
@@ -361,7 +403,13 @@ export default function Replies() {
         });
         // Refresh list to update unread count UI
         // We use fetchConversations so it respects current filter
-        await fetchConversations(selectedPhoneId, convoPage, searchTerm, filterMode === "unread");
+        await fetchConversations(
+          selectedPhoneId,
+          convoPage,
+          searchTerm,
+          filterMode === "unread",
+          customerPhone // Pass the newly active phone explicitly
+        );
       } catch (error) {
         console.error("Error marking messages as read:", error);
       }
@@ -415,81 +463,6 @@ export default function Replies() {
   };
 
   // Handle deleting a conversation
-  const handleDeleteConversation = async (customerPhone) => {
-    if (!customerPhone || !selectedPhoneId) return;
-    try {
-      await authFetch(
-        `/replies/conversations/${customerPhone}/${selectedPhoneId}`,
-        {
-          method: "DELETE",
-        }
-      );
-      // Refresh conversations
-      fetchConversations(selectedPhoneId, convoPage, searchTerm, filterMode === "unread");
-      // If the deleted chat was active, clear selection
-      if (activeConversationId === customerPhone) {
-        setActiveConversationId(null);
-        setMessages([]);
-      }
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-    }
-  };
-
-  const handleBackToList = () => {
-    setActiveConversationId(null);
-  };
-
-  // Handle deleting a single message
-  const handleDeleteMessage = async (messageId) => {
-    if (!messageId) return;
-
-    try {
-      await authFetch(`/replies/messages/${messageId}`, {
-        method: "DELETE",
-      });
-      // Remove message from local state
-      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
-    } catch (error) {
-      console.error("Error deleting message:", error);
-    }
-  };
-
-  // --- NEW: Handle Manual Unsubscribe/Resubscribe ---
-  const handleToggleSubscription = async (phoneNumber, newStatus) => {
-    if (!phoneNumber) return;
-
-    // Optimistic UI update (optional, but good for UX)
-    setConversations((prev) =>
-      prev.map((c) =>
-        c._id === phoneNumber ? { ...c, isSubscribed: newStatus } : c
-      )
-    );
-
-    try {
-      const result = await authFetch(`/replies/subscription/${phoneNumber}`, {
-        method: "POST",
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (result.success) {
-        // alert(result.message); // Silent update requested, so maybe skip alert or show toast
-        console.log(result.message);
-        // Refresh conversations to ensure backend state is synced
-        fetchConversations(selectedPhoneId, convoPage, searchTerm, filterMode === "unread");
-      } else {
-        alert("Action failed: " + result.error || "Unknown error");
-        // Revert optimistic update if needed (refreshing list essentially handles this)
-      }
-    } catch (error) {
-      console.error("Error toggling subscription:", error);
-      alert("Error updating subscription status.");
-    }
-  };
-
-  const inputStyle =
-    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-base md:text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
-
   return (
     <>
       {loading ? (
