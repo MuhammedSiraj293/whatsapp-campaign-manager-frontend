@@ -463,6 +463,93 @@ export default function Replies() {
   };
 
   // Handle deleting a conversation
+  const handleDeleteConversation = async (customerPhone) => {
+    if (!customerPhone || !selectedPhoneId) return;
+    try {
+      await authFetch(
+        `/replies/conversations/${customerPhone}/${selectedPhoneId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      // Refresh conversations
+      fetchConversations(
+        selectedPhoneId,
+        convoPage,
+        searchTerm,
+        filterMode === "unread",
+        activeConversationId
+      );
+      // If the deleted chat was active, clear selection
+      if (activeConversationId === customerPhone) {
+        setActiveConversationId(null);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+    }
+  };
+
+  const handleBackToList = () => {
+    setActiveConversationId(null);
+  };
+
+  // Handle deleting a single message
+  const handleDeleteMessage = async (messageId) => {
+    if (!messageId) return;
+
+    try {
+      await authFetch(`/replies/messages/${messageId}`, {
+        method: "DELETE",
+      });
+      // Remove message from local state
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
+  };
+
+  // --- NEW: Handle Manual Unsubscribe/Resubscribe ---
+  const handleToggleSubscription = async (phoneNumber, newStatus) => {
+    if (!phoneNumber) return;
+
+    // Optimistic UI update (optional, but good for UX)
+    setConversations((prev) =>
+      prev.map((c) =>
+        c._id === phoneNumber ? { ...c, isSubscribed: newStatus } : c
+      )
+    );
+
+    try {
+      const result = await authFetch(`/replies/subscription/${phoneNumber}`, {
+        method: "POST",
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (result.success) {
+        // alert(result.message); // Silent update requested, so maybe skip alert or show toast
+        console.log(result.message);
+        // Refresh conversations to ensure backend state is synced
+        fetchConversations(
+          selectedPhoneId,
+          convoPage,
+          searchTerm,
+          filterMode === "unread",
+          activeConversationId
+        );
+      } else {
+        alert("Action failed: " + result.error || "Unknown error");
+        // Revert optimistic update if needed (refreshing list essentially handles this)
+      }
+    } catch (error) {
+      console.error("Error toggling subscription:", error);
+      alert("Error updating subscription status.");
+    }
+  };
+
+  const inputStyle =
+    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-base md:text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
+
   return (
     <>
       {loading ? (
