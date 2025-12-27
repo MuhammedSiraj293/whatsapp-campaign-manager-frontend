@@ -133,6 +133,8 @@ export default function Replies() {
   );
 
   // --- SEARCH STATE ---
+  const [searchTerm, setSearchTerm] = useState("");
+
   const handleSearch = useCallback(
     (query) => {
       setSearchTerm(query);
