@@ -25,6 +25,8 @@ export default function Chats({
     convoId: null,
   });
 
+  const [filterMode, setFilterMode] = React.useState("all"); // 'all' | 'unread'
+
   const scrollRef = useRef(null);
   const isMounted = useRef(false);
 
@@ -45,7 +47,13 @@ export default function Chats({
   }, [searchTerm, onSearch]);
 
   // Use conversations directly (server filters them)
-  const displayConversations = conversations;
+  // Apply local filtering for "Unread" mode
+  const displayConversations = conversations.filter((c) => {
+    if (filterMode === "unread") {
+      return c.unreadCount > 0;
+    }
+    return true;
+  });
 
   // Handle right-click context menu
   const handleContextMenu = (e, convoId) => {
@@ -128,15 +136,39 @@ export default function Chats({
         // Prevent context menu on non-item areas if needed
       }}
     >
-      {/* Search Input */}
-      <div className="p-2 bg-[#111b21] border-b border-neutral-700 shrink-0">
-        <input
-          type="text"
-          placeholder="Search or start new chat"
-          className="w-full bg-[#202d33] text-sm text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600 placeholder-gray-500"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="flex flex-col border-b border-neutral-700 shrink-0 bg-[#111b21]">
+        {/* Search Input */}
+        <div className="p-2 pb-1">
+          <input
+            type="text"
+            placeholder="Search or start new chat"
+            className="w-full bg-[#202d33] text-sm text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600 placeholder-gray-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Filter Chips */}
+        <div className="flex gap-2 px-3 pb-2 pt-1 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setFilterMode("all")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMode === "all"
+                ? "bg-[#0a332c] text-[#00a884] ring-1 ring-[#00a884]"
+                : "bg-[#202d33] text-[#8696a0] hover:bg-[#2a3942]"
+              }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilterMode("unread")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMode === "unread"
+                ? "bg-[#0a332c] text-[#00a884] ring-1 ring-[#00a884]"
+                : "bg-[#202d33] text-[#8696a0] hover:bg-[#2a3942]"
+              }`}
+          >
+            Unread
+          </button>
+        </div>
       </div>
 
       {/* Conversation List */}
@@ -163,9 +195,8 @@ export default function Chats({
               {/* Avatar (Placeholder) */}
               <div className="w-[49px] h-[49px] rounded-full bg-gray-500 flex-shrink-0 mr-3 overflow-hidden">
                 <img
-                  src={`https://ui-avatars.com/api/?name=${
-                    convo.name || "User"
-                  }&background=random`}
+                  src={`https://ui-avatars.com/api/?name=${convo.name || "User"
+                    }&background=random`}
                   alt="avatar"
                   className="w-full h-full object-cover"
                 />
@@ -246,9 +277,8 @@ export default function Chats({
 
           {/* Unsubscribe / Resubscribe Option */}
           <div
-            className={`px-4 py-2 hover:bg-[#182229] cursor-pointer ${
-              !contextMenu.isSubscribed ? "text-emerald-400" : "text-yellow-400"
-            }`}
+            className={`px-4 py-2 hover:bg-[#182229] cursor-pointer ${!contextMenu.isSubscribed ? "text-emerald-400" : "text-yellow-400"
+              }`}
             onClick={() => {
               if (onToggleSubscription) {
                 // If currently subscribed (true), we want to set status to false (Unsubscribe)
