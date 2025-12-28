@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
+import { FaEdit, FaTrash, FaCog } from "react-icons/fa"; // Imported Icons
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
@@ -20,6 +21,7 @@ const Properties = () => {
   const [locationFilter, setLocationFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedIds, setSelectedIds] = useState([]); // Selected Rows State
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -158,13 +160,59 @@ const Properties = () => {
     }
   };
 
+  // --- SELECTION LOGIC ---
+  const handleSelectOne = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = properties.map((p) => p._id);
+      setSelectedIds(allIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedIds.length} properties?`
+      )
+    ) {
+      try {
+        await axios.post(`${API_URL}/api/properties/bulk-delete`, {
+          ids: selectedIds,
+        });
+        setSelectedIds([]);
+        fetchProperties();
+      } catch (err) {
+        console.error("Error deleting properties:", err);
+        alert("Failed to delete selected properties");
+      }
+    }
+  };
+
   return (
     <div className="p-2 md:p-4 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
       <div className="w-full px-2 md:px-4">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-white">
-            Properties & Projects
-          </h1>
+          <div className="flex gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center flex items-center gap-2"
+              >
+                <FaTrash /> Delete ({selectedIds.length})
+              </button>
+            )}
+            <h1 className="text-3xl font-bold text-white">
+              Properties & Projects
+            </h1>
+          </div>
           <button
             onClick={() => handleOpen()}
             className="text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center flex items-center gap-2"
@@ -237,6 +285,17 @@ const Properties = () => {
             <table className="w-full text-sm text-left text-gray-300">
               <thead className="text-xs text-uppercase bg-[#2c3943] text-gray-400">
                 <tr>
+                  <th className="px-6 py-3">
+                    <input
+                      type="checkbox"
+                      onChange={handleSelectAll}
+                      checked={
+                        properties.length > 0 &&
+                        selectedIds.length === properties.length
+                      }
+                      className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
+                    />
+                  </th>
                   <th className="px-6 py-3">Name</th>
                   <th className="px-6 py-3">Developer</th>
                   <th className="px-6 py-3">Type</th>
@@ -272,6 +331,14 @@ const Properties = () => {
                       key={p._id}
                       className="border-b border-gray-700 hover:bg-[#2a373f] transition-colors"
                     >
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(p._id)}
+                          onChange={() => handleSelectOne(p._id)}
+                          className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="font-bold text-white text-base">
                           {p.name}
@@ -322,18 +389,22 @@ const Properties = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleOpen(p)}
-                          className="font-medium text-sky-400 hover:text-sky-300 hover:underline mr-4 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p._id)}
-                          className="font-medium text-red-500 hover:text-red-400 hover:underline transition-colors"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => handleOpen(p)}
+                            className="font-medium text-sky-400 hover:text-sky-300 transition-colors"
+                            title="Edit"
+                          >
+                            <FaEdit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p._id)}
+                            className="font-medium text-red-500 hover:text-red-400 transition-colors"
+                            title="Delete"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
