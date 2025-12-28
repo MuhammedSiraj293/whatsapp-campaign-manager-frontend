@@ -4,18 +4,37 @@ import MessageStatus from "./MessageStatus";
 import { BsCheck, BsCheckAll, BsChevronDown } from "react-icons/bs";
 
 // Helper to format text with bold (*) and italic (_)
+// Helper to format text with bold (*), italic (_), strikethrough (~), and monospace (```)
 const formatMessage = (text) => {
   if (!text) return null;
-  // Split by bold (*...*) or italic (_..._)
-  // Using capturing parentheses so the delimiters/content are included in the result array
-  const parts = text.split(/(\*.*?\*|_.*?_)/g);
+
+  // Split by supported formatters
+  // Order matters: code blocks first to avoid formatting inside them
+  const parts = text.split(/(```[\s\S]*?```|\*.*?\*|_.*?_|~.*?~)/g);
 
   return parts.map((part, index) => {
+    // Monospace (```text```)
+    if (part.startsWith("```") && part.endsWith("```") && part.length >= 6) {
+      return (
+        <code
+          key={index}
+          className="bg-black/20 px-1 rounded font-mono text-sm"
+        >
+          {part.slice(3, -3)}
+        </code>
+      );
+    }
+    // Bold (*text*)
     if (part.startsWith("*") && part.endsWith("*") && part.length >= 2) {
       return <strong key={index}>{part.slice(1, -1)}</strong>;
     }
+    // Italic (_text_)
     if (part.startsWith("_") && part.endsWith("_") && part.length >= 2) {
       return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+    // Strikethrough (~text~)
+    if (part.startsWith("~") && part.endsWith("~") && part.length >= 2) {
+      return <del key={index}>{part.slice(1, -1)}</del>;
     }
     return part;
   });

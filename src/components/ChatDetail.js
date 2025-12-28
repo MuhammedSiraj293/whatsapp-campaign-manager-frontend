@@ -214,24 +214,6 @@ export default function ChatDetail({
     // Only scroll to bottom on initial mount or very specific updates handled by useLayoutEffect
   }, []);
 
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.code === "Enter" || e.code === "NumpadEnter") {
-        e.preventDefault();
-        handleInputSubmit();
-      }
-    };
-    const inputElement = inputRef.current;
-    if (inputElement) {
-      inputElement.addEventListener("keydown", listener);
-    }
-    return () => {
-      if (inputElement) {
-        inputElement.removeEventListener("keydown", listener);
-      }
-    };
-  }, [handleInputSubmit]);
-
   // Helper to determine the best supported MIME type
   const getMimeType = () => {
     if (MediaRecorder.isTypeSupported("audio/mp4")) {
@@ -536,12 +518,28 @@ export default function ChatDetail({
                 </span>
               </div>
             ) : (
-              <input
-                type="text"
+              <textarea
                 placeholder="Type a message"
-                className="w-full bg-[#2a3942] text-white text-base md:text-sm rounded-lg px-4 py-2 mx-2 focus:outline-none"
-                onChange={handleInputChange}
+                className="w-full bg-[#2a3942] text-white text-base md:text-sm rounded-lg px-4 py-2 mx-2 focus:outline-none resize-none overflow-hidden"
+                rows={1}
+                onChange={(e) => {
+                  handleInputChange();
+                  // Auto-resize
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${Math.min(
+                    e.target.scrollHeight,
+                    100
+                  )}px`;
+                }}
                 ref={inputRef}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleInputSubmit();
+                    // Reset height
+                    e.target.style.height = "auto";
+                  }
+                }}
               />
             )}
 

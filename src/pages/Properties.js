@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
-import { FaEdit, FaTrash, FaCog } from "react-icons/fa"; // Imported Icons
+import { FaEdit, FaTrash, FaCog, FaExpand } from "react-icons/fa"; // Imported Icons
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
@@ -10,6 +10,7 @@ const Properties = () => {
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false); // Description Expand State
 
   // Pagination & Filter State
   const [page, setPage] = useState(1);
@@ -791,9 +792,18 @@ const Properties = () => {
 
                 {/* Description */}
                 <div className="col-span-1 md:col-span-3">
-                  <label className="block mb-2 text-sm font-medium text-gray-300">
-                    Description / Selling Points
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm font-medium text-gray-300">
+                      Description / Selling Points
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsDescriptionExpanded(true)}
+                      className="text-emerald-400 hover:text-emerald-300 text-xs flex items-center gap-1"
+                    >
+                      <FaExpand /> Expand
+                    </button>
+                  </div>
                   <textarea
                     name="description"
                     rows="3"
@@ -803,6 +813,44 @@ const Properties = () => {
                     placeholder="Details for the AI..."
                   ></textarea>
                 </div>
+
+                {/* --- EXPANDED DESCRIPTION MODAL --- */}
+                {isDescriptionExpanded && (
+                  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-80 p-4 backdrop-blur-sm">
+                    <div className="bg-[#202d33] rounded-xl shadow-2xl w-full max-w-4xl border border-gray-700 h-[80vh] flex flex-col">
+                      <div className="flex justify-between items-center p-4 border-b border-gray-700 shrink-0 bg-[#2c3943] rounded-t-xl">
+                        <h3 className="text-lg font-bold text-white">
+                          Edit Description
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setIsDescriptionExpanded(false)}
+                          className="text-gray-400 hover:text-white text-2xl"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                      <div className="flex-1 p-4">
+                        <textarea
+                          name="description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          className="w-full h-full bg-[#111b21] border border-gray-600 text-white text-base p-4 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none placeholder-gray-500 font-mono leading-relaxed"
+                          placeholder="Type detailed description here..."
+                        />
+                      </div>
+                      <div className="p-4 border-t border-gray-700 flex justify-end bg-[#2c3943] rounded-b-xl">
+                        <button
+                          type="button"
+                          onClick={() => setIsDescriptionExpanded(false)}
+                          className="text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-6 py-2.5"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Active Toggle */}
                 <div className="col-span-1 md:col-span-3 flex items-center">
