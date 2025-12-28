@@ -22,6 +22,7 @@ const Properties = () => {
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]); // Selected Rows State
+  const [isSelectionMode, setIsSelectionMode] = useState(false); // Selection Mode State
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -200,19 +201,9 @@ const Properties = () => {
     <div className="p-2 md:p-4 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
       <div className="w-full px-2 md:px-4">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <div className="flex gap-2">
-            {selectedIds.length > 0 && (
-              <button
-                onClick={handleBulkDelete}
-                className="text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center flex items-center gap-2"
-              >
-                <FaTrash /> Delete ({selectedIds.length})
-              </button>
-            )}
-            <h1 className="text-3xl font-bold text-white">
-              Properties & Projects
-            </h1>
-          </div>
+          <h1 className="text-3xl font-bold text-white">
+            Properties & Projects
+          </h1>
           <button
             onClick={() => handleOpen()}
             className="text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center flex items-center gap-2"
@@ -228,7 +219,7 @@ const Properties = () => {
             <input
               type="text"
               placeholder="Search Project / Tag..."
-              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full placeholder-gray-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -239,7 +230,7 @@ const Properties = () => {
             <input
               type="text"
               placeholder="Filter Location..."
-              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full placeholder-gray-500"
               value={locationFilter}
               onChange={(e) => {
                 setLocationFilter(e.target.value);
@@ -253,7 +244,7 @@ const Properties = () => {
             <input
               type="text"
               placeholder="Filter Type (Villa...)"
-              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full placeholder-gray-500"
               value={typeFilter}
               onChange={(e) => {
                 setTypeFilter(e.target.value);
@@ -265,7 +256,7 @@ const Properties = () => {
           {/* Status */}
           <div>
             <select
-              className="bg-[#2c3943] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -285,17 +276,19 @@ const Properties = () => {
             <table className="w-full text-sm text-left text-gray-300">
               <thead className="text-xs text-uppercase bg-[#2c3943] text-gray-400">
                 <tr>
-                  <th className="px-6 py-3">
-                    <input
-                      type="checkbox"
-                      onChange={handleSelectAll}
-                      checked={
-                        properties.length > 0 &&
-                        selectedIds.length === properties.length
-                      }
-                      className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
-                    />
-                  </th>
+                  {isSelectionMode && (
+                    <th className="px-6 py-3">
+                      <input
+                        type="checkbox"
+                        onChange={handleSelectAll}
+                        checked={
+                          properties.length > 0 &&
+                          selectedIds.length === properties.length
+                        }
+                        className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
+                      />
+                    </th>
+                  )}
                   <th className="px-6 py-3">Name</th>
                   <th className="px-6 py-3">Developer</th>
                   <th className="px-6 py-3">Type</th>
@@ -331,14 +324,16 @@ const Properties = () => {
                       key={p._id}
                       className="border-b border-gray-700 hover:bg-[#2a373f] transition-colors"
                     >
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(p._id)}
-                          onChange={() => handleSelectOne(p._id)}
-                          className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
-                        />
-                      </td>
+                      {isSelectionMode && (
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(p._id)}
+                            onChange={() => handleSelectOne(p._id)}
+                            className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
+                          />
+                        </td>
+                      )}
                       <td className="px-6 py-4">
                         <div className="font-bold text-white text-base">
                           {p.name}
@@ -414,11 +409,40 @@ const Properties = () => {
           </div>
         </div>
 
-        {/* --- PAGINATION --- */}
-        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm">
-          <div className="mb-2 md:mb-0">
-            Total Properties:{" "}
-            <span className="text-white font-bold">{totalRecords}</span>
+        {/* --- PAGINATION & ACTION BAR --- */}
+        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm bg-[#202d33] p-3 rounded-lg shadow-lg">
+          <div className="flex items-center gap-4 mb-2 md:mb-0">
+            {/* Selection Actions */}
+            <button
+              onClick={() => {
+                setIsSelectionMode(!isSelectionMode);
+                if (isSelectionMode) setSelectedIds([]); // Clear selection when disabling
+              }}
+              className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                isSelectionMode
+                  ? "bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600"
+                  : "bg-emerald-600/10 text-emerald-400 border-emerald-600/50 hover:bg-emerald-600/20"
+              }`}
+            >
+              {isSelectionMode ? "Cancel Selection" : "Enable Selection"}
+            </button>
+
+            {isSelectionMode && selectedIds.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                <FaTrash className="w-3 h-3" />
+                Delete ({selectedIds.length})
+              </button>
+            )}
+
+            <div className="h-4 w-px bg-gray-700 mx-2"></div>
+
+            <div>
+              Total:{" "}
+              <span className="text-white font-bold">{totalRecords}</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
