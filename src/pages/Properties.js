@@ -335,7 +335,7 @@ const Properties = () => {
                         </td>
                       )}
                       <td className="px-6 py-4">
-                        <div className="font-bold text-white text-base">
+                        <div className="font-medium text-white text-base">
                           {p.name}
                         </div>
                         {p.tags && p.tags.length > 0 && (
@@ -390,14 +390,14 @@ const Properties = () => {
                             className="font-medium text-sky-400 hover:text-sky-300 transition-colors"
                             title="Edit"
                           >
-                            <FaEdit className="w-4 h-4" />
+                            <FaEdit className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => handleDelete(p._id)}
                             className="font-medium text-red-500 hover:text-red-400 transition-colors"
                             title="Delete"
                           >
-                            <FaTrash className="w-4 h-4" />
+                            <FaTrash className="w-3 h-3" />
                           </button>
                         </div>
                       </td>
