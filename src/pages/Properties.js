@@ -390,14 +390,14 @@ const Properties = () => {
                             className="font-medium text-sky-400 hover:text-sky-300 transition-colors"
                             title="Edit"
                           >
-                            <FaEdit className="w-5 h-5" />
+                            <FaEdit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(p._id)}
                             className="font-medium text-red-500 hover:text-red-400 transition-colors"
                             title="Delete"
                           >
-                            <FaTrash className="w-5 h-5" />
+                            <FaTrash className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -410,39 +410,36 @@ const Properties = () => {
         </div>
 
         {/* --- PAGINATION & ACTION BAR --- */}
-        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm bg-[#202d33] p-3 rounded-lg shadow-lg">
+        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm">
           <div className="flex items-center gap-4 mb-2 md:mb-0">
-            {/* Selection Actions */}
+            {/* Total Records */}
+            <div>
+              Total Records:{" "}
+              <span className="text-white font-bold">{totalRecords}</span>
+            </div>
+
+            {/* Selection Actions (integrated minimally) */}
+            <div className="h-4 w-px bg-gray-700 mx-2"></div>
+
             <button
               onClick={() => {
                 setIsSelectionMode(!isSelectionMode);
-                if (isSelectionMode) setSelectedIds([]); // Clear selection when disabling
+                if (isSelectionMode) setSelectedIds([]);
               }}
-              className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${
-                isSelectionMode
-                  ? "bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600"
-                  : "bg-emerald-600/10 text-emerald-400 border-emerald-600/50 hover:bg-emerald-600/20"
-              }`}
+              className="text-xs text-emerald-500 hover:text-emerald-400 font-medium transition-colors"
             >
-              {isSelectionMode ? "Cancel Selection" : "Enable Selection"}
+              {isSelectionMode ? "Cancel Selection" : "Select"}
             </button>
 
             {isSelectionMode && selectedIds.length > 0 && (
               <button
                 onClick={handleBulkDelete}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+                className="text-xs text-red-500 hover:text-red-400 font-medium flex items-center gap-1 transition-colors"
               >
                 <FaTrash className="w-3 h-3" />
                 Delete ({selectedIds.length})
               </button>
             )}
-
-            <div className="h-4 w-px bg-gray-700 mx-2"></div>
-
-            <div>
-              Total:{" "}
-              <span className="text-white font-bold">{totalRecords}</span>
-            </div>
           </div>
 
           <div className="flex items-center gap-4">
