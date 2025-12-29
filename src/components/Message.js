@@ -94,34 +94,43 @@ function Message({
   };
 
   const renderMedia = () => {
-    if (!mediaId) return null;
-    const proxyUrl = `${API_URL}/api/media/${mediaId}`;
+    // We prefer the persistent mediaUrl (Cloudinary) if available
+    // Otherwise fallback to the proxy (Meta API)
+    const mediaSource =
+      msg.mediaUrl || (mediaId ? `${API_URL}/api/media/${mediaId}` : null);
+
+    if (!mediaSource) return null;
 
     switch (mediaType) {
       case "image":
         return (
           <img
-            src={proxyUrl}
+            src={mediaSource}
             alt="Sent media"
             className="rounded-md max-w-xs mb-1"
+            loading="lazy"
           />
         );
       case "video":
         return (
-          <video src={proxyUrl} controls className="rounded-md max-w-xs mb-1" />
+          <video
+            src={mediaSource}
+            controls
+            className="rounded-md max-w-xs mb-1"
+          />
         );
       case "audio":
       case "voice":
-        return <audio src={proxyUrl} controls className="my-2" />;
+        return <audio src={mediaSource} controls className="my-2" />;
       default:
         return (
           <a
-            href={proxyUrl}
+            href={mediaSource}
             target="_blank"
             rel="noopener noreferrer"
             className="text-cyan-400 underline"
           >
-            {msg || "View Document"}
+            {msg.body || "View Document"}
           </a>
         );
     }
