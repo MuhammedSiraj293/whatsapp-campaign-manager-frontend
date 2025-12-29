@@ -16,7 +16,8 @@ import Integrations from "./pages/Integrations";
 import BotStudio from "./pages/BotStudio";
 import FlowBuilder from "./pages/FlowBuilder";
 import AutoReply from "./pages/AutoReply";
-import Properties from "./pages/Properties"; // <-- NEW IMPORT
+import Properties from "./pages/Properties";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
@@ -28,6 +29,7 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
           {/* --- NEW ROLE-BASED ROUTES --- */}
 
