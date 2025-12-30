@@ -157,7 +157,7 @@ export default function Navbar() {
                           "rounded-md px-3 py-2 text-sm font-medium transition-colors"
                         )}
                       >
-                        Replies
+                        Chat
                       </Link>
 
                       {/* 3. CRM DROPDOWN */}
@@ -338,7 +338,7 @@ export default function Navbar() {
                   to="/replies"
                   className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
                 >
-                  Replies
+                  Chat
                 </Disclosure.Button>
                 <Disclosure.Button
                   as={Link}
