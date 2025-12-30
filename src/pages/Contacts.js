@@ -14,10 +14,14 @@ export default function Contacts() {
   const [viewingList, setViewingList] = useState(null); // Will hold the list object
   const [viewingContacts, setViewingContacts] = useState([]);
 
-  const fetchContactLists = async () => {
+  // New Search State
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const fetchContactLists = async (search = "") => {
     try {
       setIsLoading(true);
-      const data = await authFetch("/contacts/lists");
+      const query = search ? `?search=${encodeURIComponent(search)}` : "";
+      const data = await authFetch(`/contacts/lists${query}`);
       if (data.success) setLists(data.data);
     } catch (error) {
       console.error("Error fetching contact lists:", error);
@@ -109,6 +113,15 @@ export default function Contacts() {
     }
   };
 
+  // Handle Search Input Change with Debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchContactLists(searchTerm);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
   // Function to close the modal
   const closeModal = () => {
     setViewingList(null);
@@ -149,9 +162,21 @@ export default function Contacts() {
         </div>
       </div>
       <div>
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          Existing Lists
-        </h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-white text-center">
+            Existing Lists
+          </h2>
+          {/* Global Search Bar */}
+          <div className="relative w-full max-w-xs">
+            <input
+              type="text"
+              placeholder="Search Lists or Contacts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block w-full p-2.5"
+            />
+          </div>
+        </div>
         {isLoading ? (
           <p className="text-center text-gray-400">Loading lists...</p>
         ) : (
