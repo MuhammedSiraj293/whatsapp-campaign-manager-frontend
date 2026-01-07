@@ -916,6 +916,8 @@ const TemplateManager = () => {
                       ? templates.find((t) => t.id === editTemplateId)
                       : null
                   }
+                  wabaId={selectedWabaId}
+                  authToken={authToken}
                   onSubmit={handleFormSubmit}
                   onCancel={() => {
                     setView("list");

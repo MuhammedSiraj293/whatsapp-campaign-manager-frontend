@@ -8,9 +8,20 @@ import {
   XMarkIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
+import axios from "axios";
 import TemplatePreview from "./TemplatePreview";
 
-const TemplateForm = ({ initialData, onSubmit, onCancel, loading, error }) => {
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:10000";
+
+const TemplateForm = ({
+  initialData,
+  onSubmit,
+  onCancel,
+  loading,
+  error,
+  wabaId,
+  authToken,
+}) => {
   const [name, setName] = useState(initialData?.name || "");
   const [language, setLanguage] = useState(initialData?.language || "en_US");
   const [category, setCategory] = useState(
@@ -110,7 +121,7 @@ const TemplateForm = ({ initialData, onSubmit, onCancel, loading, error }) => {
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
     // Construct components array
@@ -120,18 +131,63 @@ const TemplateForm = ({ initialData, onSubmit, onCancel, loading, error }) => {
     if (headerType !== "NONE") {
       const headerComp = { type: "HEADER", format: headerType };
       if (headerType === "TEXT") headerComp.text = headerText;
-      // For media, we would typically include example handlers here
+
+      // MEDIA HEADER UPLOAD LOGIC
       if (["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType)) {
-        // Note: In a real app, we would upload headerFile to get a handle.
-        // For now, sending a placeholder to satisfy the structure if needed,
-        // or we can omit it if the backend handles upload.
-        // We'll leave it out or mock it to fix the lint error.
-        /* 
-        headerComp.example = {
-          [headerType.toLowerCase() + "_handle"]: ["4::" + headerFile?.name],
-        };
-        */
+        if (headerFile) {
+          try {
+            // Determine handle key based on type
+            let handleKey = "image_handle"; // default
+            if (headerType === "VIDEO") handleKey = "video_handle";
+            if (headerType === "DOCUMENT") handleKey = "document_handle";
+
+            // Upload to Backend -> Meta
+            const formData = new FormData();
+            formData.append("file", headerFile);
+            formData.append("wabaId", wabaId);
+
+            // We can set a local loading state here if desired,
+            // but for now relying on form submission flow
+            console.log("Uploading media header...");
+
+            const uploadRes = await axios.post(
+              `${API_URL}/api/media/upload-template-media`,
+              formData,
+              {
+                headers: {
+                  Authorization: `Bearer ${authToken}`,
+                  "Content-Type": "multipart/form-data",
+                },
+              }
+            );
+
+            if (uploadRes.data && uploadRes.data.handle) {
+              const handle = uploadRes.data.handle;
+              console.log("Media handle received:", handle);
+
+              // Add example payload with handle
+              headerComp.example = {
+                [handleKey]: [handle],
+              };
+            }
+          } catch (err) {
+            console.error("Media upload failed:", err);
+            // Optionally show error to user, but let's proceed to try submitting (will fail at Meta but consistent)
+            // Or maybe we should alert the user?
+            alert("Failed to upload media header. Please try again.");
+            return;
+          }
+        } else if (initialData) {
+          // If editing and no new file selected, we might assume existing media...
+          // BUT Meta requires handle for creation. For editing, it might differ.
+          // If editing, we often don't re-upload unless changed.
+        } else {
+          // Creating new with no file?
+          // If local file not selected, maybe we have a URL?
+          // But for creation `example` is required.
+        }
       }
+
       components.push(headerComp);
     }
 
