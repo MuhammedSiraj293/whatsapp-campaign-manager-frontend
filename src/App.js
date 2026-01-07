@@ -17,6 +17,7 @@ import BotStudio from "./pages/BotStudio";
 import FlowBuilder from "./pages/FlowBuilder";
 import AutoReply from "./pages/AutoReply";
 import Properties from "./pages/Properties";
+import TemplateManager from "./pages/TemplateManager"; // <-- NEW IMPORT
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -140,7 +141,7 @@ function App() {
           <Route
             path="/bot-studio"
             element={
-              <ProtectedRoute roles={["admin"]}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <BotStudio />
               </ProtectedRoute>
             }
@@ -148,7 +149,7 @@ function App() {
           <Route
             path="/bot-studio/:flowId"
             element={
-              <ProtectedRoute roles={["admin"]}>
+              <ProtectedRoute roles={["admin", "manager"]}>
                 <FlowBuilder />
               </ProtectedRoute>
             }
@@ -169,6 +170,15 @@ function App() {
             element={
               <ProtectedRoute roles={["admin", "manager"]}>
                 <Properties />
+              </ProtectedRoute>
+            }
+          />
+          {/* --- NEW TEMPLATE MANAGER ROUTE --- */}
+          <Route
+            path="/template-manager"
+            element={
+              <ProtectedRoute roles={["admin", "manager"]}>
+                <TemplateManager />
               </ProtectedRoute>
             }
           />

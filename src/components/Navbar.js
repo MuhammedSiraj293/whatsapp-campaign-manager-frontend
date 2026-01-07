@@ -184,18 +184,23 @@ export default function Navbar() {
                       {user.role !== "viewer" && (
                         <NavDropdown
                           title="Automation"
-                          active={["/auto-reply", "/bot-studio"].includes(
-                            location.pathname
-                          )}
+                          active={[
+                            "/auto-reply",
+                            "/bot-studio",
+                            "/template-manager",
+                          ].includes(location.pathname)}
                         >
                           <DropdownItem to="/auto-reply">
                             Auto-Reply
                           </DropdownItem>
-                          {user.role === "admin" && (
+                          {["admin", "manager"].includes(user.role) && (
                             <DropdownItem to="/bot-studio">
                               Bot Studio
                             </DropdownItem>
                           )}
+                          <DropdownItem to="/template-manager">
+                            Templates
+                          </DropdownItem>
                         </NavDropdown>
                       )}
 
