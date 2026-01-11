@@ -79,7 +79,7 @@ export default function TemplateAnalytics() {
       </h2>
 
       {/* Display the stats in the card layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         <StatCard
           title="Total"
           value={analytics.total}
@@ -107,10 +107,80 @@ export default function TemplateAnalytics() {
         />
         <StatCard
           title="Failed"
-          value={analytics.failed}
+          value={`${analytics.failed} (${analytics.failedRate})`}
           className="border-l-4 border-red-500"
         />
       </div>
+
+      {/* SEGMENT PERFORMANCE TABLE */}
+      {analytics.segments && analytics.segments.length > 0 && (
+        <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h3 className="text-xl font-semibold text-white">
+              Segment Performance
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-gray-300">
+              <thead className="bg-[#111b21] uppercase text-xs font-semibold text-gray-500">
+                <tr>
+                  <th className="px-6 py-3">Segment Name</th>
+                  <th className="px-6 py-3">Total Sent</th>
+                  <th className="px-6 py-3">Delivered</th>
+                  <th className="px-6 py-3">Read</th>
+                  <th className="px-6 py-3">Failed</th>
+                  <th className="px-6 py-3">Replies</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {analytics.segments.map((seg, idx) => (
+                  <tr
+                    key={idx}
+                    className="hover:bg-[#2a3942] transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-white">
+                      {seg.name}
+                    </td>
+                    <td className="px-6 py-4">{seg.totalSent}</td>
+                    <td className="px-6 py-4">
+                      <span className="text-cyan-400 font-bold">
+                        ✔ {seg.delivered}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-1">
+                        ({seg.deliveredRate})
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-green-400 font-bold">
+                        👁 {seg.read}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-1">
+                        ({seg.readRate})
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-red-400 font-bold">
+                        ⚠ {seg.failed}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-1">
+                        ({seg.failedRate})
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-yellow-400 font-bold">
+                        ↩ {seg.replies}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-1">
+                        ({seg.replyRate})
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
