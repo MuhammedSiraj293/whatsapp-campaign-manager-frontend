@@ -11,14 +11,7 @@ import { AiOutlinePaperClip } from "react-icons/ai";
 import { BsFillMicFill } from "react-icons/bs";
 import Avatar from "./Avatar";
 import EmojiPicker from "emoji-picker-react";
-import {
-  BsCheck,
-  BsCheckAll,
-  BsChevronDown,
-  BsEmojiSmile,
-  BsTrash,
-  BsX,
-} from "react-icons/bs";
+import { BsEmojiSmile, BsTrash, BsX } from "react-icons/bs";
 import { BsArrowLeft } from "react-icons/bs";
 
 // --- NEW HELPER FUNCTION to group messages by date ---

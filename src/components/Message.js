@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { API_URL } from "../config";
-import MessageStatus from "./MessageStatus";
-import {
+
   BsCheck,
   BsCheckAll,
   BsChevronDown,
-  BsCheckSquare,
 } from "react-icons/bs";
 
 // Helper to format text with bold (*) and italic (_)
