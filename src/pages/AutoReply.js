@@ -1,8 +1,17 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { authFetch } from "../services/api";
 import { useWaba } from "../context/WabaContext";
-import { AuthContext } from "../context/AuthContext";
 import { FaSave, FaClock, FaCommentDots, FaBusinessTime } from "react-icons/fa";
+
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 export default function AutoReply() {
   const { activeWaba } = useWaba();
@@ -22,30 +31,6 @@ export default function AutoReply() {
     timezone: "UTC",
   });
 
-  const daysOfWeek = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
-
-  // Load Phone Numbers for the active WABA to allow selection
-  useEffect(() => {
-    if (activeWaba) {
-      fetchPhones();
-    }
-  }, [activeWaba, fetchPhones]);
-
-  // Load Config when a phone is selected
-  useEffect(() => {
-    if (selectedPhone) {
-      fetchConfig(selectedPhone);
-    }
-  }, [selectedPhone, fetchConfig]);
-
   const fetchPhones = React.useCallback(async () => {
     try {
       const res = await authFetch("/waba/accounts"); // Or a more specific endpoint if needed
@@ -64,51 +49,62 @@ export default function AutoReply() {
     }
   }, [activeWaba]);
 
-  const fetchConfig = React.useCallback(
-    async (phoneId) => {
-      // setIsLoading(true);
-      try {
-        const res = await authFetch(`/auto-reply/${phoneId}`);
-        if (res.success && res.data) {
-          // Ensure officeHours array is populated for all days if empty
-          let loadedConfig = res.data;
-          if (
-            !loadedConfig.officeHours ||
-            loadedConfig.officeHours.length === 0
-          ) {
-            loadedConfig.officeHours = daysOfWeek.map((day) => ({
-              day,
-              startTime: "09:00",
-              endTime: "17:00",
-              isOpen: true,
-            }));
-          } else {
-            // Merge with defaults if missing days
-            const mergedHours = daysOfWeek.map((day) => {
-              const existing = loadedConfig.officeHours.find(
-                (h) => h.day === day,
-              );
-              return (
-                existing || {
-                  day,
-                  startTime: "09:00",
-                  endTime: "17:00",
-                  isOpen: true,
-                }
-              );
-            });
-            loadedConfig.officeHours = mergedHours;
-          }
-          setConfig(loadedConfig);
+  const fetchConfig = React.useCallback(async (phoneId) => {
+    // setIsLoading(true);
+    try {
+      const res = await authFetch(`/auto-reply/${phoneId}`);
+      if (res.success && res.data) {
+        // Ensure officeHours array is populated for all days if empty
+        let loadedConfig = res.data;
+        if (
+          !loadedConfig.officeHours ||
+          loadedConfig.officeHours.length === 0
+        ) {
+          loadedConfig.officeHours = daysOfWeek.map((day) => ({
+            day,
+            startTime: "09:00",
+            endTime: "17:00",
+            isOpen: true,
+          }));
+        } else {
+          // Merge with defaults if missing days
+          const mergedHours = daysOfWeek.map((day) => {
+            const existing = loadedConfig.officeHours.find(
+              (h) => h.day === day,
+            );
+            return (
+              existing || {
+                day,
+                startTime: "09:00",
+                endTime: "17:00",
+                isOpen: true,
+              }
+            );
+          });
+          loadedConfig.officeHours = mergedHours;
         }
-      } catch (err) {
-        console.error("Error loading config", err);
-      } finally {
-        // setIsLoading(false);
+        setConfig(loadedConfig);
       }
-    },
-    [daysOfWeek],
-  );
+    } catch (err) {
+      console.error("Error loading config", err);
+    } finally {
+      // setIsLoading(false);
+    }
+  }, []);
+
+  // Load Phone Numbers for the active WABA to allow selection
+  useEffect(() => {
+    if (activeWaba) {
+      fetchPhones();
+    }
+  }, [activeWaba, fetchPhones]);
+
+  // Load Config when a phone is selected
+  useEffect(() => {
+    if (selectedPhone) {
+      fetchConfig(selectedPhone);
+    }
+  }, [selectedPhone, fetchConfig]);
 
   const handleSave = async () => {
     try {
