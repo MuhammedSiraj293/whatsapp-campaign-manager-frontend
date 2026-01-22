@@ -2,24 +2,14 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
 import { AuthContext } from "../context/AuthContext";
-import {
   ChatBubbleLeftRightIcon,
-  PlusIcon,
   MagnifyingGlassIcon,
-  CheckCircleIcon,
   ExclamationCircleIcon,
   PencilSquareIcon,
   Cog6ToothIcon,
   ChevronDownIcon,
-  FunnelIcon,
-  ArrowsRightLeftIcon,
   ChatBubbleBottomCenterTextIcon,
   ChevronRightIcon,
-  CreditCardIcon,
-  ChartBarIcon,
-  UsersIcon,
-  DocumentTextIcon,
-  FolderIcon,
   ClockIcon,
   CloudIcon,
   EllipsisHorizontalIcon,
@@ -74,7 +64,7 @@ function useOutsideAlerter(ref, callback) {
 
 const TemplateManager = () => {
   const { authToken } = useContext(AuthContext);
-  const [wabaAccounts, setWabaAccounts] = useState([]);
+  // const [wabaAccounts, setWabaAccounts] = useState([]); // REMOVED unused
   const [selectedWabaId, setSelectedWabaId] = useState("");
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -110,7 +100,7 @@ const TemplateManager = () => {
   // --- CREATE FORM STATE ---
   // Form state is now handled by TemplateForm component
   const [formError, setFormError] = useState("");
-  const [formSuccess, setFormSuccess] = useState("");
+  // const [formSuccess, setFormSuccess] = useState(""); // REMOVED unused
 
   useEffect(() => {
     const fetchWaba = async () => {
@@ -118,7 +108,7 @@ const TemplateManager = () => {
         const res = await axios.get(`${API_URL}/api/waba/accounts`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
-        setWabaAccounts(res.data.data);
+        // setWabaAccounts(res.data.data); // REMOVED unused
         if (res.data.data.length > 0) {
           setSelectedWabaId(res.data.data[0].businessAccountId);
         }
@@ -142,10 +132,9 @@ const TemplateManager = () => {
     selectedWabaId,
     view,
     searchQuery,
-    selectedCategories,
-    selectedLanguages,
     selectedStatuses,
     dateRange,
+    fetchTemplates, // Added dependency
   ]);
 
   // Fetch Analytics when selectedTemplate changes
@@ -153,9 +142,9 @@ const TemplateManager = () => {
     if (view === "details" && selectedTemplate && selectedWabaId) {
       fetchTemplateAnalytics();
     }
-  }, [view, selectedTemplate, selectedWabaId, dateRange]);
+  }, [view, selectedTemplate, selectedWabaId, dateRange, fetchTemplateAnalytics]);
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = React.useCallback(async () => {
     setLoading(true);
     try {
       // Construct Query Params
@@ -194,9 +183,17 @@ const TemplateManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    searchQuery,
+    selectedCategories,
+    selectedLanguages,
+    selectedStatuses,
+    dateRange,
+    selectedWabaId,
+    authToken,
+  ]);
 
-  const fetchTemplateAnalytics = async () => {
+  const fetchTemplateAnalytics = React.useCallback(async () => {
     try {
       const end = Math.floor(Date.now() / 1000);
       const start = Math.floor(Date.now() / 1000) - dateRange * 24 * 60 * 60;
@@ -205,7 +202,7 @@ const TemplateManager = () => {
         `${API_URL}/api/templates/${selectedWabaId}/analytics`,
         {
           params: {
-            templateId: selectedTemplate.id,
+            templateId: selectedTemplate ? selectedTemplate.id : null,
             start,
             end,
           },
@@ -219,7 +216,7 @@ const TemplateManager = () => {
       // Fallback or empty chart will render
       setAnalyticsData({});
     }
-  };
+  }, [dateRange, selectedWabaId, selectedTemplate, authToken]);
 
   // --- HANDLERS for Filter Toggles ---
   const toggleCategory = (cat) => {
@@ -257,7 +254,7 @@ const TemplateManager = () => {
   const handleFormSubmit = async (formData) => {
     setLoading(true);
     setFormError("");
-    setFormSuccess("");
+    // setFormSuccess(""); // unused
 
     try {
       if (editTemplateId) {
@@ -266,22 +263,22 @@ const TemplateManager = () => {
           { wabaId: selectedWabaId, components: formData.components },
           { headers: { Authorization: `Bearer ${authToken}` } }
         );
-        setFormSuccess("Template updated successfully!");
+        // setFormSuccess("Template updated successfully!");
       } else {
         await axios.post(
           `${API_URL}/api/templates`,
           { wabaId: selectedWabaId, ...formData },
           { headers: { Authorization: `Bearer ${authToken}` } }
         );
-        setFormSuccess(
-          "Template created successfully! Waiting for Meta review."
-        );
+        // setFormSuccess(
+        //   "Template created successfully! Waiting for Meta review."
+        // );
       }
       setTimeout(() => {
         setView("list");
         setEditTemplateId(null);
         setFormError("");
-        setFormSuccess("");
+        // setFormSuccess("");
       }, 2000);
     } catch (err) {
       setFormError(err.response?.data?.error || "Failed to save template.");
