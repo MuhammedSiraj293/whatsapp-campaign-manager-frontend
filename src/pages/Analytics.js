@@ -10,6 +10,9 @@ import {
   FaCheckDouble,
   FaEye,
   FaExclamationTriangle,
+  FaSort,
+  FaSortUp,
+  FaSortDown,
 } from "react-icons/fa";
 
 // Reusable component for the stat cards
@@ -40,6 +43,63 @@ export default function Analytics() {
   const [stats, setStats] = useState(null);
   const [templateStats, setTemplateStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // --- NEW STATE for Search and Sort ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    key: "lastSent",
+    direction: "desc",
+  });
+
+  // --- SORT HANDLER ---
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // --- DERIVED STATE: Filtered & Sorted Stats ---
+  const filteredStats = React.useMemo(() => {
+    let data = [...templateStats];
+
+    // 1. Filter
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      data = data.filter((item) =>
+        (item.templateName || "").toLowerCase().includes(lowerTerm),
+      );
+    }
+
+    // 2. Sort
+    if (sortConfig.key) {
+      data.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Handle string comparison (case-insensitive for names)
+        if (typeof aValue === "string") aValue = aValue.toLowerCase();
+        if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+        // Handle dates if key is 'lastSent' (though it comes as string often, nice to ensure)
+        if (sortConfig.key === "lastSent") {
+          aValue = new Date(aValue || 0).getTime();
+          bValue = new Date(bValue || 0).getTime();
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return data;
+  }, [templateStats, searchTerm, sortConfig]);
 
   useEffect(() => {
     const fetchAllStats = async () => {
@@ -102,43 +162,90 @@ export default function Analytics() {
       </div>
 
       <div className="mt-12">
-        <h2 className="text-2xl text-white mb-6">Template Performance</h2>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+          <h2 className="text-2xl text-white">Template Performance</h2>
+          <div className="relative mt-4 md:mt-0 w-full md:w-64">
+            <input
+              type="text"
+              placeholder="Search templates..."
+              className="w-full bg-[#202d33] text-white rounded-lg px-4 py-2 pl-10 focus:outline-none ring-1 ring-gray-700 focus:ring-emerald-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="absolute left-3 top-3 text-gray-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-[#202d33] rounded-lg shadow-lg overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-[#2a3942]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Template Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Total Sent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Delivered
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Read
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Failed
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Replies
-                </th>
+                {[
+                  {
+                    key: "templateName",
+                    label: "Template Name",
+                    align: "left",
+                  },
+                  { key: "totalSent", label: "Total Sent", align: "left" },
+                  { key: "delivered", label: "Delivered", align: "left" },
+                  { key: "read", label: "Read", align: "left" },
+                  { key: "failed", label: "Failed", align: "left" },
+                  { key: "replies", label: "Replies", align: "left" },
+                ].map((col) => (
+                  <th
+                    key={col.key}
+                    onClick={() => handleSort(col.key)}
+                    className={`px-6 py-3 text-${col.align} text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-[#324552] transition-colors select-none`}
+                  >
+                    <div className="flex items-center gap-1">
+                      {col.label}
+                      {sortConfig.key === col.key ? (
+                        sortConfig.direction === "asc" ? (
+                          <FaSortUp />
+                        ) : (
+                          <FaSortDown />
+                        )
+                      ) : (
+                        <FaSort className="text-gray-600" />
+                      )}
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {templateStats.map((template) => (
-                <tr key={template.templateName}>
+              {filteredStats.map((template) => (
+                <tr
+                  key={template.templateName}
+                  className="hover:bg-[#2a3942] transition-colors"
+                >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    {/* --- 3. THIS IS THE FIX --- */}
-                    {/* The name is now a clickable link */}
                     <Link
                       to={`/analytics/template/${template.templateName}`}
-                      className="text-white hover:text-gray-400 hover:underline"
+                      className="text-white hover:text-emerald-400 hover:underline"
                     >
                       {formatTemplateName(template.templateName)}
                     </Link>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {template.lastSent
+                        ? new Date(template.lastSent).toLocaleDateString()
+                        : "Never"}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {template.totalSent}
@@ -151,7 +258,7 @@ export default function Analytics() {
                     <FaEye className="inline mr-1 text-green-500" />
                     {template.read}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowGrap text-sm text-gray-300">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     <FaExclamationTriangle className="inline mr-1 text-red-500" />
                     {template.failed}
                   </td>
@@ -161,6 +268,16 @@ export default function Analytics() {
                   </td>
                 </tr>
               ))}
+              {filteredStats.length === 0 && (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    No templates found matching "{searchTerm}"
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
