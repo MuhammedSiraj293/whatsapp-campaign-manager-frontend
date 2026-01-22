@@ -63,7 +63,6 @@ export default function ChatDetail({
   contactName,
   onLoadMore, // Pagination
   hasMore,
-  hasMore,
   loading,
 }) {
   // --- SELECTION STATE ---
