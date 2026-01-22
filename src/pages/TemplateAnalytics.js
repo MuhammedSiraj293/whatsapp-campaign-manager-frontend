@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { authFetch } from "../services/api";
+import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 
 // Reusable StatCard component (same as on the other analytics page)
 const StatCard = ({ title, value, className = "" }) => {
@@ -31,6 +32,59 @@ export default function TemplateAnalytics() {
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { templateName } = useParams(); // Get the template name from the URL
+
+  // --- NEW STATE for Search and Sort ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    key: "totalSent",
+    direction: "desc",
+  });
+
+  // --- SORT HANDLER ---
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // --- DERIVED STATE: Filtered & Sorted Segments ---
+  const filteredSegments = React.useMemo(() => {
+    if (!analytics || !analytics.segments) return [];
+
+    let data = [...analytics.segments];
+
+    // 1. Filter
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      data = data.filter((item) =>
+        (item.name || "").toLowerCase().includes(lowerTerm),
+      );
+    }
+
+    // 2. Sort
+    if (sortConfig.key) {
+      data.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Handle string comparison (case-insensitive for names)
+        if (typeof aValue === "string") aValue = aValue.toLowerCase();
+        if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return data;
+  }, [analytics, searchTerm, sortConfig]);
 
   useEffect(() => {
     if (!templateName) return;
@@ -115,25 +169,71 @@ export default function TemplateAnalytics() {
       {/* SEGMENT PERFORMANCE TABLE */}
       {analytics.segments && analytics.segments.length > 0 && (
         <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
             <h3 className="text-xl font-semibold text-white">
               Segment Performance
             </h3>
+            <div className="relative w-full md:w-64">
+              <input
+                type="text"
+                placeholder="Search segments..."
+                className="w-full bg-[#111b21] text-white rounded-lg px-4 py-2 pl-10 focus:outline-none ring-1 ring-gray-600 focus:ring-emerald-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <div className="absolute left-3 top-2.5 text-gray-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-gray-300">
               <thead className="bg-[#111b21] uppercase text-xs font-semibold text-gray-500">
                 <tr>
-                  <th className="px-6 py-3">Segment Name</th>
-                  <th className="px-6 py-3">Total Sent</th>
-                  <th className="px-6 py-3">Delivered</th>
-                  <th className="px-6 py-3">Read</th>
-                  <th className="px-6 py-3">Failed</th>
-                  <th className="px-6 py-3">Replies</th>
+                  {[
+                    { key: "name", label: "Segment Name" },
+                    { key: "totalSent", label: "Total Sent" },
+                    { key: "delivered", label: "Delivered" },
+                    { key: "read", label: "Read" },
+                    { key: "failed", label: "Failed" },
+                    { key: "replies", label: "Replies" },
+                  ].map((col) => (
+                    <th
+                      key={col.key}
+                      className="px-6 py-3 cursor-pointer hover:bg-[#1f2c33] select-none"
+                      onClick={() => handleSort(col.key)}
+                    >
+                      <div className="flex items-center gap-1">
+                        {col.label}
+                        {sortConfig.key === col.key ? (
+                          sortConfig.direction === "asc" ? (
+                            <FaSortUp />
+                          ) : (
+                            <FaSortDown />
+                          )
+                        ) : (
+                          <FaSort className="text-gray-600" />
+                        )}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {analytics.segments.map((seg, idx) => (
+                {filteredSegments.map((seg, idx) => (
                   <tr
                     key={idx}
                     className="hover:bg-[#2a3942] transition-colors"
@@ -176,6 +276,16 @@ export default function TemplateAnalytics() {
                     </td>
                   </tr>
                 ))}
+                {filteredSegments.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
+                      No segments found matching "{searchTerm}"
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
