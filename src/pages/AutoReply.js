@@ -6,8 +6,8 @@ import { FaSave, FaClock, FaCommentDots, FaBusinessTime } from "react-icons/fa";
 
 export default function AutoReply() {
   const { activeWaba } = useWaba();
-  const { user } = useContext(AuthContext);
-  const [isLoading, setIsLoading] = useState(false);
+  // const { user } = useContext(AuthContext); // Unused
+  // const [isLoading, setIsLoading] = useState(false); // Unused
   const [phoneNumbers, setPhoneNumbers] = useState([]);
   const [selectedPhone, setSelectedPhone] = useState("");
 
@@ -37,16 +37,16 @@ export default function AutoReply() {
     if (activeWaba) {
       fetchPhones();
     }
-  }, [activeWaba]);
+  }, [activeWaba, fetchPhones]);
 
   // Load Config when a phone is selected
   useEffect(() => {
     if (selectedPhone) {
       fetchConfig(selectedPhone);
     }
-  }, [selectedPhone]);
+  }, [selectedPhone, fetchConfig]);
 
-  const fetchPhones = async () => {
+  const fetchPhones = React.useCallback(async () => {
     try {
       const res = await authFetch("/waba/accounts"); // Or a more specific endpoint if needed
       if (res.success) {
@@ -62,50 +62,53 @@ export default function AutoReply() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [activeWaba]);
 
-  const fetchConfig = async (phoneId) => {
-    setIsLoading(true);
-    try {
-      const res = await authFetch(`/auto-reply/${phoneId}`);
-      if (res.success && res.data) {
-        // Ensure officeHours array is populated for all days if empty
-        let loadedConfig = res.data;
-        if (
-          !loadedConfig.officeHours ||
-          loadedConfig.officeHours.length === 0
-        ) {
-          loadedConfig.officeHours = daysOfWeek.map((day) => ({
-            day,
-            startTime: "09:00",
-            endTime: "17:00",
-            isOpen: true,
-          }));
-        } else {
-          // Merge with defaults if missing days
-          const mergedHours = daysOfWeek.map((day) => {
-            const existing = loadedConfig.officeHours.find(
-              (h) => h.day === day
-            );
-            return (
-              existing || {
-                day,
-                startTime: "09:00",
-                endTime: "17:00",
-                isOpen: true,
-              }
-            );
-          });
-          loadedConfig.officeHours = mergedHours;
+  const fetchConfig = React.useCallback(
+    async (phoneId) => {
+      // setIsLoading(true);
+      try {
+        const res = await authFetch(`/auto-reply/${phoneId}`);
+        if (res.success && res.data) {
+          // Ensure officeHours array is populated for all days if empty
+          let loadedConfig = res.data;
+          if (
+            !loadedConfig.officeHours ||
+            loadedConfig.officeHours.length === 0
+          ) {
+            loadedConfig.officeHours = daysOfWeek.map((day) => ({
+              day,
+              startTime: "09:00",
+              endTime: "17:00",
+              isOpen: true,
+            }));
+          } else {
+            // Merge with defaults if missing days
+            const mergedHours = daysOfWeek.map((day) => {
+              const existing = loadedConfig.officeHours.find(
+                (h) => h.day === day,
+              );
+              return (
+                existing || {
+                  day,
+                  startTime: "09:00",
+                  endTime: "17:00",
+                  isOpen: true,
+                }
+              );
+            });
+            loadedConfig.officeHours = mergedHours;
+          }
+          setConfig(loadedConfig);
         }
-        setConfig(loadedConfig);
+      } catch (err) {
+        console.error("Error loading config", err);
+      } finally {
+        // setIsLoading(false);
       }
-    } catch (err) {
-      console.error("Error loading config", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [daysOfWeek],
+  );
 
   const handleSave = async () => {
     try {
