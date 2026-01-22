@@ -90,7 +90,7 @@ export default function Replies() {
     setActiveConversationId(null);
     setConvoPage(1);
     setHasMoreConvos(true);
-  }, [activeWaba, wabaAccounts]);
+  }, [activeWaba, wabaAccounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- FILTER STATE ---
   const [filterMode, setFilterMode] = useState("all"); // 'all' | 'unread'

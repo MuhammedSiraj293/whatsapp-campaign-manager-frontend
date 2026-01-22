@@ -6,7 +6,6 @@ import {
   BsCheckAll,
   BsChevronDown,
   BsCheckSquare,
-  BsSquare,
 } from "react-icons/bs";
 
 // Helper to format text with bold (*) and italic (_)
