@@ -418,6 +418,7 @@ export default function ChatDetail({
 
       {/* ... Messages Area ... */}
       <div
+        dir="ltr"
         ref={messagesContainerRef}
         onScroll={handleScroll}
         className="bg-[#0a131a] bg-chat-bg bg-contain overflow-y-scroll h-full flex flex-col custom-scrollbar"
