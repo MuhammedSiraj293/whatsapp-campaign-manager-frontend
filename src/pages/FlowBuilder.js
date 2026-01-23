@@ -363,6 +363,187 @@ export default function FlowBuilder() {
     }
   };
 
+  // --- SAVE HANDLER ---
+  const handleSave = async () => {
+    setIsLoading(true); // Show loading state while saving
+    try {
+      // 1. Fetch current nodes from backend to identify deletions
+      const response = await authFetch(`/bot-flows/${flowId}/nodes`);
+      if (!response.success)
+        throw new Error("Failed to fetch current nodes for sync.");
+
+      const existingBackendNodes = response.data;
+
+      // Filter out virtual nodes from current frontend nodes
+      const realFrontendNodes = nodes.filter((n) => !n.data.isFollowUp);
+
+      const currentFrontendNodeIds = new Set(
+        realFrontendNodes.map((n) => n.data._id).filter((id) => id),
+      ); // Only existing IDs
+
+      // 2. Identify nodes to delete (exist in backend but not in frontend)
+      const nodesToDelete = existingBackendNodes.filter(
+        (node) => !currentFrontendNodeIds.has(node._id),
+      );
+
+      // 3. Delete removed nodes
+      if (nodesToDelete.length > 0) {
+        console.log("Deleting nodes:", nodesToDelete);
+        await Promise.all(
+          nodesToDelete.map((node) =>
+            authFetch(`/bot-flows/nodes/${node._id}`, { method: "DELETE" }),
+          ),
+        );
+      }
+
+      // 4. Convert React Flow Nodes/Edges -> Backend Format
+      const backendNodes = realFrontendNodes.map((node) => {
+        // Find edges starting from this node
+        const connectedEdges = edges.filter((e) => e.source === node.id);
+
+        // Helper to find target node's business ID
+        const getTargetNodeId = (targetId) => {
+          const targetNode = nodes.find((n) => n.id === targetId);
+          // Prefer data.nodeId (user edited), fallback to id (internal)
+          return targetNode ? targetNode.data.nodeId || targetNode.id : "";
+        };
+
+        // Default Next Node (for Text nodes)
+        let nextNodeId = "";
+        if (node.data.messageType === "text") {
+          // Find edge with no specific handle or default handle
+          const edge = connectedEdges.find(
+            (e) => !e.sourceHandle || e.sourceHandle === "null",
+          );
+          if (edge) nextNodeId = getTargetNodeId(edge.target);
+        }
+
+        // Map Buttons Edges
+        let buttons = node.data.buttons || [];
+        if (node.data.messageType === "buttons") {
+          buttons = buttons.map((btn, index) => {
+            const edge = connectedEdges.find(
+              (e) => e.sourceHandle === `handle-btn-${index}`,
+            );
+            return {
+              ...btn,
+              nextNodeId: edge ? getTargetNodeId(edge.target) : "",
+            };
+          });
+        }
+
+        // Map List Items Edges & Structure into Sections
+        let listSections = [];
+        let listItems = node.data.listItems || [];
+
+        if (node.data.messageType === "list") {
+          // Update nextNodeId for each item based on edges
+          const updatedListItems = listItems.map((item, index) => {
+            const edge = connectedEdges.find(
+              (e) => e.sourceHandle === `handle-list-${index}`,
+            );
+            return {
+              ...item,
+              nextNodeId: edge ? getTargetNodeId(edge.target) : "",
+            };
+          });
+
+          // Wrap in a default section
+          if (updatedListItems.length > 0) {
+            listSections = [
+              {
+                title: "Options", // Default section title
+                rows: updatedListItems,
+              },
+            ];
+          }
+        }
+
+        return {
+          _id: node.data._id, // Existing ID if any
+          nodeId: node.data.nodeId || node.id,
+          messageText: node.data.messageText,
+          messageType: node.data.messageType,
+          saveToField: node.data.saveToField,
+          buttons: buttons,
+          listButtonText: node.data.listButtonText || "Open Menu", // Save button text
+          listSections: listSections, // Send sections instead of listItems
+          nextNodeId: nextNodeId || node.data.nextNodeId, // Prefer visual connection
+          // Follow-Up Fields
+          followUpEnabled: node.data.followUpEnabled,
+          followUpDelay: node.data.followUpDelay,
+          followUpMessage: node.data.followUpMessage,
+        };
+      });
+
+      // 5. Update or Create nodes
+      // We use a loop here, but ideally this should be a bulk operation
+      for (const node of backendNodes) {
+        if (node._id) {
+          await authFetch(`/bot-flows/nodes/${node._id}`, {
+            method: "PUT",
+            body: JSON.stringify(node),
+          });
+        } else {
+          await authFetch(`/bot-flows/${flowId}/nodes`, {
+            method: "POST",
+            body: JSON.stringify(node),
+          });
+        }
+      }
+
+      // 6. Refresh data to get new IDs
+
+      // --- SAVE FOLLOW-UP CONNECTIONS ---
+      // Find edges connected to the virtual FOLLOW_UP_NODE
+      const followUpEdges = edges.filter((e) => e.source === "FOLLOW_UP_NODE");
+
+      let followUpYesNodeId = "";
+      let followUpNoNodeId = "";
+
+      followUpEdges.forEach((edge) => {
+        // Helper to find target node's business ID (reused from above)
+        const getTargetNodeId = (targetId) => {
+          const targetNode = nodes.find((n) => n.id === targetId);
+          return targetNode ? targetNode.data.nodeId || targetNode.id : "";
+        };
+
+        if (edge.sourceHandle === "handle-btn-0") {
+          // Yes
+          followUpYesNodeId = getTargetNodeId(edge.target);
+        } else if (edge.sourceHandle === "handle-btn-1") {
+          // No
+          followUpNoNodeId = getTargetNodeId(edge.target);
+        }
+      });
+
+      // Update flow settings with these IDs
+      if (flowSettings.completionFollowUpEnabled) {
+        const updatedSettings = {
+          ...flowSettings,
+          completionFollowUpYesNodeId: followUpYesNodeId,
+          completionFollowUpNoNodeId: followUpNoNodeId,
+        };
+
+        await authFetch(`/bot-flows/${flowId}`, {
+          method: "PUT",
+          body: JSON.stringify(updatedSettings),
+        });
+
+        // Update local state
+        setFlowSettings(updatedSettings);
+      }
+
+      await fetchFlowData();
+      alert("Flow saved successfully!");
+    } catch (error) {
+      console.error("Error saving flow:", error);
+      alert(`Failed to save flow: ${error.message || "Unknown error"}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // --- AUTO LAYOUT HANDLER ---
   const onLayout = useCallback(() => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
