@@ -252,9 +252,10 @@ export default function FlowBuilder() {
     } catch (error) {
       console.error("Error fetching flow:", error);
       alert(`Failed to load flow data: ${error.message}`);
+    } finally {
       setIsLoading(false);
     }
-  }, [flowId, setNodes, setEdges]); // Removed flowSettings from dependency
+  }, [flowId, setNodes, setEdges]);
 
   useEffect(() => {
     fetchFlowData();
