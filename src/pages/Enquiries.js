@@ -178,9 +178,10 @@ export default function Enquiries() {
         <h1 className="text-3xl font-bold text-white mb-6">Enquiries</h1>
 
         {/* --- FILTERS SECTION --- */}
-        <div className="bg-[#202d33] p-3 rounded-lg shadow-lg mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* --- FILTERS SECTION --- */}
+        <div className="bg-[#202d33] p-3 rounded-lg shadow-lg mb-4 flex flex-col md:flex-row items-center gap-3">
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-1 w-full md:w-auto">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FaSearch className="text-gray-500 text-xs" />
             </div>
@@ -194,7 +195,7 @@ export default function Enquiries() {
           </div>
 
           {/* Status Filter */}
-          <div>
+          <div className="w-full md:w-40 shrink-0">
             <select
               className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
               value={statusFilter}
@@ -212,9 +213,9 @@ export default function Enquiries() {
           </div>
 
           {/* Phone Number Filter */}
-          <div>
+          <div className="w-full md:w-56 shrink-0">
             <select
-              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full truncate"
               value={phoneNumberFilter}
               onChange={(e) => {
                 setPhoneNumberFilter(e.target.value);
@@ -231,33 +232,32 @@ export default function Enquiries() {
           </div>
 
           {/* Actions / Total */}
-          <div className="flex items-center justify-end gap-3 text-xs">
+          <div className="flex items-center justify-between md:justify-end gap-3 text-xs w-full md:w-auto shrink-0">
             <button
               onClick={() => {
                 setIsSelectionMode(!isSelectionMode);
                 if (isSelectionMode) setSelectedIds([]);
               }}
-              className="text-emerald-500 hover:text-emerald-400 font-medium transition-colors"
+              className="text-emerald-500 hover:text-emerald-400 font-medium transition-colors whitespace-nowrap"
             >
-              {isSelectionMode ? "Cancel Selection" : "Select"}
+              {isSelectionMode ? "Cancel" : "Select"}
             </button>
 
             {isSelectionMode && selectedIds.length > 0 && (
               <button
                 onClick={handleBulkDelete}
-                className="text-red-500 hover:text-red-400 font-medium flex items-center gap-1 transition-colors"
+                className="text-red-500 hover:text-red-400 font-medium flex items-center gap-1 transition-colors whitespace-nowrap"
               >
                 <FaTrash className="w-3 h-3" />
-                Delete ({selectedIds.length})
+                Del ({selectedIds.length})
               </button>
             )}
 
-            <div className="text-gray-400 border-l border-gray-600 pl-3">
+            <div className="text-gray-400 border-l border-gray-600 pl-3 whitespace-nowrap">
               Found{" "}
               <span className="text-emerald-400 font-bold mx-1">
                 {totalRecords}
-              </span>{" "}
-              enquiries
+              </span>
             </div>
           </div>
         </div>
