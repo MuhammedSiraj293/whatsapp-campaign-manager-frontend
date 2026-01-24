@@ -302,9 +302,8 @@ export default function Integrations() {
           <button
             onClick={launchWhatsAppSignup}
             disabled={!isSdkLoaded}
-            className={`w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded flex items-center justify-center gap-2 ${
-              !isSdkLoaded ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded flex items-center justify-center gap-2 ${!isSdkLoaded ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             {/* Facebook Icon */}
             <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -518,6 +517,62 @@ export default function Integrations() {
                                   method: "PUT",
                                   body: JSON.stringify({
                                     isAiEnabled: e.target.checked,
+                                  }),
+                                });
+                                fetchAllData(); // Refresh
+                              } catch (err) {
+                                alert(err.message);
+                              }
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+
+                      {/* Enable Follow Up Toggle */}
+                      <div className="mt-2 flex items-center justify-between bg-[#1a262b] p-2 rounded">
+                        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                          📅 Follow-up
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={phone.isFollowUpEnabled || false}
+                            onChange={async (e) => {
+                              try {
+                                await authFetch(`/waba/phones/${phone._id}`, {
+                                  method: "PUT",
+                                  body: JSON.stringify({
+                                    isFollowUpEnabled: e.target.checked,
+                                  }),
+                                });
+                                fetchAllData(); // Refresh
+                              } catch (err) {
+                                alert(err.message);
+                              }
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+
+                      {/* Enable Review Toggle */}
+                      <div className="mt-2 flex items-center justify-between bg-[#1a262b] p-2 rounded">
+                        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                          ⭐ Review
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={phone.isReviewEnabled || false}
+                            onChange={async (e) => {
+                              try {
+                                await authFetch(`/waba/phones/${phone._id}`, {
+                                  method: "PUT",
+                                  body: JSON.stringify({
+                                    isReviewEnabled: e.target.checked,
                                   }),
                                 });
                                 fetchAllData(); // Refresh
