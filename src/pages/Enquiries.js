@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { authFetch } from "../services/api";
 import { FaTrash, FaSearch } from "react-icons/fa";
+import { useWaba } from "../context/WabaContext";
 
 export default function Enquiries() {
   const [enquiries, setEnquiries] = useState([]);
@@ -20,6 +21,9 @@ export default function Enquiries() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
+  // WABA Context
+  const { activeWaba } = useWaba();
+
   // Debounce Search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,7 +37,7 @@ export default function Enquiries() {
   useEffect(() => {
     fetchEnquiries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, debouncedSearch, statusFilter]);
+  }, [page, limit, debouncedSearch, statusFilter, activeWaba]);
 
   const fetchEnquiries = async () => {
     try {
@@ -43,6 +47,7 @@ export default function Enquiries() {
         limit,
         search: debouncedSearch,
         status: statusFilter,
+        wabaId: activeWaba || "", // Send Waba ID
       });
 
       const data = await authFetch(`/enquiries?${params}`);
@@ -345,11 +350,10 @@ export default function Enquiries() {
             <button
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={page === 1}
-              className={`px-3 py-1 rounded text-xs transition-colors ${
-                page === 1
+              className={`px-3 py-1 rounded text-xs transition-colors ${page === 1
                   ? "text-gray-600 cursor-not-allowed"
                   : "text-emerald-500 hover:bg-emerald-500/10"
-              }`}
+                }`}
             >
               PREVIOUS
             </button>
@@ -360,11 +364,10 @@ export default function Enquiries() {
             <button
               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={page === totalPages || totalPages === 0}
-              className={`px-3 py-1 rounded text-xs transition-colors ${
-                page === totalPages || totalPages === 0
+              className={`px-3 py-1 rounded text-xs transition-colors ${page === totalPages || totalPages === 0
                   ? "text-gray-600 cursor-not-allowed"
                   : "text-emerald-500 hover:bg-emerald-500/10"
-              }`}
+                }`}
             >
               NEXT
             </button>
