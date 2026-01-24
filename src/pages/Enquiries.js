@@ -17,12 +17,51 @@ export default function Enquiries() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  // New Phone Number Filter State
+  const [wabaAccounts, setWabaAccounts] = useState([]);
+  const [availablePhoneNumbers, setAvailablePhoneNumbers] = useState([]);
+  const [phoneNumberFilter, setPhoneNumberFilter] = useState("");
+
   // Selection State
   const [selectedIds, setSelectedIds] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   // WABA Context
   const { activeWaba } = useWaba();
+
+  // Fetch WABA accounts
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const data = await authFetch("/waba/accounts");
+        if (data.success) {
+          setWabaAccounts(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching WABA accounts:", error);
+      }
+    };
+    fetchAccounts();
+  }, []);
+
+  // Update available phone numbers when activeWaba changes
+  useEffect(() => {
+    if (activeWaba && wabaAccounts.length > 0) {
+      const account = wabaAccounts.find((acc) => acc._id === activeWaba);
+      const phones = account ? account.phoneNumbers : [];
+      setAvailablePhoneNumbers(phones);
+
+      // Default to the first number if available
+      if (phones.length > 0) {
+        setPhoneNumberFilter(phones[0].phoneNumberId);
+      } else {
+        setPhoneNumberFilter("");
+      }
+    } else {
+      setAvailablePhoneNumbers([]);
+      setPhoneNumberFilter("");
+    }
+  }, [activeWaba, wabaAccounts]);
 
   // Debounce Search
   useEffect(() => {
@@ -37,7 +76,7 @@ export default function Enquiries() {
   useEffect(() => {
     fetchEnquiries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, debouncedSearch, statusFilter, activeWaba]);
+  }, [page, limit, debouncedSearch, statusFilter, activeWaba, phoneNumberFilter]);
 
   const fetchEnquiries = async () => {
     try {
@@ -47,7 +86,8 @@ export default function Enquiries() {
         limit,
         search: debouncedSearch,
         status: statusFilter,
-        wabaId: activeWaba || "", // Send Waba ID
+        wabaId: activeWaba || "",
+        phoneNumberFilter: phoneNumberFilter || "", // Send specific phone filter
       });
 
       const data = await authFetch(`/enquiries?${params}`);
@@ -168,6 +208,25 @@ export default function Enquiries() {
               <option value="contacted">Contacted</option>
               <option value="handover">Handover</option>
               <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          {/* Phone Number Filter */}
+          <div>
+            <select
+              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              value={phoneNumberFilter}
+              onChange={(e) => {
+                setPhoneNumberFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">All Phone Numbers</option>
+              {availablePhoneNumbers.map((phone) => (
+                <option key={phone._id} value={phone.phoneNumberId}>
+                  {phone.phoneNumberName} ({phone.phoneNumberId})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -351,8 +410,8 @@ export default function Enquiries() {
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={page === 1}
               className={`px-3 py-1 rounded text-xs transition-colors ${page === 1
-                  ? "text-gray-600 cursor-not-allowed"
-                  : "text-emerald-500 hover:bg-emerald-500/10"
+                ? "text-gray-600 cursor-not-allowed"
+                : "text-emerald-500 hover:bg-emerald-500/10"
                 }`}
             >
               PREVIOUS
@@ -365,8 +424,8 @@ export default function Enquiries() {
               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={page === totalPages || totalPages === 0}
               className={`px-3 py-1 rounded text-xs transition-colors ${page === totalPages || totalPages === 0
-                  ? "text-gray-600 cursor-not-allowed"
-                  : "text-emerald-500 hover:bg-emerald-500/10"
+                ? "text-gray-600 cursor-not-allowed"
+                : "text-emerald-500 hover:bg-emerald-500/10"
                 }`}
             >
               NEXT
