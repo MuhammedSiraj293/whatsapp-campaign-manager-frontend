@@ -1,13 +1,22 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { authFetch } from "../services/api";
 import { useWaba } from "../context/WabaContext";
-import { AuthContext } from "../context/AuthContext";
 import { FaSave, FaClock, FaCommentDots, FaBusinessTime } from "react-icons/fa";
+
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 export default function AutoReply() {
   const { activeWaba } = useWaba();
-  const { user } = useContext(AuthContext);
-  const [isLoading, setIsLoading] = useState(false);
+  // const { user } = useContext(AuthContext); // Unused
+  // const [isLoading, setIsLoading] = useState(false); // Unused
   const [phoneNumbers, setPhoneNumbers] = useState([]);
   const [selectedPhone, setSelectedPhone] = useState("");
 
@@ -22,31 +31,7 @@ export default function AutoReply() {
     timezone: "UTC",
   });
 
-  const daysOfWeek = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
-
-  // Load Phone Numbers for the active WABA to allow selection
-  useEffect(() => {
-    if (activeWaba) {
-      fetchPhones();
-    }
-  }, [activeWaba]);
-
-  // Load Config when a phone is selected
-  useEffect(() => {
-    if (selectedPhone) {
-      fetchConfig(selectedPhone);
-    }
-  }, [selectedPhone]);
-
-  const fetchPhones = async () => {
+  const fetchPhones = React.useCallback(async () => {
     try {
       const res = await authFetch("/waba/accounts"); // Or a more specific endpoint if needed
       if (res.success) {
@@ -62,10 +47,10 @@ export default function AutoReply() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [activeWaba]);
 
-  const fetchConfig = async (phoneId) => {
-    setIsLoading(true);
+  const fetchConfig = React.useCallback(async (phoneId) => {
+    // setIsLoading(true);
     try {
       const res = await authFetch(`/auto-reply/${phoneId}`);
       if (res.success && res.data) {
@@ -85,7 +70,7 @@ export default function AutoReply() {
           // Merge with defaults if missing days
           const mergedHours = daysOfWeek.map((day) => {
             const existing = loadedConfig.officeHours.find(
-              (h) => h.day === day
+              (h) => h.day === day,
             );
             return (
               existing || {
@@ -103,9 +88,23 @@ export default function AutoReply() {
     } catch (err) {
       console.error("Error loading config", err);
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Load Phone Numbers for the active WABA to allow selection
+  useEffect(() => {
+    if (activeWaba) {
+      fetchPhones();
+    }
+  }, [activeWaba, fetchPhones]);
+
+  // Load Config when a phone is selected
+  useEffect(() => {
+    if (selectedPhone) {
+      fetchConfig(selectedPhone);
+    }
+  }, [selectedPhone, fetchConfig]);
 
   const handleSave = async () => {
     try {

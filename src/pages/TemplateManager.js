@@ -4,22 +4,13 @@ import { API_URL } from "../config";
 import { AuthContext } from "../context/AuthContext";
 import {
   ChatBubbleLeftRightIcon,
-  PlusIcon,
   MagnifyingGlassIcon,
-  CheckCircleIcon,
   ExclamationCircleIcon,
   PencilSquareIcon,
   Cog6ToothIcon,
   ChevronDownIcon,
-  FunnelIcon,
-  ArrowsRightLeftIcon,
   ChatBubbleBottomCenterTextIcon,
   ChevronRightIcon,
-  CreditCardIcon,
-  ChartBarIcon,
-  UsersIcon,
-  DocumentTextIcon,
-  FolderIcon,
   ClockIcon,
   CloudIcon,
   EllipsisHorizontalIcon,
@@ -74,7 +65,7 @@ function useOutsideAlerter(ref, callback) {
 
 const TemplateManager = () => {
   const { authToken } = useContext(AuthContext);
-  const [wabaAccounts, setWabaAccounts] = useState([]);
+  // const [wabaAccounts, setWabaAccounts] = useState([]); // REMOVED unused
   const [selectedWabaId, setSelectedWabaId] = useState("");
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -110,7 +101,81 @@ const TemplateManager = () => {
   // --- CREATE FORM STATE ---
   // Form state is now handled by TemplateForm component
   const [formError, setFormError] = useState("");
-  const [formSuccess, setFormSuccess] = useState("");
+  // const [formSuccess, setFormSuccess] = useState(""); // REMOVED unused
+
+  const fetchTemplates = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      // Construct Query Params
+      const params = {};
+      if (searchQuery) params.name = searchQuery;
+      if (selectedCategories.length > 0)
+        params.category = selectedCategories.join(",");
+      if (selectedLanguages.length > 0)
+        params.language = selectedLanguages.join(",");
+
+      const validMetaStatuses = ["APPROVED", "REJECTED", "PENDING", "PAUSED"];
+      const statusFilters = selectedStatuses.filter((s) =>
+        validMetaStatuses.includes(s),
+      );
+      if (statusFilters.length > 0) params.status = statusFilters.join(",");
+
+      // Analytics Date Range
+      if (dateRange) {
+        const end = Math.floor(Date.now() / 1000);
+        const start = Math.floor(Date.now() / 1000) - dateRange * 24 * 60 * 60;
+        params.start = start;
+        params.end = end;
+      }
+
+      const res = await axios.get(
+        `${API_URL}/api/templates/${selectedWabaId}`,
+        {
+          params,
+          headers: { Authorization: `Bearer ${authToken}` },
+        },
+      );
+
+      setTemplates(res.data.data);
+    } catch (err) {
+      console.error("Failed to fetch templates", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    searchQuery,
+    selectedCategories,
+    selectedLanguages,
+    selectedStatuses,
+    dateRange,
+    selectedWabaId,
+    authToken,
+  ]);
+
+  const fetchTemplateAnalytics = React.useCallback(async () => {
+    try {
+      const end = Math.floor(Date.now() / 1000);
+      const start = Math.floor(Date.now() / 1000) - dateRange * 24 * 60 * 60;
+
+      const res = await axios.get(
+        `${API_URL}/api/templates/${selectedWabaId}/analytics`,
+        {
+          params: {
+            templateId: selectedTemplate ? selectedTemplate.id : null,
+            start,
+            end,
+          },
+          headers: { Authorization: `Bearer ${authToken}` },
+        },
+      );
+
+      setAnalyticsData(res.data);
+    } catch (err) {
+      console.error("Failed to fetch template analytics", err);
+      // Fallback or empty chart will render
+      setAnalyticsData({});
+    }
+  }, [dateRange, selectedWabaId, selectedTemplate, authToken]);
 
   useEffect(() => {
     const fetchWaba = async () => {
@@ -118,7 +183,7 @@ const TemplateManager = () => {
         const res = await axios.get(`${API_URL}/api/waba/accounts`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
-        setWabaAccounts(res.data.data);
+        // setWabaAccounts(res.data.data); // REMOVED unused
         if (res.data.data.length > 0) {
           setSelectedWabaId(res.data.data[0].businessAccountId);
         }
@@ -142,10 +207,9 @@ const TemplateManager = () => {
     selectedWabaId,
     view,
     searchQuery,
-    selectedCategories,
-    selectedLanguages,
     selectedStatuses,
     dateRange,
+    fetchTemplates, // Added dependency
   ]);
 
   // Fetch Analytics when selectedTemplate changes
@@ -153,84 +217,24 @@ const TemplateManager = () => {
     if (view === "details" && selectedTemplate && selectedWabaId) {
       fetchTemplateAnalytics();
     }
-  }, [view, selectedTemplate, selectedWabaId, dateRange]);
-
-  const fetchTemplates = async () => {
-    setLoading(true);
-    try {
-      // Construct Query Params
-      const params = {};
-      if (searchQuery) params.name = searchQuery;
-      if (selectedCategories.length > 0)
-        params.category = selectedCategories.join(",");
-      if (selectedLanguages.length > 0)
-        params.language = selectedLanguages.join(",");
-
-      const validMetaStatuses = ["APPROVED", "REJECTED", "PENDING", "PAUSED"];
-      const statusFilters = selectedStatuses.filter((s) =>
-        validMetaStatuses.includes(s)
-      );
-      if (statusFilters.length > 0) params.status = statusFilters.join(",");
-
-      // Analytics Date Range
-      if (dateRange) {
-        const end = Math.floor(Date.now() / 1000);
-        const start = Math.floor(Date.now() / 1000) - dateRange * 24 * 60 * 60;
-        params.start = start;
-        params.end = end;
-      }
-
-      const res = await axios.get(
-        `${API_URL}/api/templates/${selectedWabaId}`,
-        {
-          params,
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-
-      setTemplates(res.data.data);
-    } catch (err) {
-      console.error("Failed to fetch templates", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTemplateAnalytics = async () => {
-    try {
-      const end = Math.floor(Date.now() / 1000);
-      const start = Math.floor(Date.now() / 1000) - dateRange * 24 * 60 * 60;
-
-      const res = await axios.get(
-        `${API_URL}/api/templates/${selectedWabaId}/analytics`,
-        {
-          params: {
-            templateId: selectedTemplate.id,
-            start,
-            end,
-          },
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-
-      setAnalyticsData(res.data);
-    } catch (err) {
-      console.error("Failed to fetch template analytics", err);
-      // Fallback or empty chart will render
-      setAnalyticsData({});
-    }
-  };
+  }, [
+    view,
+    selectedTemplate,
+    selectedWabaId,
+    dateRange,
+    fetchTemplateAnalytics,
+  ]);
 
   // --- HANDLERS for Filter Toggles ---
   const toggleCategory = (cat) => {
     setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     );
   };
 
   const toggleLanguage = (lang) => {
     setSelectedLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
+      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang],
     );
   };
 
@@ -238,7 +242,7 @@ const TemplateManager = () => {
     setSelectedStatuses((prev) =>
       prev.includes(statusKey)
         ? prev.filter((s) => s !== statusKey)
-        : [...prev, statusKey]
+        : [...prev, statusKey],
     );
   };
 
@@ -257,31 +261,31 @@ const TemplateManager = () => {
   const handleFormSubmit = async (formData) => {
     setLoading(true);
     setFormError("");
-    setFormSuccess("");
+    // setFormSuccess(""); // unused
 
     try {
       if (editTemplateId) {
         await axios.put(
           `${API_URL}/api/templates/${editTemplateId}`,
           { wabaId: selectedWabaId, components: formData.components },
-          { headers: { Authorization: `Bearer ${authToken}` } }
+          { headers: { Authorization: `Bearer ${authToken}` } },
         );
-        setFormSuccess("Template updated successfully!");
+        // setFormSuccess("Template updated successfully!");
       } else {
         await axios.post(
           `${API_URL}/api/templates`,
           { wabaId: selectedWabaId, ...formData },
-          { headers: { Authorization: `Bearer ${authToken}` } }
+          { headers: { Authorization: `Bearer ${authToken}` } },
         );
-        setFormSuccess(
-          "Template created successfully! Waiting for Meta review."
-        );
+        // setFormSuccess(
+        //   "Template created successfully! Waiting for Meta review."
+        // );
       }
       setTimeout(() => {
         setView("list");
         setEditTemplateId(null);
         setFormError("");
-        setFormSuccess("");
+        // setFormSuccess("");
       }, 2000);
     } catch (err) {
       setFormError(err.response?.data?.error || "Failed to save template.");
@@ -309,7 +313,7 @@ const TemplateManager = () => {
       0;
     const totalRead = graphData.reduce(
       (acc, curr) => acc + (curr.read || 0),
-      0
+      0,
     );
 
     // Read rate calculation
@@ -616,7 +620,7 @@ const TemplateManager = () => {
                                 {cat.toLowerCase()}
                               </span>
                             </label>
-                          )
+                          ),
                         )}
                       </div>
                     )}
@@ -697,7 +701,7 @@ const TemplateManager = () => {
                                     : status.toLowerCase()}
                                 </span>
                               </label>
-                            )
+                            ),
                           )}
                         </div>
                         <div className="pt-2 border-t border-gray-100 mt-1 flex justify-end">
@@ -862,8 +866,8 @@ const TemplateManager = () => {
                                   t.status === "APPROVED"
                                     ? "bg-[#E7F6D5] text-[#1F510F] border-[#E7F6D5]"
                                     : t.status === "REJECTED"
-                                    ? "bg-[#FFEBEB] text-[#C0121A] border-[#FFEBEB]"
-                                    : "bg-[#FEF5D5] text-[#7A6117] border-[#FEF5D5]"
+                                      ? "bg-[#FFEBEB] text-[#C0121A] border-[#FFEBEB]"
+                                      : "bg-[#FEF5D5] text-[#7A6117] border-[#FEF5D5]"
                                 }`}
                               >
                                 <div
@@ -871,15 +875,15 @@ const TemplateManager = () => {
                                     t.status === "APPROVED"
                                       ? "bg-[#4B9C25]"
                                       : t.status === "REJECTED"
-                                      ? "bg-[#C0121A]"
-                                      : "bg-[#F5C32E]"
+                                        ? "bg-[#C0121A]"
+                                        : "bg-[#F5C32E]"
                                   }`}
                                 ></div>
                                 {t.status === "APPROVED"
                                   ? "Active - Quality pending"
                                   : t.status === "PENDING"
-                                  ? "In Review"
-                                  : t.status}
+                                    ? "In Review"
+                                    : t.status}
                               </span>
                             </td>
                             <td className="text-center py-4 text-[15px]">

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
-import { FaEdit, FaTrash, FaCog, FaExpand } from "react-icons/fa"; // Imported Icons
+import { FaEdit, FaTrash, FaExpand } from "react-icons/fa"; // Imported Icons
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
@@ -165,7 +165,7 @@ const Properties = () => {
   // --- SELECTION LOGIC ---
   const handleSelectOne = (id) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -182,7 +182,7 @@ const Properties = () => {
     if (selectedIds.length === 0) return;
     if (
       window.confirm(
-        `Are you sure you want to delete ${selectedIds.length} properties?`
+        `Are you sure you want to delete ${selectedIds.length} properties?`,
       )
     ) {
       try {
@@ -348,8 +348,8 @@ const Properties = () => {
                                   tag.toLowerCase().includes("hot")
                                     ? "text-red-400 border-red-400 bg-red-400/10"
                                     : tag.toLowerCase().includes("new")
-                                    ? "text-green-400 border-green-400 bg-green-400/10"
-                                    : "text-blue-400 border-blue-400 bg-blue-400/10"
+                                      ? "text-green-400 border-green-400 bg-green-400/10"
+                                      : "text-blue-400 border-blue-400 bg-blue-400/10"
                                 }`}
                               >
                                 {tag}

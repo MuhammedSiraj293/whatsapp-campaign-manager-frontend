@@ -46,13 +46,6 @@ const TemplatePreview = ({
     });
   }
 
-  // Format body text to highlight variables or headers (basic)
-  // For now just display text. format variables like {{1}} to be bold or highlighted if needed.
-  const formatBody = (text) => {
-    if (!text) return "Enter body text...";
-    return text;
-  };
-
   // Helper to format WhatsApp text
   const formatMessage = (text) => {
     if (!text) return "";

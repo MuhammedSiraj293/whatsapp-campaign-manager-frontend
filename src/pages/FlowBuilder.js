@@ -80,39 +80,6 @@ export default function FlowBuilder() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [flowSettings, setFlowSettings] = useState({});
 
-  // --- FETCH FLOW SETTINGS ---
-  const fetchFlowSettings = useCallback(async () => {
-    try {
-      const response = await authFetch(`/bot-flows/${flowId}`);
-      if (response.success) {
-        setFlowSettings(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching flow settings:", error);
-    }
-  }, [flowId]);
-
-  // --- SAVE FLOW SETTINGS ---
-  const saveFlowSettings = async () => {
-    try {
-      await authFetch(`/bot-flows/${flowId}`, {
-        method: "PUT",
-        body: JSON.stringify(flowSettings),
-      });
-      setShowSettingsModal(false);
-      alert("Flow settings saved!");
-      // Refresh nodes to show/hide the virtual node
-      fetchFlowData();
-    } catch (error) {
-      console.error("Error saving flow settings:", error);
-      alert("Failed to save settings.");
-    }
-  };
-
-  useEffect(() => {
-    fetchFlowSettings();
-  }, [fetchFlowSettings]);
-
   // --- FETCH & TRANSFORM DATA ---
   const fetchFlowData = useCallback(async () => {
     try {
@@ -131,7 +98,7 @@ export default function FlowBuilder() {
         const backendNodes = nodesResponse.data;
         const currentSettings = settingsResponse.success
           ? settingsResponse.data
-          : flowSettings;
+          : {}; // Use fetched settings or empty object
 
         // 1. Transform Backend Nodes -> React Flow Nodes
         const initialNodes = backendNodes.map((node) => {
@@ -334,7 +301,7 @@ export default function FlowBuilder() {
       setNodes((nds) => nds.concat(newNode));
       setSelectedNode(newNode); // Auto-select new node
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, setNodes],
   );
 
   // Enforce single connection per handle (replace existing)
@@ -353,11 +320,11 @@ export default function FlowBuilder() {
             animated: true,
             style: { stroke: "#10b981", strokeWidth: 2 },
           },
-          filteredEds
+          filteredEds,
         );
       });
     },
-    [setEdges]
+    [setEdges],
   );
 
   const onNodeClick = useCallback((event, node) => {
@@ -380,6 +347,23 @@ export default function FlowBuilder() {
     setSelectedEdge(null);
   };
 
+  // --- SAVE FLOW SETTINGS ---
+  const saveFlowSettings = async () => {
+    try {
+      await authFetch(`/bot-flows/${flowId}`, {
+        method: "PUT",
+        body: JSON.stringify(flowSettings),
+      });
+      setShowSettingsModal(false);
+      alert("Flow settings saved!");
+      // Refresh nodes to show/hide the virtual node
+      fetchFlowData();
+    } catch (error) {
+      console.error("Error saving flow settings:", error);
+      alert("Failed to save settings.");
+    }
+  };
+
   // --- SAVE HANDLER ---
   const handleSave = async () => {
     setIsLoading(true); // Show loading state while saving
@@ -395,12 +379,12 @@ export default function FlowBuilder() {
       const realFrontendNodes = nodes.filter((n) => !n.data.isFollowUp);
 
       const currentFrontendNodeIds = new Set(
-        realFrontendNodes.map((n) => n.data._id).filter((id) => id)
+        realFrontendNodes.map((n) => n.data._id).filter((id) => id),
       ); // Only existing IDs
 
       // 2. Identify nodes to delete (exist in backend but not in frontend)
       const nodesToDelete = existingBackendNodes.filter(
-        (node) => !currentFrontendNodeIds.has(node._id)
+        (node) => !currentFrontendNodeIds.has(node._id),
       );
 
       // 3. Delete removed nodes
@@ -408,8 +392,8 @@ export default function FlowBuilder() {
         console.log("Deleting nodes:", nodesToDelete);
         await Promise.all(
           nodesToDelete.map((node) =>
-            authFetch(`/bot-flows/nodes/${node._id}`, { method: "DELETE" })
-          )
+            authFetch(`/bot-flows/nodes/${node._id}`, { method: "DELETE" }),
+          ),
         );
       }
 
@@ -430,7 +414,7 @@ export default function FlowBuilder() {
         if (node.data.messageType === "text") {
           // Find edge with no specific handle or default handle
           const edge = connectedEdges.find(
-            (e) => !e.sourceHandle || e.sourceHandle === "null"
+            (e) => !e.sourceHandle || e.sourceHandle === "null",
           );
           if (edge) nextNodeId = getTargetNodeId(edge.target);
         }
@@ -440,7 +424,7 @@ export default function FlowBuilder() {
         if (node.data.messageType === "buttons") {
           buttons = buttons.map((btn, index) => {
             const edge = connectedEdges.find(
-              (e) => e.sourceHandle === `handle-btn-${index}`
+              (e) => e.sourceHandle === `handle-btn-${index}`,
             );
             return {
               ...btn,
@@ -457,7 +441,7 @@ export default function FlowBuilder() {
           // Update nextNodeId for each item based on edges
           const updatedListItems = listItems.map((item, index) => {
             const edge = connectedEdges.find(
-              (e) => e.sourceHandle === `handle-list-${index}`
+              (e) => e.sourceHandle === `handle-list-${index}`,
             );
             return {
               ...item,
@@ -565,7 +549,7 @@ export default function FlowBuilder() {
   const onLayout = useCallback(() => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       nodes,
-      edges
+      edges,
     );
     setNodes([...layoutedNodes]);
     setEdges([...layoutedEdges]);
@@ -586,7 +570,7 @@ export default function FlowBuilder() {
           return { ...node, data: newData };
         }
         return node;
-      })
+      }),
     );
 
     // Update local selected node state to reflect changes immediately in UI
@@ -604,8 +588,8 @@ export default function FlowBuilder() {
     setEdges((eds) =>
       eds.filter(
         (edge) =>
-          edge.source !== selectedNode.id && edge.target !== selectedNode.id
-      )
+          edge.source !== selectedNode.id && edge.target !== selectedNode.id,
+      ),
     );
     setSelectedNode(null);
   };
@@ -909,7 +893,7 @@ export default function FlowBuilder() {
                                     &times;
                                   </button>
                                 </div>
-                              )
+                              ),
                             )}
                             <button
                               onClick={addButton}
@@ -958,7 +942,7 @@ export default function FlowBuilder() {
                                         updateListItem(
                                           index,
                                           "title",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
                                       className="flex-1 bg-transparent border-b border-gray-600 text-sm text-white focus:outline-none focus:border-emerald-500"
@@ -978,14 +962,14 @@ export default function FlowBuilder() {
                                       updateListItem(
                                         index,
                                         "description",
-                                        e.target.value
+                                        e.target.value,
                                       )
                                     }
                                     className="w-full bg-transparent text-xs text-gray-400 focus:outline-none"
                                     placeholder="Description (optional)"
                                   />
                                 </div>
-                              )
+                              ),
                             )}
                             <button
                               onClick={addListItem}
@@ -1012,7 +996,7 @@ export default function FlowBuilder() {
                               onChange={(e) =>
                                 updateNodeData(
                                   "followUpEnabled",
-                                  e.target.checked
+                                  e.target.checked,
                                 )
                               }
                               className="form-checkbox h-4 w-4 text-emerald-500 rounded border-gray-700 bg-[#111b21]"
@@ -1035,7 +1019,7 @@ export default function FlowBuilder() {
                                   onChange={(e) =>
                                     updateNodeData(
                                       "followUpDelay",
-                                      parseInt(e.target.value) || 1
+                                      parseInt(e.target.value) || 1,
                                     )
                                   }
                                   className="w-full bg-[#111b21] border border-gray-700 rounded p-2 text-sm text-white"
@@ -1053,7 +1037,7 @@ export default function FlowBuilder() {
                                   onChange={(e) =>
                                     updateNodeData(
                                       "followUpMessage",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   className="w-full bg-[#111b21] border border-gray-700 rounded p-2 text-sm text-white"

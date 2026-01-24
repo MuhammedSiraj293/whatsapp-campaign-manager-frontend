@@ -11,12 +11,7 @@ import { AiOutlinePaperClip } from "react-icons/ai";
 import { BsFillMicFill } from "react-icons/bs";
 import Avatar from "./Avatar";
 import EmojiPicker from "emoji-picker-react";
-import {
-  BsCheck,
-  BsCheckAll,
-  BsChevronDown,
-  BsEmojiSmile,
-} from "react-icons/bs";
+import { BsEmojiSmile, BsTrash, BsX } from "react-icons/bs";
 import { BsArrowLeft } from "react-icons/bs";
 
 // --- NEW HELPER FUNCTION to group messages by date ---
@@ -63,6 +58,31 @@ export default function ChatDetail({
   hasMore,
   loading,
 }) {
+  // --- SELECTION STATE ---
+  const [selectedMessages, setSelectedMessages] = useState([]);
+  const isSelectionMode = selectedMessages.length > 0;
+
+  const handleToggleSelection = (msgId) => {
+    setSelectedMessages((prev) => {
+      if (prev.includes(msgId)) {
+        return prev.filter((id) => id !== msgId);
+      } else {
+        return [...prev, msgId];
+      }
+    });
+  };
+
+  const handleCancelSelection = () => {
+    setSelectedMessages([]);
+  };
+
+  const handleDeleteSelected = () => {
+    if (window.confirm(`Delete ${selectedMessages.length} messages?`)) {
+      selectedMessages.forEach((id) => onDeleteMessage(id));
+      setSelectedMessages([]);
+    }
+  };
+
   const [typing, setTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef(null);
@@ -356,25 +376,49 @@ export default function ChatDetail({
     <div className="flex flex-col h-full bg-[#0a131a]">
       {/* ... Header ... */}
       <div className="flex justify-between bg-[#202d33] h-[60px] p-3 sticky top-0 z-20">
-        <div className="flex items-center gap-2">
-          {/* --- BACK BUTTON (Mobile Only) --- */}
-          <button
-            onClick={onBack}
-            className="md:hidden text-[#8796a1] hover:text-white mr-1"
-          >
-            <BsArrowLeft size={24} />
-          </button>
-
-          <Avatar contactId={activeConversationId} name={contactName} />
-          <div className="flex flex-col">
-            <h1 className="text-white font-medium">{activeConversationId}</h1>
-            <p className="text-[#8796a1] text-xs">{contactName || "online"}</p>
+        {isSelectionMode ? (
+          <div className="flex items-center gap-4 text-white w-full">
+            <button
+              onClick={handleCancelSelection}
+              className="hover:text-gray-300"
+            >
+              <BsX size={24} />
+            </button>
+            <span className="font-bold">
+              {selectedMessages.length} Selected
+            </span>
+            <div className="flex-1" />
+            <button
+              onClick={handleDeleteSelected}
+              className="hover:text-red-400"
+            >
+              <BsTrash size={20} />
+            </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            {/* --- BACK BUTTON (Mobile Only) --- */}
+            <button
+              onClick={onBack}
+              className="md:hidden text-[#8796a1] hover:text-white mr-1"
+            >
+              <BsArrowLeft size={24} />
+            </button>
+
+            <Avatar contactId={activeConversationId} name={contactName} />
+            <div className="flex flex-col">
+              <h1 className="text-white font-medium">{activeConversationId}</h1>
+              <p className="text-[#8796a1] text-xs">
+                {contactName || "online"}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ... Messages Area ... */}
       <div
+        dir="ltr"
         ref={messagesContainerRef}
         onScroll={handleScroll}
         className="bg-[#0a131a] bg-chat-bg bg-contain overflow-y-scroll h-full flex flex-col custom-scrollbar"
@@ -411,6 +455,9 @@ export default function ChatDetail({
                 onReply={handleReply}
                 onReact={onReact}
                 onDeleteMessage={onDeleteMessage}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedMessages.includes(msg._id)}
+                onToggleSelection={() => handleToggleSelection(msg._id)}
               />
             ))}
           </div>
@@ -528,7 +575,7 @@ export default function ChatDetail({
                   e.target.style.height = "auto";
                   e.target.style.height = `${Math.min(
                     e.target.scrollHeight,
-                    100
+                    100,
                   )}px`;
                 }}
                 ref={inputRef}

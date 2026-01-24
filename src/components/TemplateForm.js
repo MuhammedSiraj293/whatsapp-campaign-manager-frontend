@@ -4,7 +4,6 @@ import {
   PhotoIcon,
   VideoCameraIcon,
   DocumentTextIcon,
-  MapPinIcon,
   XMarkIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
@@ -25,7 +24,7 @@ const TemplateForm = ({
   const [name, setName] = useState(initialData?.name || "");
   const [language, setLanguage] = useState(initialData?.language || "en_US");
   const [category, setCategory] = useState(
-    initialData?.category || "MARKETING"
+    initialData?.category || "MARKETING",
   );
 
   // Header State
@@ -107,7 +106,7 @@ const TemplateForm = ({
 
   const handleVariableChange = (key, field, value) => {
     setVariables((prev) =>
-      prev.map((v) => (v.key === key ? { ...v, [field]: value } : v))
+      prev.map((v) => (v.key === key ? { ...v, [field]: value } : v)),
     );
   };
 
@@ -158,7 +157,7 @@ const TemplateForm = ({
                   Authorization: `Bearer ${authToken}`,
                   "Content-Type": "multipart/form-data",
                 },
-              }
+              },
             );
 
             if (uploadRes.data && uploadRes.data.handle) {
@@ -288,7 +287,7 @@ const TemplateForm = ({
                       value={name}
                       onChange={(e) =>
                         setName(
-                          e.target.value.toLowerCase().replace(/\s/g, "_")
+                          e.target.value.toLowerCase().replace(/\s/g, "_"),
                         )
                       }
                       disabled={!!initialData}
@@ -322,9 +321,9 @@ const TemplateForm = ({
                 Add a header, body and footer for your template. Cloud API
                 hosted by Meta will review the template variables and content to
                 protect the security and integrity of our services.{" "}
-                <a href="#" className="text-blue-500 hover:underline">
+                <button className="text-blue-500 hover:underline bg-transparent border-none p-0 cursor-pointer">
                   Learn More
-                </a>
+                </button>
               </p>
 
               {/* HEADERS */}
@@ -415,7 +414,7 @@ const TemplateForm = ({
                         className="btn btn-xs btn-ghost gap-1 bg-gray-100 hover:bg-gray-200"
                         onClick={() =>
                           setBodyText(
-                            (prev) => prev + ` {{${variables.length + 1}}}`
+                            (prev) => prev + ` {{${variables.length + 1}}}`,
                           )
                         }
                       >
@@ -466,7 +465,7 @@ const TemplateForm = ({
                               handleVariableChange(
                                 v.key,
                                 "type",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                           >
@@ -484,7 +483,7 @@ const TemplateForm = ({
                               handleVariableChange(
                                 v.key,
                                 "sample",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                           />
@@ -540,17 +539,19 @@ const TemplateForm = ({
                     className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-50 text-sm"
                   >
                     <li>
-                      <a onClick={() => handleAddButton("QUICK_REPLY")}>
+                      <button onClick={() => handleAddButton("QUICK_REPLY")}>
                         Quick Reply
-                      </a>
+                      </button>
                     </li>
                     <li>
-                      <a onClick={() => handleAddButton("URL")}>URL</a>
+                      <button onClick={() => handleAddButton("URL")}>
+                        URL
+                      </button>
                     </li>
                     <li>
-                      <a onClick={() => handleAddButton("PHONE_NUMBER")}>
+                      <button onClick={() => handleAddButton("PHONE_NUMBER")}>
                         Phone Number
-                      </a>
+                      </button>
                     </li>
                   </ul>
                 </div>
@@ -611,7 +612,7 @@ const TemplateForm = ({
                                 handleButtonChange(
                                   idx,
                                   "phoneNumber",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               placeholder="+1..."

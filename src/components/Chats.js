@@ -1,10 +1,4 @@
 import React, { useRef, useEffect } from "react";
-import {
-  BsThreeDotsVertical,
-  BsTrash,
-  BsCheck,
-  BsCheckAll,
-} from "react-icons/bs";
 
 export default function Chats({
   conversations,
@@ -146,19 +140,21 @@ export default function Chats({
         <div className="flex gap-2 px-3 pb-2 pt-1 overflow-x-auto no-scrollbar">
           <button
             onClick={() => onFilterChange("all")}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMode === "all"
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filterMode === "all"
                 ? "bg-[#0a332c] text-[#00a884] ring-1 ring-[#00a884]"
                 : "bg-[#202d33] text-[#8696a0] hover:bg-[#2a3942]"
-              }`}
+            }`}
           >
             All
           </button>
           <button
             onClick={() => onFilterChange("unread")}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMode === "unread"
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filterMode === "unread"
                 ? "bg-[#0a332c] text-[#00a884] ring-1 ring-[#00a884]"
                 : "bg-[#202d33] text-[#8696a0] hover:bg-[#2a3942]"
-              }`}
+            }`}
           >
             Unread
           </button>
@@ -189,8 +185,9 @@ export default function Chats({
               {/* Avatar (Placeholder) */}
               <div className="w-[49px] h-[49px] rounded-full bg-gray-500 flex-shrink-0 mr-3 overflow-hidden">
                 <img
-                  src={`https://ui-avatars.com/api/?name=${convo.name || "User"
-                    }&background=random`}
+                  src={`https://ui-avatars.com/api/?name=${
+                    convo.name || "User"
+                  }&background=random`}
                   alt="avatar"
                   className="w-full h-full object-cover"
                 />
@@ -271,8 +268,9 @@ export default function Chats({
 
           {/* Unsubscribe / Resubscribe Option */}
           <div
-            className={`px-4 py-2 hover:bg-[#182229] cursor-pointer ${!contextMenu.isSubscribed ? "text-emerald-400" : "text-yellow-400"
-              }`}
+            className={`px-4 py-2 hover:bg-[#182229] cursor-pointer ${
+              !contextMenu.isSubscribed ? "text-emerald-400" : "text-yellow-400"
+            }`}
             onClick={() => {
               if (onToggleSubscription) {
                 // If currently subscribed (true), we want to set status to false (Unsubscribe)

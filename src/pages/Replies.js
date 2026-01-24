@@ -90,7 +90,7 @@ export default function Replies() {
     setActiveConversationId(null);
     setConvoPage(1);
     setHasMoreConvos(true);
-  }, [activeWaba, wabaAccounts]);
+  }, [activeWaba, wabaAccounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- FILTER STATE ---
   const [filterMode, setFilterMode] = useState("all"); // 'all' | 'unread'
@@ -102,7 +102,7 @@ export default function Replies() {
       page = 1,
       search = "",
       unread = false,
-      activeId = null
+      activeId = null,
     ) => {
       if (!recipientId) return;
       setLoadingConvos(true);
@@ -110,7 +110,7 @@ export default function Replies() {
         const limit = 20;
         // encodeURIComponent for safety
         let query = `/replies/conversations/${recipientId}?page=${page}&limit=${limit}&search=${encodeURIComponent(
-          search
+          search,
         )}&unread=${unread}`;
 
         if (activeId) {
@@ -126,7 +126,7 @@ export default function Replies() {
             setConversations((prev) => {
               // Filter out potential duplicates based on _id (customer phone)
               const newConvos = data.data.filter(
-                (newC) => !prev.some((existing) => existing._id === newC._id)
+                (newC) => !prev.some((existing) => existing._id === newC._id),
               );
               return [...prev, ...newConvos];
             });
@@ -140,7 +140,7 @@ export default function Replies() {
         setLoadingConvos(false);
       }
     },
-    []
+    [],
   );
 
   // --- SEARCH STATE ---
@@ -155,12 +155,11 @@ export default function Replies() {
         1,
         query,
         filterMode === "unread",
-        activeConversationId
+        activeConversationId,
       );
     },
-    [selectedPhoneId, fetchConversations, filterMode, activeConversationId]
+    [selectedPhoneId, fetchConversations, filterMode, activeConversationId],
   );
-
 
   const handleFilterChange = (mode) => {
     setFilterMode(mode);
@@ -170,7 +169,7 @@ export default function Replies() {
       1,
       searchTerm,
       mode === "unread",
-      activeConversationId
+      activeConversationId,
     );
   };
 
@@ -183,7 +182,7 @@ export default function Replies() {
       nextPage,
       searchTerm,
       filterMode === "unread",
-      activeConversationId
+      activeConversationId,
     );
   }, [
     hasMoreConvos,
@@ -205,10 +204,16 @@ export default function Replies() {
         1,
         searchTerm,
         filterMode === "unread",
-        activeConversationId
+        activeConversationId,
       );
     }
-  }, [selectedPhoneId, filterMode, activeConversationId]); // Added filterMode dependency
+  }, [
+    selectedPhoneId,
+    filterMode,
+    activeConversationId,
+    fetchConversations,
+    searchTerm,
+  ]); // Added filterMode dependency
 
   // Fetch messages for the selected chat
   const fetchMessages = async (customerPhone, recipientId, page = 1) => {
@@ -217,7 +222,7 @@ export default function Replies() {
     try {
       const limit = 50;
       const data = await authFetch(
-        `/replies/messages/${customerPhone}/${recipientId}?page=${page}&limit=${limit}`
+        `/replies/messages/${customerPhone}/${recipientId}?page=${page}&limit=${limit}`,
       );
       if (data.success) {
         if (page === 1) {
@@ -227,7 +232,7 @@ export default function Replies() {
             // Prepend new (older) messages
             // Filter duplicates just in case
             const newMsgs = data.data.filter(
-              (newM) => !prev.some((existing) => existing._id === newM._id)
+              (newM) => !prev.some((existing) => existing._id === newM._id),
             );
             return [...newMsgs, ...prev];
           });
@@ -267,7 +272,7 @@ export default function Replies() {
           1,
           searchTerm,
           filterMode === "unread",
-          activeChatRef.current.customerPhone
+          activeChatRef.current.customerPhone,
         );
 
         if (data.from === activeChatRef.current.customerPhone) {
@@ -297,7 +302,7 @@ export default function Replies() {
             if (prevMessages.some((m) => m._id === data.message._id)) {
               console.warn(
                 "Socket: Duplicate incoming message ignored",
-                data.message._id
+                data.message._id,
               );
               return prevMessages;
             }
@@ -308,7 +313,7 @@ export default function Replies() {
               const quotedMsg = prevMessages.find(
                 (m) =>
                   m.messageId === newMessage.context.id ||
-                  m._id === newMessage.context.id
+                  m._id === newMessage.context.id,
               );
               if (quotedMsg) {
                 newMessage.quotedMessage = quotedMsg;
@@ -347,7 +352,7 @@ export default function Replies() {
             if (prevMessages.some((m) => m._id === data.message._id)) {
               console.warn(
                 "Socket: Duplicate outgoing message ignored",
-                data.message._id
+                data.message._id,
               );
               return prevMessages;
             }
@@ -358,7 +363,7 @@ export default function Replies() {
               const quotedMsg = prevMessages.find(
                 (m) =>
                   m.messageId === newMessage.context.id ||
-                  m._id === newMessage.context.id
+                  m._id === newMessage.context.id,
               );
               if (quotedMsg) {
                 newMessage.quotedMessage = quotedMsg;
@@ -408,7 +413,7 @@ export default function Replies() {
           convoPage,
           searchTerm,
           filterMode === "unread",
-          customerPhone // Pass the newly active phone explicitly
+          customerPhone, // Pass the newly active phone explicitly
         );
       } catch (error) {
         console.error("Error marking messages as read:", error);
@@ -426,7 +431,7 @@ export default function Replies() {
         {
           method: "POST",
           body: JSON.stringify({ message: messageText, context }),
-        }
+        },
       );
     } catch (error) {
       console.error("Error sending reply:", error);
@@ -442,7 +447,7 @@ export default function Replies() {
         {
           method: "POST",
           body: JSON.stringify({ messageId: msg.messageId, emoji }),
-        }
+        },
       );
     } catch (error) {
       console.error("Error sending reaction:", error);
@@ -455,7 +460,7 @@ export default function Replies() {
     try {
       await uploadFile(
         `/replies/send-media/${activeConversationId}/${selectedPhoneId}`,
-        file
+        file,
       );
     } catch (error) {
       console.error("Error sending media:", error);
@@ -470,7 +475,7 @@ export default function Replies() {
         `/replies/conversations/${customerPhone}/${selectedPhoneId}`,
         {
           method: "DELETE",
-        }
+        },
       );
       // Refresh conversations
       fetchConversations(
@@ -478,7 +483,7 @@ export default function Replies() {
         convoPage,
         searchTerm,
         filterMode === "unread",
-        activeConversationId
+        activeConversationId,
       );
       // If the deleted chat was active, clear selection
       if (activeConversationId === customerPhone) {
@@ -516,8 +521,8 @@ export default function Replies() {
     // Optimistic UI update (optional, but good for UX)
     setConversations((prev) =>
       prev.map((c) =>
-        c._id === phoneNumber ? { ...c, isSubscribed: newStatus } : c
-      )
+        c._id === phoneNumber ? { ...c, isSubscribed: newStatus } : c,
+      ),
     );
 
     try {
@@ -535,7 +540,7 @@ export default function Replies() {
           convoPage,
           searchTerm,
           filterMode === "unread",
-          activeConversationId
+          activeConversationId,
         );
       } else {
         alert("Action failed: " + result.error || "Unknown error");
@@ -613,7 +618,6 @@ export default function Replies() {
               />
             </div>
           </div>
-
 
           {/* --- RIGHT SIDE: CHAT DETAIL --- */}
           <div
