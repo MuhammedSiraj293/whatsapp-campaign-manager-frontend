@@ -247,8 +247,6 @@ export default function Integrations() {
     "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-4 py-2 transition-colors flex items-center gap-2";
   const btnSecondary =
     "text-white bg-slate-600 hover:bg-slate-500 font-medium rounded-lg text-sm px-4 py-2 transition-colors flex items-center gap-2";
-  const btnDanger =
-    "text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-3 py-2 transition-colors";
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 font-sans">
