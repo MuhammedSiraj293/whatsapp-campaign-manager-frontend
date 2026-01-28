@@ -1,10 +1,17 @@
 // frontend/src/pages/Integrations.js
-
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import { authFetch } from "../services/api";
 import { useWaba } from "../context/WabaContext";
 import { AuthContext } from "../context/AuthContext";
-import { FaTrash, FaSave } from "react-icons/fa";
+import {
+  FaTrash,
+  FaSave,
+  FaEdit,
+  FaTimes,
+  FaPlus,
+  FaRobot,
+  FaWhatsapp,
+} from "react-icons/fa";
 
 export default function Integrations() {
   const [accounts, setAccounts] = useState([]);
@@ -14,65 +21,50 @@ export default function Integrations() {
   const { activeWaba } = useWaba();
   const { user } = useContext(AuthContext);
 
-  // Form states
-  const [accountName, setAccountName] = useState("");
-  const [accessToken, setAccessToken] = useState("");
-  const [businessAccountId, setBusinessAccountId] = useState("");
-  const [phoneName, setPhoneName] = useState("");
-  const [phoneId, setPhoneId] = useState("");
+  // Form states (Add New)
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [newAccount, setNewAccount] = useState({
+    accountName: "",
+    accessToken: "",
+    businessAccountId: "",
+  });
 
-  // Editing states
-  const [editingSheetId, setEditingSheetId] = useState({});
-  const [editingBotFlow, setEditingBotFlow] = useState({});
+  const [showAddPhone, setShowAddPhone] = useState(null); // stores accountId to show form for
+  const [newPhone, setNewPhone] = useState({
+    phoneName: "",
+    phoneId: "",
+  });
 
-  const inputStyle =
-    "bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5";
-  const labelStyle = "block mb-2 text-sm font-medium text-gray-400";
-  const buttonStyle =
-    "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center";
+  // Edit States (Map ID -> Data)
+  const [editingAccount, setEditingAccount] = useState(null); // ID of account being edited
+  const [editAccountData, setEditAccountData] = useState({});
+
+  const [editingPhone, setEditingPhone] = useState(null); // ID of phone being edited
+  const [editPhoneData, setEditPhoneData] = useState({});
 
   // ---------------------------------------------
-  // 🔥 Unified Fetch (Dashboard Style)
+  // Data Fetching
   // ---------------------------------------------
-
   const fetchAllData = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
-
     try {
-      // Step 1: Load all WABA accounts first
+      // 1. Get Accounts
       const accountsRes = await authFetch("/waba/accounts");
-
       if (accountsRes.success) {
-        const accs = accountsRes.data;
-        setAccounts(accs);
-
-        // Initialize editing states
-        const sheetState = {};
-        const botState = {};
-
-        accs.forEach((acc) => {
-          sheetState[acc._id] = acc.masterSpreadsheetId || "";
-          acc.phoneNumbers.forEach((phone) => {
-            botState[phone._id] = phone.activeBotFlow || "";
-          });
-        });
-
-        setEditingSheetId(sheetState);
-        setEditingBotFlow(botState);
+        setAccounts(accountsRes.data);
       }
-
-      // Step 2: Only fetch bot flows if a WABA is active
+      // 2. Get Flows (if active waba, or just get all? The API is by WABA usually)
+      // We will try to fetch flows for the *first* account if no active one, or just when needed.
+      // For now, let's just fetch for the active one to populate the dropdowns correctly if context matches.
+      // ideally we need ALL flows for ALL accounts to show in dropdowns properly.
+      // existing code fetched only for activeWaba. Let's stick effectively to that or iterate.
       if (activeWaba) {
         const flowRes = await authFetch(`/bot-flows/waba/${activeWaba}`);
-        if (flowRes.success) {
-          setBotFlows(flowRes.data);
-        }
-      } else {
-        setBotFlows([]); // no WABA = no flows displayed
+        if (flowRes.success) setBotFlows(flowRes.data);
       }
     } catch (err) {
-      console.error("Error fetching integrations data:", err);
+      console.error("Error fetching data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -83,21 +75,37 @@ export default function Integrations() {
   }, [fetchAllData]);
 
   // ---------------------------------------------
-  // 🔧 WABA ACCOUNT HANDLERS
+  // Handlers - Accounts
   // ---------------------------------------------
-
   const handleAddAccount = async (e) => {
     e.preventDefault();
     try {
       await authFetch("/waba/accounts", {
         method: "POST",
-        body: JSON.stringify({ accountName, accessToken, businessAccountId }),
+        body: JSON.stringify(newAccount),
       });
       alert("WABA account added!");
+      setNewAccount({
+        accountName: "",
+        accessToken: "",
+        businessAccountId: "",
+      });
+      setShowAddAccount(false);
       fetchAllData();
-      setAccountName("");
-      setAccessToken("");
-      setBusinessAccountId("");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleUpdateAccount = async (id) => {
+    try {
+      await authFetch(`/waba/accounts/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(editAccountData),
+      });
+      alert("Account updated!");
+      setEditingAccount(null);
+      fetchAllData();
     } catch (err) {
       alert(err.message);
     }
@@ -105,25 +113,8 @@ export default function Integrations() {
 
   const handleDeleteAccount = async (id) => {
     if (!window.confirm("Delete this account and all phone numbers?")) return;
-
     try {
       await authFetch(`/waba/accounts/${id}`, { method: "DELETE" });
-      alert("Account deleted.");
-      fetchAllData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleSaveMasterSheetId = async (accountId) => {
-    try {
-      await authFetch(`/waba/accounts/${accountId}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          masterSpreadsheetId: editingSheetId[accountId],
-        }),
-      });
-      alert("Master Sheet ID updated!");
       fetchAllData();
     } catch (err) {
       alert(err.message);
@@ -131,61 +122,54 @@ export default function Integrations() {
   };
 
   // ---------------------------------------------
-  // 📱 PHONE HANDLERS
+  // Handlers - Phones
   // ---------------------------------------------
-
-  const handleAddPhone = async (e) => {
+  const handleAddPhone = async (e, accountId) => {
     e.preventDefault();
-
-    if (!activeWaba) {
-      return alert("Please select a WABA first.");
-    }
-
     try {
       await authFetch("/waba/phones", {
         method: "POST",
         body: JSON.stringify({
-          phoneNumberName: phoneName,
-          phoneNumberId: phoneId,
-          wabaAccount: activeWaba,
+          phoneNumberName: newPhone.phoneName,
+          phoneNumberId: newPhone.phoneId,
+          wabaAccount: accountId,
         }),
       });
       alert("Phone number added!");
-      fetchAllData();
-      setPhoneName("");
-      setPhoneId("");
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleDeletePhone = async (phoneId) => {
-    if (!window.confirm("Delete this phone number?")) return;
-
-    try {
-      await authFetch(`/waba/phones/${phoneId}`, { method: "DELETE" });
-      alert("Phone deleted.");
+      setNewPhone({ phoneName: "", phoneId: "" });
+      setShowAddPhone(null);
       fetchAllData();
     } catch (err) {
       alert(err.message);
     }
   };
 
-  // ---------------------------------------------
-  // 🤖 BOT FLOW ASSIGNMENT
-  // ---------------------------------------------
-
-  const handleBotFlowChange = (phoneId, botFlowId) => {
-    setEditingBotFlow({ ...editingBotFlow, [phoneId]: botFlowId });
-  };
-
-  const handleSaveBotFlow = async (phoneId) => {
+  const handleUpdatePhone = async (id, data) => {
+    // data can be passed explicitly (for toggles) or use state (for full edit)
+    const payload = data || editPhoneData;
     try {
-      await authFetch(`/waba/phones/${phoneId}`, {
+      await authFetch(`/waba/phones/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ activeBotFlow: editingBotFlow[phoneId] }),
+        body: JSON.stringify(payload),
       });
-      alert("Bot flow assigned!");
+      if (!data) {
+        // if it was a manual edit (not a toggle), close edit mode
+        alert("Phone details updated!");
+        setEditingPhone(null);
+        fetchAllData();
+      } else {
+        // quiet update for toggles
+        fetchAllData();
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeletePhone = async (id) => {
+    if (!window.confirm("Delete this phone number?")) return;
+    try {
+      await authFetch(`/waba/phones/${id}`, { method: "DELETE" });
       fetchAllData();
     } catch (err) {
       alert(err.message);
@@ -193,42 +177,24 @@ export default function Integrations() {
   };
 
   // ---------------------------------------------
-  // 🚀 EMBEDDED SIGNUP (CONNECT WHATSAPP)
+  // Embedded Signup
   // ---------------------------------------------
-
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
-
   useEffect(() => {
-    // Function to initialize the SDK
     const initFacebook = () => {
       if (window.FB) {
-        try {
-          console.log("Initializing FB SDK...", {
-            appId: process.env.REACT_APP_FACEBOOK_APP_ID,
-          });
-          window.FB.init({
-            appId: process.env.REACT_APP_FACEBOOK_APP_ID,
-            cookie: true,
-            xfbml: true,
-            version: "v20.0",
-          });
-          console.log("FB.init called successfully.");
-          window.FB.AppEvents.logPageView();
-          setIsSdkLoaded(true);
-        } catch (e) {
-          console.error("FB Init Failed", e);
-        }
+        window.FB.init({
+          appId: process.env.REACT_APP_FACEBOOK_APP_ID,
+          cookie: true,
+          xfbml: true,
+          version: "v20.0",
+        });
+        setIsSdkLoaded(true);
       }
     };
-
-    // If scripts are already loaded (e.g. from HMR), init immediately
-    if (window.FB) {
-      initFacebook();
-    } else {
-      // Otherwise set the callback
+    if (window.FB) initFacebook();
+    else {
       window.fbAsyncInit = initFacebook;
-
-      // And inject script if not present
       if (!document.getElementById("facebook-jssdk")) {
         const js = document.createElement("script");
         js.id = "facebook-jssdk";
@@ -239,30 +205,19 @@ export default function Integrations() {
   }, []);
 
   const launchWhatsAppSignup = () => {
-    if (!isSdkLoaded || !window.FB) {
-      alert("Facebook SDK is loading... please wait.");
-      return;
-    }
-
-    // Launch Facebook Login with Configuration ID for Embedded Signup
+    if (!window.FB) return alert("SDK loading...");
     window.FB.login(
-      function (response) {
-        if (response.authResponse && response.authResponse.code) {
-          const code = response.authResponse.code;
-          // Send code to backend
-          handleEmbeddedSignup(code);
-        } else {
-          console.log("User cancelled login or did not fully authorize.");
+      (response) => {
+        if (response.authResponse?.code) {
+          handleEmbeddedSignup(response.authResponse.code);
         }
       },
       {
-        config_id: process.env.REACT_APP_FACEBOOK_CONFIG_ID, // NEED THIS IN .ENV
+        config_id: process.env.REACT_APP_FACEBOOK_CONFIG_ID,
         response_type: "code",
         override_default_response_type: true,
-        extras: {
-          setup: {}, // Triggers Embedded Signup
-        },
-      }
+        extras: { setup: {} },
+      },
     );
   };
 
@@ -273,332 +228,507 @@ export default function Integrations() {
         body: JSON.stringify({ code }),
       });
       if (res.success) {
-        alert("WhatsApp Connected Successfully!");
-        fetchAllData(); // Refresh list
+        alert("Connected Successfully!");
+        fetchAllData();
       } else {
-        alert("Connection failed: " + (res.error || "Unknown error"));
+        alert("Connection failed: " + res.error);
       }
     } catch (err) {
-      alert("Connection error: " + err.message);
+      alert("Error: " + err.message);
     }
   };
 
   // ---------------------------------------------
-  // ✨ UI
+  // RENDER HELPERS
   // ---------------------------------------------
+  const inputClass =
+    "bg-slate-700 border border-slate-600 text-white text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5";
+  const btnPrimary =
+    "text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-4 py-2 transition-colors flex items-center gap-2";
+  const btnSecondary =
+    "text-white bg-slate-600 hover:bg-slate-500 font-medium rounded-lg text-sm px-4 py-2 transition-colors flex items-center gap-2";
+  const btnDanger =
+    "text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-3 py-2 transition-colors";
+
   return (
-    <div className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black">
-      {/* LEFT COLUMN — Add Accounts & Phones */}
-      <div className="flex flex-col gap-8">
-        {/* 🆕 CONNECT WHATSAPP (Embedded Signup) */}
-        <div className="bg-[#202d33] p-6 rounded-lg shadow-lg border border-emerald-600/30">
-          <h2 className="text-xl font-bold text-white mb-2">
-            Connect WhatsApp
-          </h2>
-          <p className="text-sm text-gray-400 mb-4">
-            Use your Facebook account to automatically connect your WhatsApp
-            Business number.
-          </p>
-          <button
-            onClick={launchWhatsAppSignup}
-            disabled={!isSdkLoaded}
-            className={`w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded flex items-center justify-center gap-2 ${!isSdkLoaded ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-          >
-            {/* Facebook Icon */}
-            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-            Connect with Facebook
-          </button>
-        </div>
-
-        {/* Add WABA Account (Manual) */}
-        <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Manually Add WABA Account
-          </h2>
-
-          <form onSubmit={handleAddAccount} className="flex flex-col gap-4">
-            <input
-              type="text"
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              placeholder="Account Name (e.g., Client A)"
-              className={inputStyle}
-              required
-            />
-
-            <input
-              type="text"
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-              placeholder="Permanent Access Token"
-              className={inputStyle}
-              required
-            />
-
-            <input
-              type="text"
-              value={businessAccountId}
-              onChange={(e) => setBusinessAccountId(e.target.value)}
-              placeholder="Business Account ID"
-              className={inputStyle}
-              required
-            />
-
-            <button type="submit" className={buttonStyle}>
-              Save Account
+    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 font-sans">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-700 pb-6">
+          <div>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
+              Integrations
+            </h1>
+            <p className="text-slate-400 mt-1">
+              Manage your WhatsApp Business Accounts and Phone Numbers
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={launchWhatsAppSignup}
+              className="bg-[#1877F2] hover:bg-[#166fe5] text-white px-4 py-2.5 rounded-lg font-semibold flex items-center gap-2 shadow-lg transition-transform hover:scale-105"
+              disabled={!isSdkLoaded}
+            >
+              <FaWhatsapp className="text-xl" />
+              Connect with Facebook
             </button>
-          </form>
-        </div>
-
-        {/* Add Phone */}
-        <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Add Phone Number to:{" "}
-            {activeWaba
-              ? accounts.find((a) => a._id === activeWaba)?.accountName
-              : "..."}
-          </h2>
-
-          <form onSubmit={handleAddPhone} className="flex flex-col gap-4">
-            <input
-              type="text"
-              value={phoneName}
-              onChange={(e) => setPhoneName(e.target.value)}
-              placeholder="Phone Number Name"
-              className={inputStyle}
-              disabled={!activeWaba}
-              required
-            />
-
-            <input
-              type="text"
-              value={phoneId}
-              onChange={(e) => setPhoneId(e.target.value)}
-              placeholder="Phone Number ID (from Meta)"
-              className={inputStyle}
-              disabled={!activeWaba}
-              required
-            />
-
-            <button className={buttonStyle} disabled={!activeWaba}>
-              Add Phone
+            <button
+              onClick={() => setShowAddAccount(!showAddAccount)}
+              className={btnPrimary}
+            >
+              <FaPlus />
+              Manual Connect
             </button>
-          </form>
+          </div>
         </div>
-      </div>
 
-      {/* RIGHT COLUMN — List Accounts */}
-      <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold text-white mb-4">Managed Accounts</h2>
-
-        {isLoading ? (
-          <p className="text-center text-gray-400">Loading...</p>
-        ) : (
-          <div className="flex flex-col gap-6">
-            {accounts.map((account) => (
-              <div key={account._id} className="bg-[#2a3942] p-4 rounded-lg">
-                {/* Account Header */}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-white">
-                    {account.accountName}
-                  </h3>
+        {/* MANUAL ADD FORM (Collapsible) */}
+        {showAddAccount && (
+          <div className="bg-slate-800 rounded-xl p-6 border border-emerald-500/30 shadow-2xl animate-fade-in-down">
+            <h3 className="text-lg font-semibold mb-4 text-emerald-400">
+              Add New WABA Account
+            </h3>
+            <form
+              onSubmit={handleAddAccount}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"
+            >
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Account Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. My Business"
+                  className={inputClass}
+                  value={newAccount.accountName}
+                  onChange={(e) =>
+                    setNewAccount({
+                      ...newAccount,
+                      accountName: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Business ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="123456789..."
+                  className={inputClass}
+                  value={newAccount.businessAccountId}
+                  onChange={(e) =>
+                    setNewAccount({
+                      ...newAccount,
+                      businessAccountId: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <label className="block text-xs text-slate-400 mb-1">
+                  Permanent Access Token
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="EAAG..."
+                    className={inputClass}
+                    value={newAccount.accessToken}
+                    onChange={(e) =>
+                      setNewAccount({
+                        ...newAccount,
+                        accessToken: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                  <button type="submit" className={btnPrimary}>
+                    Save
+                  </button>
                   <button
-                    onClick={() => handleDeleteAccount(account._id)}
-                    className="text-red-500 hover:text-red-400"
+                    type="button"
+                    onClick={() => setShowAddAccount(false)}
+                    className={btnSecondary}
                   >
-                    <FaTrash />
+                    Cancel
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        )}
 
-                <p className="text-xs text-gray-400">
-                  ID: {account.businessAccountId}
-                </p>
-
-                {/* Master Sheet */}
-                <div className="mt-4">
-                  <label className={labelStyle}>Master Leads Sheet ID</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editingSheetId[account._id] || ""}
-                      onChange={(e) =>
-                        setEditingSheetId({
-                          ...editingSheetId,
-                          [account._id]: e.target.value,
-                        })
-                      }
-                      className={inputStyle}
-                    />
-
-                    <button
-                      onClick={() => handleSaveMasterSheetId(account._id)}
-                      className="text-white bg-sky-600 hover:bg-sky-700 rounded-lg p-2.5"
-                    >
-                      <FaSave />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Phone Numbers */}
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-300 mb-2">
-                    Phone Numbers:
-                  </h4>
-
-                  {account.phoneNumbers.map((phone) => (
-                    <div
-                      key={phone._id}
-                      className="bg-[#202d33] p-3 rounded mb-2"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-white">{phone.phoneNumberName}</p>
-                          <p className="text-xs text-gray-400">
-                            {phone.phoneNumberId}
-                          </p>
-                        </div>
-
+        {/* ACCOUNTS LIST */}
+        {isLoading ? (
+          <div className="text-center py-20 text-slate-500 animate-pulse">
+            Loading accounts...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {accounts.map((acc) => (
+              <div
+                key={acc._id}
+                className="bg-slate-800 rounded-xl border border-slate-700 hover:border-slate-600 transition-all shadow-lg overflow-hidden"
+              >
+                {/* ACCOUNT HEADER / EDIT MODE */}
+                <div className="p-5 bg-slate-800/50 border-b border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  {editingAccount === acc._id ? (
+                    // EDIT MODE
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                      <input
+                        className={inputClass}
+                        value={editAccountData.accountName}
+                        onChange={(e) =>
+                          setEditAccountData({
+                            ...editAccountData,
+                            accountName: e.target.value,
+                          })
+                        }
+                        placeholder="Name"
+                      />
+                      <input
+                        className={inputClass}
+                        value={editAccountData.businessAccountId}
+                        onChange={(e) =>
+                          setEditAccountData({
+                            ...editAccountData,
+                            businessAccountId: e.target.value,
+                          })
+                        }
+                        placeholder="Business ID"
+                      />
+                      <input
+                        className={inputClass}
+                        value={editAccountData.masterSpreadsheetId || ""}
+                        onChange={(e) =>
+                          setEditAccountData({
+                            ...editAccountData,
+                            masterSpreadsheetId: e.target.value,
+                          })
+                        }
+                        placeholder="Spreadsheet ID"
+                      />
+                      <div className="md:col-span-3">
+                        <input
+                          className={inputClass}
+                          value={editAccountData.accessToken}
+                          onChange={(e) =>
+                            setEditAccountData({
+                              ...editAccountData,
+                              accessToken: e.target.value,
+                            })
+                          }
+                          placeholder="Access Token"
+                        />
+                      </div>
+                      <div className="flex gap-2 md:col-span-3 justify-end">
                         <button
-                          onClick={() => handleDeletePhone(phone._id)}
-                          className="text-red-500 hover:text-red-400"
+                          onClick={() => handleUpdateAccount(acc._id)}
+                          className={btnPrimary}
                         >
-                          <FaTrash />
+                          <FaSave /> Save
+                        </button>
+                        <button
+                          onClick={() => setEditingAccount(null)}
+                          className={btnSecondary}
+                        >
+                          <FaTimes /> Cancel
                         </button>
                       </div>
+                    </div>
+                  ) : (
+                    // VIEW MODE
+                    <>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-xl font-bold text-white tracking-tight">
+                            {acc.accountName}
+                          </h2>
+                          <span className="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300 font-mono">
+                            ID: {acc.businessAccountId}
+                          </span>
+                        </div>
+                        {acc.masterSpreadsheetId && (
+                          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                            <span className="opacity-50">Sheet:</span>{" "}
+                            {acc.masterSpreadsheetId}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingAccount(acc._id);
+                            setEditAccountData(acc);
+                          }}
+                          className="p-2 text-slate-400 hover:text-emerald-400 transition-colors"
+                          title="Edit Account"
+                        >
+                          <FaEdit size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAccount(acc._id)}
+                          className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                          title="Delete Account"
+                        >
+                          <FaTrash size={18} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
 
-                      {/* Bot Flow Selector */}
-                      <div className="mt-3">
-                        <label className={labelStyle}>Active Bot Flow</label>
-                        <div className="flex gap-2">
-                          <select
-                            value={editingBotFlow[phone._id] || ""}
+                {/* PHONE NUMBERS SECTION */}
+                <div className="p-5 bg-[#1e293b]/50">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                      Phone Numbers
+                    </h3>
+                    <button
+                      onClick={() =>
+                        setShowAddPhone(
+                          showAddPhone === acc._id ? null : acc._id,
+                        )
+                      }
+                      className="text-xs flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium"
+                    >
+                      <FaPlus /> Add Phone
+                    </button>
+                  </div>
+
+                  {/* ADD PHONE FORM */}
+                  {showAddPhone === acc._id && (
+                    <div className="bg-slate-900/50 p-4 rounded-lg mb-4 border border-slate-600 animate-fade-in">
+                      <form
+                        onSubmit={(e) => handleAddPhone(e, acc._id)}
+                        className="flex flex-col md:flex-row gap-3 items-end"
+                      >
+                        <div className="flex-1">
+                          <label className="text-xs text-slate-500">
+                            Display Name
+                          </label>
+                          <input
+                            className={inputClass}
+                            placeholder="Sales Number"
+                            value={newPhone.phoneName}
                             onChange={(e) =>
-                              handleBotFlowChange(phone._id, e.target.value)
+                              setNewPhone({
+                                ...newPhone,
+                                phoneName: e.target.value,
+                              })
                             }
-                            className={inputStyle}
-                          >
-                            <option value="">-- No Bot --</option>
+                            required
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs text-slate-500">
+                            Phone ID
+                          </label>
+                          <input
+                            className={inputClass}
+                            placeholder="10034..."
+                            value={newPhone.phoneId}
+                            onChange={(e) =>
+                              setNewPhone({
+                                ...newPhone,
+                                phoneId: e.target.value,
+                              })
+                            }
+                            required
+                          />
+                        </div>
+                        <button className={btnPrimary}>Add</button>
+                      </form>
+                    </div>
+                  )}
 
-                            {botFlows
-                              .filter(
-                                (flow) => flow.wabaAccount === account._id
-                              )
-                              .map((flow) => (
-                                <option key={flow._id} value={flow._id}>
-                                  {flow.name}
-                                </option>
-                              ))}
-                          </select>
+                  {/* NUMBERS LIST */}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {acc.phoneNumbers.map((phone) => (
+                      <div
+                        key={phone._id}
+                        className="bg-slate-900 rounded-lg p-4 border border-slate-700 flex flex-col gap-3"
+                      >
+                        {/* PHONE HEADER */}
+                        <div className="flex justify-between items-start">
+                          {editingPhone === phone._id ? (
+                            <div className="flex-1 space-y-2 mr-2">
+                              <input
+                                className={inputClass}
+                                value={editPhoneData.phoneNumberName}
+                                onChange={(e) =>
+                                  setEditPhoneData({
+                                    ...editPhoneData,
+                                    phoneNumberName: e.target.value,
+                                  })
+                                }
+                              />
+                              <input
+                                className={inputClass}
+                                value={editPhoneData.phoneNumberId}
+                                onChange={(e) =>
+                                  setEditPhoneData({
+                                    ...editPhoneData,
+                                    phoneNumberId: e.target.value,
+                                  })
+                                }
+                              />
+                              <div className="flex gap-2 mt-2">
+                                <button
+                                  size="sm"
+                                  onClick={() => handleUpdatePhone(phone._id)}
+                                  className="text-xs bg-emerald-600 text-white px-2 py-1 rounded"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  size="sm"
+                                  onClick={() => setEditingPhone(null)}
+                                  className="text-xs bg-slate-600 text-white px-2 py-1 rounded"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <h4 className="font-bold text-white">
+                                {phone.phoneNumberName}
+                              </h4>
+                              <p className="text-xs text-slate-500 font-mono">
+                                {phone.phoneNumberId}
+                              </p>
+                            </div>
+                          )}
 
-                          <button
-                            onClick={() => handleSaveBotFlow(phone._id)}
-                            className="text-white bg-sky-600 hover:bg-sky-700 rounded-lg p-2.5"
-                          >
-                            <FaSave />
-                          </button>
+                          {!editingPhone && (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingPhone(phone._id);
+                                  setEditPhoneData(phone);
+                                }}
+                                className="text-slate-500 hover:text-white p-1"
+                              >
+                                <FaEdit />
+                              </button>
+                              <button
+                                onClick={() => handleDeletePhone(phone._id)}
+                                className="text-slate-500 hover:text-red-500 p-1"
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ACTIONS / TOGGLES */}
+                        <div className="pt-3 border-t border-slate-700/50 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm text-slate-300">
+                              <FaRobot /> AI Assistant
+                            </div>
+                            <Toggle
+                              checked={phone.isAiEnabled}
+                              onChange={(e) =>
+                                handleUpdatePhone(phone._id, {
+                                  isAiEnabled: e.target.checked,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-slate-300 pl-6">
+                              Follow-up
+                            </div>
+                            <Toggle
+                              checked={phone.isFollowUpEnabled}
+                              onChange={(e) =>
+                                handleUpdatePhone(phone._id, {
+                                  isFollowUpEnabled: e.target.checked,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-slate-300 pl-6">
+                              Review
+                            </div>
+                            <Toggle
+                              checked={phone.isReviewEnabled}
+                              onChange={(e) =>
+                                handleUpdatePhone(phone._id, {
+                                  isReviewEnabled: e.target.checked,
+                                })
+                              }
+                            />
+                          </div>
+
+                          {/* BOT FLOW */}
+                          <div className="pt-2">
+                            <select
+                              className="bg-slate-800 border border-slate-600 text-xs rounded block w-full p-2 text-slate-300"
+                              value={phone.activeBotFlow || ""}
+                              onChange={(e) =>
+                                handleUpdatePhone(phone._id, {
+                                  activeBotFlow: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">-- No Bot Flow --</option>
+                              {botFlows
+                                .filter((f) => f.wabaAccount === acc._id)
+                                .map((f) => (
+                                  <option key={f._id} value={f._id}>
+                                    {f.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
-
-                      {/* AI Agent Toggle */}
-                      <div className="mt-3 flex items-center justify-between bg-[#1a262b] p-2 rounded">
-                        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                          🤖 AI Assistant
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={phone.isAiEnabled || false}
-                            onChange={async (e) => {
-                              try {
-                                await authFetch(`/waba/phones/${phone._id}`, {
-                                  method: "PUT",
-                                  body: JSON.stringify({
-                                    isAiEnabled: e.target.checked,
-                                  }),
-                                });
-                                fetchAllData(); // Refresh
-                              } catch (err) {
-                                alert(err.message);
-                              }
-                            }}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                        </label>
+                    ))}
+                    {acc.phoneNumbers.length === 0 && (
+                      <div className="p-4 text-center text-slate-500 text-sm italic">
+                        No phone numbers
                       </div>
-
-                      {/* Enable Follow Up Toggle */}
-                      <div className="mt-2 flex items-center justify-between bg-[#1a262b] p-2 rounded">
-                        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                          📅 Follow-up
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={phone.isFollowUpEnabled || false}
-                            onChange={async (e) => {
-                              try {
-                                await authFetch(`/waba/phones/${phone._id}`, {
-                                  method: "PUT",
-                                  body: JSON.stringify({
-                                    isFollowUpEnabled: e.target.checked,
-                                  }),
-                                });
-                                fetchAllData(); // Refresh
-                              } catch (err) {
-                                alert(err.message);
-                              }
-                            }}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                        </label>
-                      </div>
-
-                      {/* Enable Review Toggle */}
-                      <div className="mt-2 flex items-center justify-between bg-[#1a262b] p-2 rounded">
-                        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                          ⭐ Review
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={phone.isReviewEnabled || false}
-                            onChange={async (e) => {
-                              try {
-                                await authFetch(`/waba/phones/${phone._id}`, {
-                                  method: "PUT",
-                                  body: JSON.stringify({
-                                    isReviewEnabled: e.target.checked,
-                                  }),
-                                });
-                                fetchAllData(); // Refresh
-                              } catch (err) {
-                                alert(err.message);
-                              }
-                            }}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                        </label>
-                      </div>
-                    </div>
-                  ))}
-
-                  {account.phoneNumbers.length === 0 && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      No phone numbers yet.
-                    </p>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
+            {accounts.length === 0 && (
+              <div className="text-center py-20 bg-slate-800/50 rounded-xl border border-dashed border-slate-700">
+                <h2 className="text-xl text-slate-400 font-semibold">
+                  No Accounts Connected
+                </h2>
+                <p className="text-slate-500 mt-2">
+                  Connect with Facebook or add manually to get started
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// Simple Reusable Toggle Component
+function Toggle({ checked, onChange }) {
+  return (
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input
+        type="checkbox"
+        className="sr-only peer"
+        checked={checked || false}
+        onChange={onChange}
+      />
+      <div className="w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+    </label>
   );
 }
