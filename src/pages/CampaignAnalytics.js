@@ -52,7 +52,7 @@ export default function CampaignAnalytics() {
       }
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}/api/analytics/${campaignId}/export`,
-        { headers }
+        { headers },
       );
 
       if (!response.ok) {
@@ -146,6 +146,12 @@ export default function CampaignAnalytics() {
           value={`${analytics.failed} (${analytics.failedRate})`}
           className="border-l-4 border-red-500"
         />
+        {/* --- NEW SKIPPED CARD --- */}
+        <StatCard
+          title="Skipped"
+          value={`${analytics.skipped || 0} (${analytics.skippedRate || "0%"})`}
+          className="border-l-4 border-gray-500"
+        />
       </div>
 
       {/* --- NEW GOOGLE SHEETS EXPORT SECTION --- */}
@@ -170,7 +176,8 @@ export default function CampaignAnalytics() {
         </div>
         <p className="text-xs text-gray-400 mt-2">
           **Reminder**: You must share your Google Sheet with the service
-          account email `sheets-manager@whatsapp-crm-472112.iam.gserviceaccount.com`.
+          account email
+          `sheets-manager@whatsapp-crm-472112.iam.gserviceaccount.com`.
         </p>
       </div>
 
@@ -219,8 +226,8 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
       setLoading(true);
       const res = await authFetch(
         `/analytics/${campaignId}/details?page=${currentPage}&limit=${limit}&status=${statusFilter}&search=${encodeURIComponent(
-          debouncedSearch
-        )}`
+          debouncedSearch,
+        )}`,
       );
       if (res.success) {
         setDetails(res.data);
@@ -261,6 +268,7 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
             <option value="delivered">Delivered</option>
             <option value="read">Read</option>
             <option value="failed">Failed</option>
+            <option value="skipped">Skipped</option>
           </select>
         </div>
       </div>
@@ -313,10 +321,12 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
                           item.status === "read"
                             ? "bg-green-500/20 text-green-500"
                             : item.status === "delivered"
-                            ? "bg-blue-500/20 text-blue-500"
-                            : item.status === "failed"
-                            ? "bg-red-500/20 text-red-500"
-                            : "bg-gray-500/20 text-gray-500"
+                              ? "bg-blue-500/20 text-blue-500"
+                              : item.status === "failed"
+                                ? "bg-red-500/20 text-red-500"
+                                : item.status === "skipped"
+                                  ? "bg-gray-500/20 text-gray-400"
+                                  : "bg-gray-500/20 text-gray-500"
                         }`}
                     >
                       {item.status}
