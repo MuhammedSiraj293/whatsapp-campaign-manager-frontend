@@ -39,7 +39,6 @@ export default function CreateCampaign() {
   const [wabaAccounts, setWabaAccounts] = useState([]);
 
   // Selected values
-  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedTemplateObject, setSelectedTemplateObject] = useState(null); // Store full object for preview
   const [selectedList, setSelectedList] = useState("");
   const [selectedExclusionList, setSelectedExclusionList] = useState("");
@@ -81,7 +80,6 @@ export default function CreateCampaign() {
 
     // Reset fields on WABA change
     setSelectedPhoneNumber("");
-    setSelectedTemplate("");
     setSelectedTemplateObject(null);
     setFormMessage("");
     setButtons([]);
@@ -112,7 +110,6 @@ export default function CreateCampaign() {
 
   const handleTemplateChange = (e) => {
     const templateName = e.target.value;
-    setSelectedTemplate(templateName);
     const template = templates.find((t) => t.name === templateName);
     setSelectedTemplateObject(template);
 
