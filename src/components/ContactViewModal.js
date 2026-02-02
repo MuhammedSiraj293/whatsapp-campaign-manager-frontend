@@ -45,11 +45,8 @@ export default function ContactViewModal({
   };
 
   const handleDeleteContact = async (contactId) => {
-    if (!window.confirm("Are you sure you want to delete this contact?"))
-      return;
     try {
       await authFetch(`/contacts/contacts/${contactId}`, { method: "DELETE" });
-      alert("Contact deleted successfully.");
       onRefresh(); // Refresh the contact list in the parent
     } catch (error) {
       console.error("Error deleting contact:", error);
