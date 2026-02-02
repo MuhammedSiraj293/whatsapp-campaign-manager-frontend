@@ -202,9 +202,11 @@ export default function Analytics() {
                     align: "left",
                   },
                   { key: "totalSent", label: "Total Sent", align: "left" },
+                  { key: "sent", label: "Sent", align: "left" },
                   { key: "delivered", label: "Delivered", align: "left" },
                   { key: "read", label: "Read", align: "left" },
                   { key: "failed", label: "Failed", align: "left" },
+                  { key: "skipped", label: "Skipped", align: "left" },
                   { key: "replies", label: "Replies", align: "left" },
                 ].map((col) => (
                   <th
@@ -251,6 +253,9 @@ export default function Analytics() {
                     {template.totalSent}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {template.sent || 0}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     <FaCheckDouble className="inline mr-1 text-cyan-500" />
                     {template.delivered}
                   </td>
@@ -261,6 +266,12 @@ export default function Analytics() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     <FaExclamationTriangle className="inline mr-1 text-red-500" />
                     {template.failed}
+                  </td>
+                  <td
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 max-w-[100px] truncate"
+                    title={template.skipped || 0}
+                  >
+                    {template.skipped || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     <FaReply className="inline mr-1 text-yellow-500" />

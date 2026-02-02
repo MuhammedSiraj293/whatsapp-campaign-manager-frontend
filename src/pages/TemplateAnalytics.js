@@ -139,6 +139,12 @@ export default function TemplateAnalytics() {
           value={analytics.total}
           className="border-l-4 border-violet-700"
         />
+        {/* ADDED SENT */}
+        <StatCard
+          title="Sent (Dispatched)"
+          value={`${analytics.sent || 0} (${analytics.sentRate || "0%"})`}
+          className="border-l-4 border-indigo-500"
+        />
         <StatCard
           title="Total Delivered"
           value={`${analytics.totalDelivered} (${analytics.totalDeliveryRate})`}
@@ -163,6 +169,12 @@ export default function TemplateAnalytics() {
           title="Failed"
           value={`${analytics.failed} (${analytics.failedRate})`}
           className="border-l-4 border-red-500"
+        />
+        {/* ADDED SKIPPED */}
+        <StatCard
+          title="Skipped"
+          value={`${analytics.skipped || 0} (${analytics.skippedRate || "0%"})`}
+          className="border-l-4 border-gray-500"
         />
       </div>
 
@@ -206,9 +218,11 @@ export default function TemplateAnalytics() {
                   {[
                     { key: "name", label: "Segment Name" },
                     { key: "totalSent", label: "Total Sent" },
+                    { key: "sent", label: "Sent" },
                     { key: "delivered", label: "Delivered" },
                     { key: "read", label: "Read" },
                     { key: "failed", label: "Failed" },
+                    { key: "skipped", label: "Skipped" },
                     { key: "replies", label: "Replies" },
                   ].map((col) => (
                     <th
@@ -243,6 +257,14 @@ export default function TemplateAnalytics() {
                     </td>
                     <td className="px-6 py-4">{seg.totalSent}</td>
                     <td className="px-6 py-4">
+                      <span className="text-indigo-400 font-bold">
+                        ➡ {seg.sent}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-1">
+                        ({seg.sentRate})
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
                       <span className="text-cyan-400 font-bold">
                         ✔ {seg.delivered}
                       </span>
@@ -264,6 +286,14 @@ export default function TemplateAnalytics() {
                       </span>
                       <span className="text-xs text-gray-400 ml-1">
                         ({seg.failedRate})
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-gray-400 font-bold">
+                        ⚠ {seg.skipped}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({seg.skippedRate})
                       </span>
                     </td>
                     <td className="px-6 py-4">

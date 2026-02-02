@@ -122,6 +122,11 @@ export default function CampaignAnalytics() {
           className="border-l-4 border-violet-700"
         />
         <StatCard
+          title="Sent (Dispatched)"
+          value={`${analytics.sent || 0} (${analytics.sentRate || "0%"})`}
+          className="border-l-4 border-indigo-500"
+        />
+        <StatCard
           title="Total Delivered"
           value={`${analytics.totalDelivered} (${analytics.totalDeliveryRate})`}
           className="border-l-4 border-blue-500"
