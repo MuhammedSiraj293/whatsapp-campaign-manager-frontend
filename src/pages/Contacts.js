@@ -115,11 +115,19 @@ export default function Contacts() {
     }
   };
 
-  // Function to open the modal and fetch contacts for the selected list
+  // Function to open the modal and fetch contacts for the selected list (or analytics view)
   const handleViewContacts = async (list) => {
-    setViewingList(list); // Set the full list object to show its name in the modal
+    setViewingList(list); // Set the list object (real or dummy) to show its name in the modal
     try {
-      const data = await authFetch(`/contacts/lists/${list._id}/contacts`);
+      let url = `/contacts/lists/${list._id}/contacts`;
+
+      // If this is a special Analytics View request
+      if (list.isAnalyticsView) {
+        const encodedReason = encodeURIComponent(list.reasonFilter);
+        url = `/contacts/unsubscribed?reason=${encodedReason}`;
+      }
+
+      const data = await authFetch(url);
       if (data.success) {
         setViewingContacts(data.data);
       }
@@ -233,10 +241,18 @@ export default function Contacts() {
                 {stats.reasons.map((r, idx) => (
                   <div
                     key={idx}
-                    className="bg-[#2c3943] p-3 rounded-lg flex justify-between items-center"
+                    onClick={() =>
+                      handleViewContacts({
+                        _id: "analytics_view", // Dummy ID
+                        name: `Unsubscribed: ${r.reason}`, // Custom Title
+                        isAnalyticsView: true, // Flag to identify special view
+                        reasonFilter: r.reason, // Pass reason for fetching
+                      })
+                    }
+                    className="bg-[#2c3943] p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-[#374151] transition-colors group"
                   >
                     <span
-                      className="text-gray-300 text-sm truncate mr-2"
+                      className="text-gray-300 text-sm truncate mr-2 group-hover:text-white"
                       title={r.reason}
                     >
                       {r.reason}
