@@ -7,11 +7,22 @@ import {
   FaTimesCircle,
   FaWhatsapp,
   FaInfoCircle,
+  FaTag,
+  FaStickyNote,
+  FaPlus,
+  FaTimes,
+  FaSave,
 } from "react-icons/fa";
 
 const ContactDetailModal = ({ contactId, onClose }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Editable Fields
+  const [tags, setTags] = useState([]);
+  const [newTag, setNewTag] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchDetails();
@@ -22,11 +33,44 @@ const ContactDetailModal = ({ contactId, onClose }) => {
       const res = await authFetch(`/contacts/${contactId}/details`);
       if (res.success) {
         setData(res.data);
+        setTags(res.data.contact.tags || []);
+        setNotes(res.data.contact.notes || "");
       }
     } catch (error) {
       console.error("Error fetching details:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await authFetch(`/contacts/${contactId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tags, notes }),
+      });
+      if (res.success) {
+        // Optional: show toast
+        alert("Saved successfully");
+      }
+    } catch (error) {
+      console.error("Error updating contact:", error);
+      alert("Failed to save");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -101,6 +145,71 @@ const ContactDetailModal = ({ contactId, onClose }) => {
               </div>
               <div className="text-2xl font-bold text-white flex justify-center items-center gap-2">
                 <FaReply className="text-emerald-400" /> {stats.replied}
+              </div>
+            </div>
+          </div>
+
+          {/* Tags & Notes Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Tags */}
+            <div className="bg-[#2a3942] p-4 rounded">
+              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                <FaTag className="text-emerald-400" /> Tags
+              </h3>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-emerald-900 text-emerald-100 text-xs px-2 py-1 rounded-full flex items-center gap-1"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:text-white"
+                    >
+                      <FaTimes />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 bg-[#111b21] text-white text-sm px-3 py-2 rounded border border-gray-600 focus:border-emerald-500 outline-none"
+                  placeholder="Add a tag..."
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
+                />
+                <button
+                  onClick={handleAddTag}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded text-sm disabled:opacity-50"
+                  disabled={!newTag.trim()}
+                >
+                  <FaPlus />
+                </button>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="bg-[#2a3942] p-4 rounded flex flex-col">
+              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                <FaStickyNote className="text-yellow-400" /> Notes
+              </h3>
+              <textarea
+                className="flex-1 bg-[#111b21] text-white text-sm px-3 py-2 rounded border border-gray-600 focus:border-emerald-500 outline-none resize-none h-24"
+                placeholder="Add notes about this contact..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              ></textarea>
+              <div className="mt-3 text-right">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm flex items-center gap-2 ml-auto disabled:opacity-50"
+                >
+                  <FaSave /> {saving ? "Saving..." : "Save Details"}
+                </button>
               </div>
             </div>
           </div>

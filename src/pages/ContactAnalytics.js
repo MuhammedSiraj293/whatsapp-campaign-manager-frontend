@@ -14,6 +14,9 @@ const ContactAnalytics = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [listFilter, setListFilter] = useState("");
+  const [minReplies, setMinReplies] = useState("");
+  const [minScore, setMinScore] = useState("");
+  const [lastActiveDays, setLastActiveDays] = useState("");
   const [sortBy, setSortBy] = useState("lastActive");
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -42,6 +45,9 @@ const ContactAnalytics = () => {
         search,
         status: statusFilter,
         listId: listFilter,
+        minReplies,
+        minScore,
+        lastActiveDays,
         sortBy,
         sortOrder,
       });
@@ -56,7 +62,17 @@ const ContactAnalytics = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, listFilter, sortBy, sortOrder]);
+  }, [
+    page,
+    search,
+    statusFilter,
+    listFilter,
+    minReplies,
+    minScore,
+    lastActiveDays,
+    sortBy,
+    sortOrder,
+  ]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -109,43 +125,92 @@ const ContactAnalytics = () => {
           {/* Add export button later */}
         </div>
 
-        {/* Filters */}
-        <div className="bg-[#202d33] p-4 rounded-lg mb-6 shadow-md flex flex-wrap gap-4 items-center">
-          <div className="flex-1 min-w-[200px] relative">
-            <FaSearch className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search contacts..."
-              className="w-full bg-[#2a3942] pl-10 pr-4 py-2 rounded border border-gray-600 focus:border-emerald-500 focus:outline-none text-white"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+        <div className="bg-[#202d33] p-4 rounded-lg mb-6 shadow-md flex flex-col gap-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex-1 min-w-[200px] relative">
+              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search contacts..."
+                className="w-full bg-[#2a3942] pl-10 pr-4 py-2 rounded border border-gray-600 focus:border-emerald-500 focus:outline-none text-white"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            <select
+              className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 focus:border-emerald-500 text-white"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="hot">Hot</option>
+              <option value="warm">Warm</option>
+              <option value="cold">Cold</option>
+              <option value="dead">Dead</option>
+            </select>
+
+            <select
+              className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 focus:border-emerald-500 text-white"
+              value={listFilter}
+              onChange={(e) => setListFilter(e.target.value)}
+            >
+              <option value="">All Lists</option>
+              {lists.map((l) => (
+                <option key={l._id} value={l._id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <select
-            className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 focus:border-emerald-500 text-white"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Statuses</option>
-            <option value="hot">Hot</option>
-            <option value="warm">Warm</option>
-            <option value="cold">Cold</option>
-            <option value="dead">Dead</option>
-          </select>
-
-          <select
-            className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 focus:border-emerald-500 text-white"
-            value={listFilter}
-            onChange={(e) => setListFilter(e.target.value)}
-          >
-            <option value="">All Lists</option>
-            {lists.map((l) => (
-              <option key={l._id} value={l._id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
+          {/* Advanced Filters */}
+          <div className="flex flex-wrap gap-4 items-center text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">Min Replies:</span>
+              <input
+                type="number"
+                placeholder="0"
+                className="w-20 bg-[#2a3942] px-2 py-1 rounded border border-gray-600 focus:border-emerald-500 text-white"
+                value={minReplies}
+                onChange={(e) => setMinReplies(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">Min Score:</span>
+              <input
+                type="number"
+                placeholder="0-100"
+                className="w-20 bg-[#2a3942] px-2 py-1 rounded border border-gray-600 focus:border-emerald-500 text-white"
+                value={minScore}
+                onChange={(e) => setMinScore(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">Last Active &lt;</span>
+              <input
+                type="number"
+                placeholder="Days"
+                className="w-20 bg-[#2a3942] px-2 py-1 rounded border border-gray-600 focus:border-emerald-500 text-white"
+                value={lastActiveDays}
+                onChange={(e) => setLastActiveDays(e.target.value)}
+              />
+              <span className="text-gray-400">days ago</span>
+            </div>
+            <button
+              onClick={() => {
+                setStatusFilter("all");
+                setListFilter("");
+                setMinReplies("");
+                setMinScore("");
+                setLastActiveDays("");
+                setSearch("");
+              }}
+              className="ml-auto text-emerald-400 hover:text-emerald-300 text-sm underline"
+            >
+              Reset Filters
+            </button>
+          </div>
         </div>
 
         {/* Table */}
