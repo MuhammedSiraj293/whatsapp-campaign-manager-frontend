@@ -16,6 +16,7 @@ export default function ContactViewModal({
   const [filter, setFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // New Status Filter
   const [viewingStats, setViewingStats] = useState(null); // New Stats Viewing State
+  const [selectedContactIds, setSelectedContactIds] = useState(new Set()); // New Selection State
 
   if (!list) return null; // The modal is controlled by the 'list' prop
 
@@ -85,6 +86,54 @@ export default function ContactViewModal({
 
     return matchesSearch && matchesStatus;
   });
+
+  // --- BULK SELECTION HANDLERS ---
+  const toggleSelectAll = () => {
+    if (selectedContactIds.size === filteredContacts.length) {
+      setSelectedContactIds(new Set());
+    } else {
+      const allIds = new Set(filteredContacts.map((c) => c._id));
+      setSelectedContactIds(allIds);
+    }
+  };
+
+  const toggleSelectContact = (contactId) => {
+    const newSelected = new Set(selectedContactIds);
+    if (newSelected.has(contactId)) {
+      newSelected.delete(contactId);
+    } else {
+      newSelected.add(contactId);
+    }
+    setSelectedContactIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedContactIds.size === 0) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedContactIds.size} contacts?`,
+      )
+    )
+      return;
+
+    try {
+      const response = await authFetch(`/contacts/bulk-delete`, {
+        method: "POST",
+        body: JSON.stringify({ contactIds: Array.from(selectedContactIds) }),
+      });
+
+      if (response.success) {
+        alert("Contacts deleted successfully");
+        setSelectedContactIds(new Set());
+        onRefresh();
+      } else {
+        alert(response.error || "Failed to delete contacts");
+      }
+    } catch (error) {
+      console.error("Error deleting contacts:", error);
+      alert("Failed to delete contacts");
+    }
+  };
 
   return (
     <div
@@ -179,9 +228,20 @@ export default function ContactViewModal({
         )}
 
         <div className="flex justify-between items-center p-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">
-            Contacts in "{list.name}" ({contacts.length})
-          </h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-white">
+              Contacts in "{list.name}" ({contacts.length})
+            </h2>
+            {selectedContactIds.size > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                title="Delete Selected"
+              >
+                Delete Selected ({selectedContactIds.size})
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white text-2xl"
@@ -214,6 +274,17 @@ export default function ContactViewModal({
           <table className="min-w-full">
             <thead className="bg-[#2a3942]">
               <tr>
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
+                    checked={
+                      filteredContacts.length > 0 &&
+                      selectedContactIds.size === filteredContacts.length
+                    }
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
                   Phone Number
                 </th>
@@ -230,6 +301,7 @@ export default function ContactViewModal({
                 <tr key={contact._id}>
                   {editingContactId === contact._id ? (
                     <>
+                      <td className="px-6 py-4"></td>
                       <td className="px-6 py-4">
                         <input
                           type="text"
@@ -273,6 +345,14 @@ export default function ContactViewModal({
                     </>
                   ) : (
                     <>
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
+                          checked={selectedContactIds.has(contact._id)}
+                          onChange={() => toggleSelectContact(contact._id)}
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {contact.phoneNumber}
                       </td>

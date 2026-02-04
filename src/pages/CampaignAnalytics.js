@@ -270,6 +270,7 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">All Statuses</option>
+            <option value="sent">Sent</option>
             <option value="delivered">Delivered</option>
             <option value="read">Read</option>
             <option value="failed">Failed</option>
