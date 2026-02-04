@@ -1,12 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { authFetch } from "../services/api";
-import {
-  FaSearch,
-  FaFilter,
-  FaSort,
-  FaSortUp,
-  FaSortDown,
-} from "react-icons/fa";
+import { FaSearch, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import ContactDetailModal from "../components/ContactDetailModal"; // Will create next
 
 const ContactAnalytics = () => {
@@ -30,10 +24,6 @@ const ContactAnalytics = () => {
     fetchLists();
   }, []);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [page, search, statusFilter, listFilter, sortBy, sortOrder]);
-
   const fetchLists = async () => {
     try {
       const res = await authFetch("/contacts/lists");
@@ -43,7 +33,7 @@ const ContactAnalytics = () => {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       const query = new URLSearchParams({
@@ -66,7 +56,11 @@ const ContactAnalytics = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, statusFilter, listFilter, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleSort = (field) => {
     if (sortBy === field) {

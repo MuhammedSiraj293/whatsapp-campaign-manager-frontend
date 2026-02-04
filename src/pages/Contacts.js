@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { authFetch } from "../services/api";
+import { useNavigate } from "react-router-dom"; // <-- Import useNavigate
 import ContactViewModal from "../components/ContactViewModal";
 import { FaUser, FaUserCheck, FaUserSlash, FaCopy } from "react-icons/fa"; // Icons for analytics
 
 export default function Contacts() {
+  const navigate = useNavigate(); // <-- Initialize hook
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newListName, setNewListName] = useState("");
@@ -171,7 +173,10 @@ export default function Contacts() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Total Contacts */}
-            <div className="bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg">
+            <div
+              onClick={() => navigate("/contact-analytics")} // <-- Navigate on click
+              className="bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg cursor-pointer hover:bg-[#2a3942] transition-colors"
+            >
               <div>
                 <p className="text-gray-400 text-sm uppercase tracking-wider font-semibold">
                   Total Contacts
