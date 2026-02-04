@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { authFetch } from "../services/api";
 import {
   FaPaperPlane,
   FaReply,
   FaCheckDouble,
-  FaTimesCircle,
   FaWhatsapp,
   FaInfoCircle,
   FaTag,
@@ -24,11 +23,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchDetails();
-  }, [contactId]);
-
-  const fetchDetails = async () => {
+  const fetchDetails = useCallback(async () => {
     try {
       const res = await authFetch(`/contacts/${contactId}/details`);
       if (res.success) {
@@ -41,7 +36,11 @@ const ContactDetailModal = ({ contactId, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [contactId]);
+
+  useEffect(() => {
+    fetchDetails();
+  }, [fetchDetails]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
