@@ -515,7 +515,11 @@ export default function Replies() {
   };
 
   // --- NEW: Handle Manual Unsubscribe/Resubscribe ---
-  const handleToggleSubscription = async (phoneNumber, newStatus) => {
+  const handleToggleSubscription = async (
+    phoneNumber,
+    newStatus,
+    reason = null,
+  ) => {
     if (!phoneNumber) return;
 
     // Optimistic UI update (optional, but good for UX)
@@ -526,9 +530,14 @@ export default function Replies() {
     );
 
     try {
+      const payload = { status: newStatus };
+      if (!newStatus && reason) {
+        payload.unsubscribeReason = reason;
+      }
+
       const result = await authFetch(`/replies/subscription/${phoneNumber}`, {
         method: "POST",
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(payload),
       });
 
       if (result.success) {

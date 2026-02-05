@@ -21,6 +21,15 @@ export default function Chats({
     convoId: null,
   });
 
+  // --- UNSUBSCRIBE MODAL STATE ---
+  const [unsubscribeModal, setUnsubscribeModal] = React.useState({
+    visible: false,
+    convoId: null,
+  });
+  const [unsubscribeReason, setUnsubscribeReason] =
+    React.useState("Requested by User");
+  const [customReason, setCustomReason] = React.useState("");
+
   const scrollRef = useRef(null);
   const isMounted = useRef(false);
 
@@ -273,15 +282,106 @@ export default function Chats({
             }`}
             onClick={() => {
               if (onToggleSubscription) {
-                // If currently subscribed (true), we want to set status to false (Unsubscribe)
-                // If currently unsubscribed (false), we want to set status to true (Resubscribe)
-                const newStatus = !contextMenu.isSubscribed;
-                onToggleSubscription(contextMenu.convoId, newStatus);
+                if (contextMenu.isSubscribed) {
+                  // Currently Subscribed -> Open Modal to Unsubscribe
+                  setUnsubscribeModal({
+                    visible: true,
+                    convoId: contextMenu.convoId,
+                  });
+                } else {
+                  // Currently Unsubscribed -> Resubscribe Immediately
+                  onToggleSubscription(contextMenu.convoId, true);
+                }
               }
               closeContextMenu();
             }}
           >
             {contextMenu.isSubscribed ? "Unsubscribe" : "Resubscribe"}
+          </div>
+        </div>
+      )}
+
+      {/* --- UNSUBSCRIBE REASON MODAL --- */}
+      {unsubscribeModal.visible && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70"
+          onClick={() => setUnsubscribeModal({ visible: false, convoId: null })}
+        >
+          <div
+            className="bg-[#2a3942] p-6 rounded-lg w-full max-w-sm border border-gray-600 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-white mb-4">
+              Confirm Unsubscribe
+            </h3>
+            <p className="text-gray-300 mb-4 text-sm">
+              Select a reason for unsubscribing this contact.
+            </p>
+
+            <div className="space-y-2 mb-4">
+              {["Requested by User", "Spam", "Real Estate Broker", "Other"].map(
+                (r) => (
+                  <label
+                    key={r}
+                    className="flex items-center gap-2 text-gray-200 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="reason"
+                      value={r}
+                      checked={unsubscribeReason === r}
+                      onChange={(e) => setUnsubscribeReason(e.target.value)}
+                      className="text-emerald-500 focus:ring-emerald-500 bg-[#111b21] border-gray-600"
+                    />
+                    {r}
+                  </label>
+                ),
+              )}
+            </div>
+
+            {unsubscribeReason === "Other" && (
+              <textarea
+                className="w-full bg-[#111b21] text-white text-sm p-2 rounded border border-gray-600 mb-4 outline-none focus:border-emerald-500 resize-none"
+                placeholder="Enter reason..."
+                rows="2"
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+              />
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() =>
+                  setUnsubscribeModal({ visible: false, convoId: null })
+                }
+                className="text-gray-400 hover:text-white px-3 py-1.5"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const finalReason =
+                    unsubscribeReason === "Other"
+                      ? customReason
+                      : unsubscribeReason;
+
+                  if (onToggleSubscription) {
+                    onToggleSubscription(
+                      unsubscribeModal.convoId,
+                      false,
+                      finalReason,
+                    );
+                  }
+
+                  setUnsubscribeModal({ visible: false, convoId: null });
+                  setUnsubscribeReason("Requested by User");
+                  setCustomReason("");
+                }}
+                className="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded"
+              >
+                Unsubscribe
+              </button>
+            </div>
           </div>
         </div>
       )}

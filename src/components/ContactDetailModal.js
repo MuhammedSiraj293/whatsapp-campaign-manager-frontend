@@ -73,6 +73,46 @@ const ContactDetailModal = ({ contactId, onClose }) => {
     }
   };
 
+  /* ----------------------------------------------------------------
+   * UNSUBSCRIBE LOGIC
+   * ---------------------------------------------------------------- */
+  const [showUnsubscribe, setShowUnsubscribe] = useState(false);
+  const [unsubscribeReason, setUnsubscribeReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+
+  const handleUnsubscribeClick = () => {
+    setShowUnsubscribe(true);
+    setUnsubscribeReason("Requested by User"); // Default
+  };
+
+  const confirmUnsubscribe = async () => {
+    if (!unsubscribeReason) return;
+    const finalReason =
+      unsubscribeReason === "Other" ? customReason : unsubscribeReason;
+
+    try {
+      const res = await authFetch(`/contacts/contacts/${contactId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isSubscribed: false,
+          unsubscribeReason: finalReason,
+          unsubscribeDate: new Date(),
+        }),
+      });
+      if (res.success) {
+        alert("Contact unsubscribed successfully.");
+        setShowUnsubscribe(false);
+        fetchDetails(); // Refresh to show updated status
+      } else {
+        alert("Failed to unsubscribe.");
+      }
+    } catch (error) {
+      console.error("Error unsubscribing:", error);
+      alert("Error unsubscribing.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
@@ -91,9 +131,72 @@ const ContactDetailModal = ({ contactId, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="bg-[#202d33] w-full max-w-4xl max-h-[90vh] rounded-lg shadow-xl overflow-hidden flex flex-col"
+        className="bg-[#202d33] w-full max-w-4xl max-h-[90vh] rounded-lg shadow-xl overflow-hidden flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* --- UNSUBSCRIBE CONFIRMATION MODAL --- */}
+        {showUnsubscribe && (
+          <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-90">
+            <div className="bg-[#2a3942] p-6 rounded-lg w-full max-w-sm border border-gray-600 shadow-2xl">
+              <h3 className="text-xl font-bold text-white mb-4">
+                Confirm Unsubscribe
+              </h3>
+              <p className="text-gray-300 mb-4 text-sm">
+                Select a reason for unsubscribing <b>{contact.name}</b>.
+              </p>
+
+              <div className="space-y-2 mb-4">
+                {[
+                  "Requested by User",
+                  "Spam",
+                  "Real Estate Broker",
+                  "Other",
+                ].map((r) => (
+                  <label
+                    key={r}
+                    className="flex items-center gap-2 text-gray-200 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="reason"
+                      value={r}
+                      checked={unsubscribeReason === r}
+                      onChange={(e) => setUnsubscribeReason(e.target.value)}
+                      className="text-emerald-500 focus:ring-emerald-500 bg-[#111b21] border-gray-600"
+                    />
+                    {r}
+                  </label>
+                ))}
+              </div>
+
+              {unsubscribeReason === "Other" && (
+                <textarea
+                  className="w-full bg-[#111b21] text-white text-sm p-2 rounded border border-gray-600 mb-4 outline-none focus:border-emerald-500"
+                  placeholder="Enter reason..."
+                  rows="2"
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                />
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowUnsubscribe(false)}
+                  className="text-gray-400 hover:text-white px-3 py-1.5"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmUnsubscribe}
+                  className="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded"
+                >
+                  Unsubscribe
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="bg-[#2a3942] p-6 border-b border-gray-700 flex justify-between items-center">
           <div>
@@ -102,10 +205,29 @@ const ContactDetailModal = ({ contactId, onClose }) => {
               <span className="text-lg text-gray-400 font-normal">
                 ({contact.phoneNumber})
               </span>
+              {!contact.isSubscribed && (
+                <span className="bg-red-900 text-red-200 text-xs px-2 py-1 rounded ml-2">
+                  UNSUBSCRIBED
+                </span>
+              )}
             </h2>
-            <div className="text-sm text-emerald-500">
-              {contact.contactList?.name}
+            <div className="text-sm text-emerald-500 flex items-center gap-3">
+              <span>{contact.contactList?.name}</span>
+              {contact.isSubscribed && (
+                <button
+                  onClick={handleUnsubscribeClick}
+                  className="text-red-400 hover:text-red-300 underline text-xs"
+                >
+                  Unsubscribe Manually
+                </button>
+              )}
             </div>
+            {/* Show Reason if Unsubscribed */}
+            {!contact.isSubscribed && contact.unsubscribeReason && (
+              <div className="text-xs text-gray-400 mt-1">
+                Reason: {contact.unsubscribeReason}
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
