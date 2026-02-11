@@ -1,12 +1,30 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { authFetch } from "../services/api";
-import { FaSearch, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
-import ContactDetailModal from "../components/ContactDetailModal"; // Will create next
+import {
+  FaSearch,
+  FaSort,
+  FaSortUp,
+  FaSortDown,
+  FaUsers,
+  FaChartLine,
+  FaFire,
+  FaComments,
+} from "react-icons/fa";
+import ContactDetailModal from "../components/ContactDetailModal";
+import KPICard from "../components/dashboard/KPICard";
+import TrendChart from "../components/dashboard/TrendChart";
+import StatusDonutChart from "../components/dashboard/StatusDonutChart";
+import TopPerformersChart from "../components/dashboard/TopPerformersChart";
 
 const ContactAnalytics = () => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lists, setLists] = useState([]);
+
+  // Dashboard data
+  const [summary, setSummary] = useState(null);
+  const [trends, setTrends] = useState([]);
+  const [topPerformers, setTopPerformers] = useState([]);
 
   // Filters & Pagination
   const [page, setPage] = useState(1);
@@ -19,6 +37,7 @@ const ContactAnalytics = () => {
   const [lastActiveDays, setLastActiveDays] = useState("");
   const [sortBy, setSortBy] = useState("lastActive");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [period, setPeriod] = useState("30d");
 
   // Selection for Detail Modal
   const [selectedContactId, setSelectedContactId] = useState(null);
@@ -36,6 +55,70 @@ const ContactAnalytics = () => {
     }
   };
 
+  // Fetch dashboard summary
+  const fetchDashboardSummary = useCallback(async () => {
+    try {
+      const query = new URLSearchParams({
+        search,
+        status: statusFilter,
+        listId: listFilter,
+        minReplies,
+        minScore,
+        lastActiveDays,
+      });
+
+      const res = await authFetch(
+        `/contacts/dashboard/summary?${query.toString()}`,
+      );
+      if (res.success) {
+        setSummary(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard summary", error);
+    }
+  }, [search, statusFilter, listFilter, minReplies, minScore, lastActiveDays]);
+
+  // Fetch trends
+  const fetchTrends = useCallback(async () => {
+    try {
+      const query = new URLSearchParams({
+        period,
+        listId: listFilter,
+        status: statusFilter,
+      });
+
+      const res = await authFetch(
+        `/contacts/dashboard/trends?${query.toString()}`,
+      );
+      if (res.success) {
+        setTrends(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching trends", error);
+    }
+  }, [period, listFilter, statusFilter]);
+
+  // Fetch top performers
+  const fetchTopPerformers = useCallback(async () => {
+    try {
+      const query = new URLSearchParams({
+        limit: 10,
+        listId: listFilter,
+        status: statusFilter,
+      });
+
+      const res = await authFetch(
+        `/contacts/dashboard/top-performers?${query.toString()}`,
+      );
+      if (res.success) {
+        setTopPerformers(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching top performers", error);
+    }
+  }, [listFilter, statusFilter]);
+
+  // Fetch contacts table data
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
@@ -76,7 +159,15 @@ const ContactAnalytics = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+    fetchDashboardSummary();
+    fetchTrends();
+    fetchTopPerformers();
+  }, [
+    fetchDashboardData,
+    fetchDashboardSummary,
+    fetchTrends,
+    fetchTopPerformers,
+  ]);
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -103,9 +194,9 @@ const ContactAnalytics = () => {
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return "text-red-400"; // Hot
-    if (score >= 50) return "text-orange-400"; // Warm
-    return "text-gray-400"; // Cold
+    if (score >= 80) return "text-red-400";
+    if (score >= 50) return "text-orange-400";
+    return "text-gray-400";
   };
 
   const renderSortIcon = (field) => {
@@ -120,11 +211,74 @@ const ContactAnalytics = () => {
   return (
     <div className="p-6 bg-[#111b21] min-h-screen text-gray-200">
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-white">Contact Analytics</h1>
-          {/* Add export button later */}
+          <h1 className="text-3xl font-bold text-white">
+            Contact Analytics Dashboard
+          </h1>
+          <div className="flex gap-2">
+            <select
+              className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 text-white text-sm"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+            </select>
+          </div>
         </div>
 
+        {/* KPI Cards */}
+        {summary && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <KPICard
+              title="Total Contacts"
+              value={summary.totalContacts.toLocaleString()}
+              subtitle="Active contacts"
+              icon={<FaUsers />}
+              color="blue"
+            />
+            <KPICard
+              title="Avg Engagement"
+              value={Math.round(summary.avgEngagementScore)}
+              subtitle="Engagement score"
+              icon={<FaChartLine />}
+              color="green"
+            />
+            <KPICard
+              title="Hot Leads"
+              value={summary.hotLeadsCount.toLocaleString()}
+              subtitle={`${Math.round((summary.hotLeadsCount / summary.totalContacts) * 100)}% of total`}
+              icon={<FaFire />}
+              color="red"
+            />
+            <KPICard
+              title="Response Rate"
+              value={`${summary.responseRate.toFixed(1)}%`}
+              subtitle={`${summary.totalReplies} replies`}
+              icon={<FaComments />}
+              color="orange"
+            />
+          </div>
+        )}
+
+        {/* Trend Chart (Full Width) */}
+        {trends.length > 0 && (
+          <div className="mb-6">
+            <TrendChart data={trends} />
+          </div>
+        )}
+
+        {/* Status Distribution & Top Performers (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {summary && <StatusDonutChart data={summary} />}
+          {topPerformers.length > 0 && (
+            <TopPerformersChart data={topPerformers} />
+          )}
+        </div>
+
+        {/* Filters */}
         <div className="bg-[#202d33] p-4 rounded-lg mb-6 shadow-md flex flex-col gap-4">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px] relative">
@@ -213,8 +367,13 @@ const ContactAnalytics = () => {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Contacts Table */}
         <div className="bg-[#202d33] rounded-lg shadow-md overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h2 className="text-lg font-semibold text-white">
+              Contact Details
+            </h2>
+          </div>
           <table className="w-full text-left border-collapse">
             <thead className="bg-[#2a3942] text-gray-300 uppercase text-xs">
               <tr>
@@ -366,7 +525,7 @@ const ContactAnalytics = () => {
           </button>
         </div>
 
-        {/* Detail Modal Placeholder */}
+        {/* Detail Modal */}
         {selectedContactId && (
           <ContactDetailModal
             contactId={selectedContactId}
