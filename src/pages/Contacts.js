@@ -1,24 +1,32 @@
-// frontend/src/pages/Contacts.js
-
 import React, { useState, useEffect } from "react";
 import { authFetch } from "../services/api";
-import { useNavigate } from "react-router-dom"; // <-- Import useNavigate
+import { useNavigate } from "react-router-dom";
 import ContactViewModal from "../components/ContactViewModal";
-import { FaUser, FaUserCheck, FaUserSlash, FaCopy } from "react-icons/fa"; // Icons for analytics
+import AddContactsModal from "../components/AddContactsModal"; // Import the new modal
+import {
+  FaUser,
+  FaUserCheck,
+  FaUserSlash,
+  FaCopy,
+  FaPlus,
+  FaTrash,
+  FaEye,
+  FaFileImport,
+} from "react-icons/fa";
 
 export default function Contacts() {
-  const navigate = useNavigate(); // <-- Initialize hook
+  const navigate = useNavigate();
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newListName, setNewListName] = useState("");
-  const [pastedData, setPastedData] = useState({});
-  const [stats, setStats] = useState(null); // Analytics State
+  const [stats, setStats] = useState(null);
 
-  // State for the modal
-  const [viewingList, setViewingList] = useState(null); // Will hold the list object
+  // Modals State
+  const [viewingList, setViewingList] = useState(null); // For View Contacts
   const [viewingContacts, setViewingContacts] = useState([]);
+  const [addingContactList, setAddingContactList] = useState(null); // For Add Contacts Modal
 
-  // New Search State
+  // Search State
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchContactLists = async (search = "") => {
@@ -26,17 +34,9 @@ export default function Contacts() {
       setIsLoading(true);
       const query = search ? `?search=${encodeURIComponent(search)}` : "";
 
-      // Fetch Lists
-      const listPromise = authFetch(`/contacts/lists${query}`);
-
-      // Fetch Analytics (only if not searching, to avoid unrelated reload, OR always reload if we want live updates)
-      // For now, let's fetch analytics only on initial load or if explicitly needed.
-      // But typically analytics should be global.
-      const statsPromise = authFetch("/contacts/analytics");
-
       const [listData, statsData] = await Promise.all([
-        listPromise,
-        statsPromise,
+        authFetch(`/contacts/lists${query}`),
+        authFetch("/contacts/analytics"),
       ]);
 
       if (listData.success) setLists(listData.data);
@@ -61,44 +61,12 @@ export default function Contacts() {
         body: JSON.stringify({ name: newListName }),
       });
       if (data.success) {
-        alert("List created successfully!");
         setNewListName("");
         fetchContactLists();
       }
     } catch (error) {
       alert(error.message);
     }
-  };
-
-  const handlePasteUpload = async (listId) => {
-    const dataToUpload = pastedData[listId];
-    if (!dataToUpload || !dataToUpload.trim())
-      return alert("Please paste data.");
-    const rows = dataToUpload.trim().split("\n");
-    const headers = rows[0].split("\t");
-    const contacts = rows.slice(1).map((row) => {
-      const values = row.split("\t");
-      let contact = {};
-      headers.forEach((header, index) => {
-        contact[header.trim()] = values[index];
-      });
-      return contact;
-    });
-    try {
-      const result = await authFetch(`/contacts/lists/${listId}/bulk-add`, {
-        method: "POST",
-        body: JSON.stringify({ contacts }),
-      });
-      alert(result.message);
-      setPastedData({ ...pastedData, [listId]: "" });
-      fetchContactLists(); // Refresh counts after upload
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    }
-  };
-
-  const handlePastedDataChange = (listId, value) => {
-    setPastedData({ ...pastedData, [listId]: value });
   };
 
   const handleDeleteList = async (listId) => {
@@ -110,20 +78,16 @@ export default function Contacts() {
       return;
     try {
       await authFetch(`/contacts/lists/${listId}`, { method: "DELETE" });
-      alert("Contact list deleted successfully.");
       fetchContactLists();
     } catch (error) {
       alert(error.message);
     }
   };
 
-  // Function to open the modal and fetch contacts for the selected list (or analytics view)
   const handleViewContacts = async (list) => {
-    setViewingList(list); // Set the list object (real or dummy) to show its name in the modal
+    setViewingList(list);
     try {
       let url = `/contacts/lists/${list._id}/contacts`;
-
-      // If this is a special Analytics View request
       if (list.isAnalyticsView) {
         const encodedReason = encodeURIComponent(list.reasonFilter);
         url = `/contacts/unsubscribed?reason=${encodedReason}`;
@@ -139,30 +103,34 @@ export default function Contacts() {
     }
   };
 
-  // Handle Search Input Change with Debounce
+  // Debounced Search
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchContactLists(searchTerm);
-    }, 500); // 500ms delay
-
+    }, 500);
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  // Function to close the modal
-  const closeModal = () => {
-    setViewingList(null);
-    setViewingContacts([]);
-  };
-
   return (
     <div className="p-4 md:p-8 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black">
-      {/* Conditionally render the modal based on the 'viewingList' state */}
+      {/* --- MODALS --- */}
       {viewingList && (
         <ContactViewModal
           list={viewingList}
           contacts={viewingContacts}
-          onClose={closeModal}
-          onRefresh={() => handleViewContacts(viewingList)} // Pass a refresh function
+          onClose={() => {
+            setViewingList(null);
+            setViewingContacts([]);
+          }}
+          onRefresh={() => handleViewContacts(viewingList)}
+        />
+      )}
+
+      {addingContactList && (
+        <AddContactsModal
+          list={addingContactList}
+          onClose={() => setAddingContactList(null)}
+          onRefresh={fetchContactLists}
         />
       )}
 
@@ -170,70 +138,32 @@ export default function Contacts() {
       {stats && (
         <div className="max-w-7xl mx-auto mb-10">
           <h2 className="text-2xl font-bold text-white mb-6">Overview</h2>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Total Contacts */}
-            <div
-              onClick={() => navigate("/contact-analytics")} // <-- Navigate on click
-              className="bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg cursor-pointer hover:bg-[#2a3942] transition-colors"
-            >
-              <div>
-                <p className="text-gray-400 text-sm uppercase tracking-wider font-semibold">
-                  Total Contacts
-                </p>
-                <h3 className="text-3xl font-bold text-white mt-1">
-                  {stats.totalContacts}
-                </h3>
-              </div>
-              <div className="bg-blue-900/30 p-3 rounded-lg">
-                <FaUser className="text-blue-400 text-2xl" />
-              </div>
-            </div>
-
-            {/* Subscribed */}
-            <div className="bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg">
-              <div>
-                <p className="text-gray-400 text-sm uppercase tracking-wider font-semibold">
-                  Subscribed
-                </p>
-                <h3 className="text-3xl font-bold text-emerald-400 mt-1">
-                  {stats.subscribed}
-                </h3>
-              </div>
-              <div className="bg-emerald-900/30 p-3 rounded-lg">
-                <FaUserCheck className="text-emerald-400 text-2xl" />
-              </div>
-            </div>
-
-            {/* Unsubscribed */}
-            <div className="bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg">
-              <div>
-                <p className="text-gray-400 text-sm uppercase tracking-wider font-semibold">
-                  Unsubscribed
-                </p>
-                <h3 className="text-3xl font-bold text-red-400 mt-1">
-                  {stats.unsubscribed}
-                </h3>
-              </div>
-              <div className="bg-red-900/30 p-3 rounded-lg">
-                <FaUserSlash className="text-red-400 text-2xl" />
-              </div>
-            </div>
-
-            {/* Duplicates */}
-            <div className="bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg">
-              <div>
-                <p className="text-gray-400 text-sm uppercase tracking-wider font-semibold">
-                  Duplicates
-                </p>
-                <h3 className="text-3xl font-bold text-amber-400 mt-1">
-                  {stats.duplicates}
-                </h3>
-              </div>
-              <div className="bg-amber-900/30 p-3 rounded-lg">
-                <FaCopy className="text-amber-400 text-2xl" />
-              </div>
-            </div>
+            <StatsCard
+              title="Total Contacts"
+              value={stats.totalContacts}
+              icon={<FaUser />}
+              color="blue"
+              onClick={() => navigate("/contact-analytics")}
+            />
+            <StatsCard
+              title="Subscribed"
+              value={stats.subscribed}
+              icon={<FaUserCheck />}
+              color="emerald"
+            />
+            <StatsCard
+              title="Unsubscribed"
+              value={stats.unsubscribed}
+              icon={<FaUserSlash />}
+              color="red"
+            />
+            <StatsCard
+              title="Duplicates"
+              value={stats.duplicates}
+              icon={<FaCopy />}
+              color="amber"
+            />
           </div>
 
           {/* Unsubscribe Reasons Breakdown */}
@@ -248,13 +178,13 @@ export default function Contacts() {
                     key={idx}
                     onClick={() =>
                       handleViewContacts({
-                        _id: "analytics_view", // Dummy ID
-                        name: `Unsubscribed: ${r.reason}`, // Custom Title
-                        isAnalyticsView: true, // Flag to identify special view
-                        reasonFilter: r.reason, // Pass reason for fetching
+                        _id: "analytics_view",
+                        name: `Unsubscribed: ${r.reason}`,
+                        isAnalyticsView: true,
+                        reasonFilter: r.reason,
                       })
                     }
-                    className="bg-[#2c3943] p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-[#374151] transition-colors group"
+                    className="bg-[#2c3943] p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-[#374151] transition-colors group border border-gray-700/50 hover:border-emerald-500/30"
                   >
                     <span
                       className="text-gray-300 text-sm truncate mr-2 group-hover:text-white"
@@ -273,103 +203,190 @@ export default function Contacts() {
         </div>
       )}
 
-      <div className="max-w-xl mx-auto mb-8">
-        <div className="bg-[#202d33] p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Create New Contact List
-          </h2>
-          <form onSubmit={handleCreateList} className="flex gap-4">
-            <input
-              type="text"
-              placeholder="New list name (e.g., 'August Leads')"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              className="bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg block w-full p-2.5"
-            />
-            <button
-              type="submit"
-              className="text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center whitespace-nowrap"
+      {/* --- LISTS MANAGEMENT --- */}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-2xl font-bold text-white">Contact Lists</h2>
+            <span className="text-emerald-400 font-mono text-sm bg-emerald-900/30 px-2 py-1 rounded-md border border-emerald-900/50">
+              {lists.length} Lists
+            </span>
+          </div>
+
+          <div className="flex w-full md:w-auto gap-3">
+            {/* Search Bar */}
+            <div className="relative w-full md:w-64">
+              <input
+                type="text"
+                placeholder="Search Lists..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-[#202d33] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5"
+              />
+            </div>
+
+            {/* Create List Form (Inline for compactness) */}
+            <form
+              onSubmit={handleCreateList}
+              className="flex gap-2 w-full md:w-auto"
             >
-              Create List
-            </button>
-          </form>
-        </div>
-      </div>
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white text-center">
-            Existing Lists
-          </h2>
-          {/* Global Search Bar */}
-          <div className="relative w-full max-w-xs">
-            <input
-              type="text"
-              placeholder="Search Lists or Contacts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block w-full p-2.5"
-            />
-          </div>
-        </div>
-        {isLoading ? (
-          <p className="text-center text-gray-400">Loading lists...</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {lists.map((list) => (
-              <div
-                key={list._id}
-                className="bg-[#202d33] p-6 rounded-lg shadow-lg flex flex-col justify-between"
+              <input
+                type="text"
+                placeholder="New list name"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                className="bg-[#202d33] border border-gray-700 text-neutral-200 text-sm rounded-lg block w-full md:w-48 p-2.5"
+              />
+              <button
+                type="submit"
+                className="text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-4 py-2.5 flex items-center gap-2 whitespace-nowrap shadow-lg hover:shadow-emerald-900/30 transition-all"
               >
-                <div>
-                  <strong className="text-lg font-bold text-white truncate">
-                    {list.name}
-                  </strong>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Contacts: {list.contactCount}
-                  </p>
-                </div>
-                <div className="upload-section mt-4 pt-4 border-t border-gray-700">
-                  <p className="mb-2 text-sm text-gray-400">
-                    Add Contacts (Paste from Sheet):
-                  </p>
-                  <textarea
-                    className="bg-[#2c3943] text-neutral-200 text-sm rounded-lg block w-full p-2.5"
-                    rows="4"
-                    placeholder="phoneNumber	name	var1..."
-                    value={pastedData[list._id] || ""}
-                    onChange={(e) =>
-                      handlePastedDataChange(list._id, e.target.value)
-                    }
-                  ></textarea>
-                  <button
-                    onClick={() => handlePasteUpload(list._id)}
-                    disabled={
-                      !pastedData[list._id] || !pastedData[list._id].trim()
-                    }
-                    className="w-full text-white bg-sky-600 hover:bg-sky-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center mt-2 disabled:bg-gray-600"
-                  >
-                    Upload Pasted Contacts
-                  </button>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-700 flex gap-2">
-                  <button
-                    onClick={() => handleViewContacts(list)}
-                    className="w-full text-white bg-gray-600 hover:bg-gray-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                  >
-                    View Contacts
-                  </button>
-                  <button
-                    onClick={() => handleDeleteList(list._id)}
-                    className="w-full text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                  >
-                    Delete List
-                  </button>
-                </div>
-              </div>
-            ))}
+                <FaPlus /> Create
+              </button>
+            </form>
           </div>
-        )}
+        </div>
+
+        {/* --- TABLE LAYOUT --- */}
+        <div className="bg-[#202d33] rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+          {isLoading ? (
+            <div className="p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading your lists...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-gray-300">
+                <thead className="bg-[#111b21] uppercase text-xs font-semibold text-gray-400 border-b border-gray-700">
+                  <tr>
+                    <th className="px-6 py-5 tracking-wider">List Name</th>
+                    <th className="px-6 py-5 tracking-wider">Contacts</th>
+                    <th className="px-6 py-5 text-center tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700/50">
+                  {lists.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="3"
+                        className="px-6 py-12 text-center text-gray-500"
+                      >
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <FaFileImport className="text-4xl text-gray-600" />
+                          <p>
+                            No contact lists found. Create one above to get
+                            started.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    lists.map((list, index) => (
+                      <tr
+                        key={list._id}
+                        className="hover:bg-[#2a3942]/50 transition-all duration-200 group"
+                      >
+                        <td className="px-6 py-5 font-medium text-white">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-900/80 to-emerald-800/20 flex items-center justify-center text-emerald-400 border border-emerald-900/50 shadow-sm group-hover:scale-105 transition-transform">
+                              <span className="font-bold text-sm">
+                                {index + 1}
+                              </span>
+                            </div>
+                            <span className="text-lg group-hover:text-emerald-400 transition-colors">
+                              {list.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className="bg-[#111b21] border border-gray-700 text-gray-300 py-1.5 px-4 rounded-full text-sm font-medium shadow-sm">
+                            {list.contactCount || 0}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center justify-center gap-3 opacity-70 group-hover:opacity-100 transition-opacity">
+                            <ActionButton
+                              onClick={() => setAddingContactList(list)}
+                              icon={<FaFileImport />}
+                              label="Add Contacts"
+                              color="sky"
+                            />
+                            <ActionButton
+                              onClick={() => handleViewContacts(list)}
+                              icon={<FaEye />}
+                              label="View Contacts"
+                              color="gray"
+                            />
+                            <ActionButton
+                              onClick={() => handleDeleteList(list._id)}
+                              icon={<FaTrash />}
+                              label="Delete"
+                              color="red"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+// Helper Components for Cleaner JSX
+const StatsCard = ({ title, value, icon, color, onClick }) => {
+  const colors = {
+    blue: "text-blue-400 bg-blue-900/30",
+    emerald: "text-emerald-400 bg-emerald-900/30",
+    red: "text-red-400 bg-red-900/30",
+    amber: "text-amber-400 bg-amber-900/30",
+  };
+
+  return (
+    <div
+      onClick={onClick}
+      className={`bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg ${onClick ? "cursor-pointer hover:bg-[#2a3942] transition-colors" : ""}`}
+    >
+      <div>
+        <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold">
+          {title}
+        </p>
+        <h3
+          className={`text-3xl font-bold mt-1 ${colors[color].split(" ")[0]}`}
+        >
+          {value}
+        </h3>
+      </div>
+      <div className={`p-3 rounded-lg ${colors[color].split(" ")[1]}`}>
+        <span className={`text-2xl ${colors[color].split(" ")[0]}`}>
+          {icon}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const ActionButton = ({ onClick, icon, label, color }) => {
+  const colors = {
+    sky: "text-sky-400 hover:bg-sky-900/30",
+    gray: "text-gray-400 hover:bg-gray-700",
+    red: "text-red-400 hover:bg-red-900/30",
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`p-2 rounded-lg transition-all ${colors[color]}`}
+      title={label}
+    >
+      {icon}
+    </button>
+  );
+};
