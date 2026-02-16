@@ -31,7 +31,6 @@ export default function CreateCampaign() {
   const [expectedVariables, setExpectedVariables] = useState(0);
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
-  const [buttons, setButtons] = useState([]);
 
   // Data for dropdowns
   const [templates, setTemplates] = useState([]);
@@ -82,7 +81,6 @@ export default function CreateCampaign() {
     setSelectedPhoneNumber("");
     setSelectedTemplateObject(null);
     setFormMessage("");
-    setButtons([]);
   }, [activeWaba, wabaAccounts, templates]);
 
   // Auto-select Unsubscribe list for exclusion if found
@@ -116,33 +114,9 @@ export default function CreateCampaign() {
     if (template) {
       const bodyComponent = template.components.find((c) => c.type === "BODY");
       setFormMessage(bodyComponent ? bodyComponent.text : "");
-
-      // Auto-load existing buttons from template for preview (optional, if we want to show template buttons)
-      // For now, we keep the manual button adder as per original logic,
-      // but if the template has buttons, they are usually static or URL params.
-      // We'll stick to manual button management for simplicity unless template enforces them.
     } else {
       setFormMessage("");
     }
-  };
-
-  const addButton = () => {
-    if (buttons.length < 3) {
-      setButtons([...buttons, { type: "QUICK_REPLY", text: "" }]);
-    }
-  };
-
-  const handleButtonChange = (index, field, value) => {
-    const newButtons = [...buttons];
-    newButtons[index][field] = value;
-    if (field === "type" && value === "QUICK_REPLY") {
-      delete newButtons[index].url;
-    }
-    setButtons(newButtons);
-  };
-
-  const removeButton = (index) => {
-    setButtons(buttons.filter((_, i) => i !== index));
   };
 
   const handleCreateCampaign = async (event) => {
@@ -167,9 +141,6 @@ export default function CreateCampaign() {
     formData.append("phoneNumber", selectedPhoneNumber);
     formData.append("expectedVariables", expectedVariables);
     formData.append("spreadsheetId", spreadsheetId);
-
-    // Important: Append buttons as string because FormData handles text
-    formData.append("buttons", JSON.stringify(buttons));
 
     if (scheduledFor) {
       const utcDate = new Date(scheduledFor).toISOString();
@@ -495,105 +466,74 @@ export default function CreateCampaign() {
                   </div>
                 </div>
 
-                {/* Media Header Config */}
-                <div className="mb-6 p-4 bg-[#1e293b] rounded-lg border border-gray-700">
-                  <label className={`${labelStyle} mb-3`}>
-                    <PhotoIcon className="w-4 h-4" /> Header Image
-                  </label>
-
-                  <div className="flex gap-6 mb-4">
-                    <label className="flex items-center cursor-pointer text-sm text-gray-300 hover:text-white">
-                      <input
-                        type="radio"
-                        name="imgMode"
-                        checked={imageMode === "url"}
-                        onChange={() => setImageMode("url")}
-                        className="mr-2 text-emerald-500 focus:ring-emerald-500 bg-gray-700 border-gray-500"
-                      />{" "}
-                      Use URL
+                {/* Media Header Config - Conditional */}
+                {selectedTemplateObject?.components?.some(
+                  (c) =>
+                    c.type === "HEADER" &&
+                    ["IMAGE", "VIDEO", "DOCUMENT"].includes(c.format),
+                ) && (
+                  <div className="mb-6 p-4 bg-[#1e293b] rounded-lg border border-gray-700">
+                    <label className={`${labelStyle} mb-3`}>
+                      <PhotoIcon className="w-4 h-4" /> Header Media
                     </label>
-                    <label className="flex items-center cursor-pointer text-sm text-gray-300 hover:text-white">
-                      <input
-                        type="radio"
-                        name="imgMode"
-                        checked={imageMode === "file"}
-                        onChange={() => setImageMode("file")}
-                        className="mr-2 text-emerald-500 focus:ring-emerald-500 bg-gray-700 border-gray-500"
-                      />{" "}
-                      Upload File
-                    </label>
-                  </div>
 
-                  {imageMode === "url" ? (
-                    <input
-                      type="text"
-                      placeholder="https://example.com/image.jpg"
-                      value={headerImageUrl}
-                      onChange={(e) => setHeaderImageUrl(e.target.value)}
-                      className={inputStyle}
-                    />
-                  ) : (
-                    <input
-                      type="file"
-                      onChange={(e) => setHeaderImageFile(e.target.files[0])}
-                      className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-900 file:text-emerald-300 hover:file:bg-emerald-800"
-                      accept="image/*"
-                    />
-                  )}
-                </div>
-
-                {/* Variables & Buttons */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className={labelStyle}>
-                      <CodeBracketIcon className="w-4 h-4" /> Body Variables
-                    </label>
-                    <input
-                      type="number"
-                      value={expectedVariables}
-                      onChange={(e) => setExpectedVariables(e.target.value)}
-                      className={inputStyle}
-                      min="0"
-                    />
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      Number of {"{{1}}"}, {"{{2}}"} placeholders in body.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className={labelStyle}>Interactive Buttons</label>
-                    <div className="space-y-2">
-                      {buttons.map((btn, idx) => (
-                        <div key={idx} className="flex gap-2">
-                          <input
-                            type="text"
-                            value={btn.text}
-                            onChange={(e) =>
-                              handleButtonChange(idx, "text", e.target.value)
-                            }
-                            placeholder="Button Label"
-                            className={`${inputStyle} flex-1`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeButton(idx)}
-                            className="text-red-400 hover:text-red-300 px-2"
-                          >
-                            &times;
-                          </button>
-                        </div>
-                      ))}
-                      {buttons.length < 3 && (
-                        <button
-                          type="button"
-                          onClick={addButton}
-                          className="text-emerald-400 text-xs hover:underline"
-                        >
-                          + Add Button
-                        </button>
-                      )}
+                    <div className="flex gap-6 mb-4">
+                      <label className="flex items-center cursor-pointer text-sm text-gray-300 hover:text-white">
+                        <input
+                          type="radio"
+                          name="imgMode"
+                          checked={imageMode === "url"}
+                          onChange={() => setImageMode("url")}
+                          className="mr-2 text-emerald-500 focus:ring-emerald-500 bg-gray-700 border-gray-500"
+                        />{" "}
+                        Use URL
+                      </label>
+                      <label className="flex items-center cursor-pointer text-sm text-gray-300 hover:text-white">
+                        <input
+                          type="radio"
+                          name="imgMode"
+                          checked={imageMode === "file"}
+                          onChange={() => setImageMode("file")}
+                          className="mr-2 text-emerald-500 focus:ring-emerald-500 bg-gray-700 border-gray-500"
+                        />{" "}
+                        Upload File
+                      </label>
                     </div>
+
+                    {imageMode === "url" ? (
+                      <input
+                        type="text"
+                        placeholder="https://example.com/media.jpg"
+                        value={headerImageUrl}
+                        onChange={(e) => setHeaderImageUrl(e.target.value)}
+                        className={inputStyle}
+                      />
+                    ) : (
+                      <input
+                        type="file"
+                        onChange={(e) => setHeaderImageFile(e.target.files[0])}
+                        className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-900 file:text-emerald-300 hover:file:bg-emerald-800"
+                        accept="image/*,video/*,application/pdf"
+                      />
+                    )}
                   </div>
+                )}
+
+                {/* Variables */}
+                <div>
+                  <label className={labelStyle}>
+                    <CodeBracketIcon className="w-4 h-4" /> Body Variables
+                  </label>
+                  <input
+                    type="number"
+                    value={expectedVariables}
+                    onChange={(e) => setExpectedVariables(e.target.value)}
+                    className={inputStyle}
+                    min="0"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Number of {"{{1}}"}, {"{{2}}"} placeholders in body.
+                  </p>
                 </div>
               </div>
 
