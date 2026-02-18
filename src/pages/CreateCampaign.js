@@ -32,7 +32,8 @@ export default function CreateCampaign() {
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [batchSize, setBatchSize] = useState(50); // Default 50
-  const [batchDelay, setBatchDelay] = useState(2); // Default 2 seconds
+  const [batchDelay, setBatchDelay] = useState(120); // Default 120 seconds (2 mins)
+  const [messageDelay, setMessageDelay] = useState(2); // Default 2 seconds
 
   // Data for dropdowns
   const [templates, setTemplates] = useState([]);
@@ -151,7 +152,8 @@ export default function CreateCampaign() {
 
     // Batch Settings
     formData.append("batchSize", batchSize);
-    formData.append("batchDelay", batchDelay * 1000); // Convert to ms for backend
+    formData.append("batchDelay", batchDelay * 1000); // Convert to ms
+    formData.append("messageDelay", messageDelay * 1000); // Convert to ms
 
     // Handle Image
     if (imageMode === "file" && headerImageFile) {
@@ -372,7 +374,7 @@ export default function CreateCampaign() {
                   </div>
                   <div>
                     <label htmlFor="batchDelay" className={labelStyle}>
-                      Delay (Seconds)
+                      Batch Delay (Seconds)
                     </label>
                     <input
                       id="batchDelay"
@@ -382,6 +384,25 @@ export default function CreateCampaign() {
                       onChange={(e) => setBatchDelay(e.target.value)}
                       className={inputStyle}
                     />
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Delay between batches.
+                    </p>
+                  </div>
+                  <div>
+                    <label htmlFor="messageDelay" className={labelStyle}>
+                      Message Delay (Seconds)
+                    </label>
+                    <input
+                      id="messageDelay"
+                      type="number"
+                      min="1"
+                      value={messageDelay}
+                      onChange={(e) => setMessageDelay(e.target.value)}
+                      className={inputStyle}
+                    />
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Delay between each message.
+                    </p>
                   </div>
                 </div>
               </div>
