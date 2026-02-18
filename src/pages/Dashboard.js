@@ -12,6 +12,10 @@ const getStatusClass = (status) => {
       return "bg-gray-400 text-gray-900";
     case "scheduled":
       return "bg-blue-600 text-white";
+    case "sending":
+      return "bg-yellow-500 text-black animate-pulse";
+    case "paused":
+      return "bg-orange-500 text-white";
     case "sent":
       return "bg-green-600 text-white";
     case "failed":
@@ -108,6 +112,28 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error sending campaign:", error);
+      alert(error.message);
+    }
+  };
+
+  const handlePauseCampaign = async (campaignId) => {
+    try {
+      const result = await authFetch(`/campaigns/${campaignId}/pause`, {
+        method: "POST",
+      });
+      if (!result.success) alert(`Error: ${result.error}`);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleResumeCampaign = async (campaignId) => {
+    try {
+      const result = await authFetch(`/campaigns/${campaignId}/resume`, {
+        method: "POST",
+      });
+      if (!result.success) alert(`Error: ${result.error}`);
+    } catch (error) {
       alert(error.message);
     }
   };
@@ -229,9 +255,27 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mt-6 flex gap-2">
-                      {campaign.status !== "sent" ? (
+                      {campaign.status === "sending" && (
                         <button
-                          className={`${buttonStyle} w-full`}
+                          className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-yellow-500 hover:bg-yellow-400 text-black transition-colors"
+                          onClick={() => handlePauseCampaign(campaign._id)}
+                        >
+                          ⏸ Pause
+                        </button>
+                      )}
+                      {campaign.status === "paused" && (
+                        <button
+                          className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-500 text-white transition-colors"
+                          onClick={() => handleResumeCampaign(campaign._id)}
+                        >
+                          ▶ Resume
+                        </button>
+                      )}
+                      {campaign.status !== "sent" &&
+                      campaign.status !== "sending" &&
+                      campaign.status !== "paused" ? (
+                        <button
+                          className={`${buttonStyle} flex-1`}
                           onClick={() =>
                             handleSendCampaign(
                               campaign._id,
@@ -244,16 +288,16 @@ export default function Dashboard() {
                         >
                           Send Now
                         </button>
-                      ) : (
+                      ) : campaign.status === "sent" ? (
                         <Link
                           to={`/analytics/${campaign._id}`}
-                          className={`${analyticsButtonStyle} w-full`}
+                          className={`${analyticsButtonStyle} flex-1`}
                         >
                           Analytics
                         </Link>
-                      )}
+                      ) : null}
                       <button
-                        className={`${deleteButtonStyle} w-full`}
+                        className={`${deleteButtonStyle} flex-1`}
                         onClick={() => handleDeleteCampaign(campaign._id)}
                       >
                         Delete
