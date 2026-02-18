@@ -31,6 +31,8 @@ export default function CreateCampaign() {
   const [expectedVariables, setExpectedVariables] = useState(0);
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
+  const [batchSize, setBatchSize] = useState(50); // Default 50
+  const [batchDelay, setBatchDelay] = useState(2); // Default 2 seconds
 
   // Data for dropdowns
   const [templates, setTemplates] = useState([]);
@@ -146,6 +148,10 @@ export default function CreateCampaign() {
       const utcDate = new Date(scheduledFor).toISOString();
       formData.append("scheduledFor", utcDate);
     }
+
+    // Batch Settings
+    formData.append("batchSize", batchSize);
+    formData.append("batchDelay", batchDelay * 1000); // Convert to ms for backend
 
     // Handle Image
     if (imageMode === "file" && headerImageFile) {
@@ -348,6 +354,34 @@ export default function CreateCampaign() {
                     <p className="text-xs text-gray-500 mt-1">
                       Leave blank to send immediately.
                     </p>
+                  </div>
+
+                  {/* --- BATCH SETTINGS --- */}
+                  <div>
+                    <label htmlFor="batchSize" className={labelStyle}>
+                      Batch Size (Messages)
+                    </label>
+                    <input
+                      id="batchSize"
+                      type="number"
+                      min="1"
+                      value={batchSize}
+                      onChange={(e) => setBatchSize(e.target.value)}
+                      className={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="batchDelay" className={labelStyle}>
+                      Delay (Seconds)
+                    </label>
+                    <input
+                      id="batchDelay"
+                      type="number"
+                      min="1"
+                      value={batchDelay}
+                      onChange={(e) => setBatchDelay(e.target.value)}
+                      className={inputStyle}
+                    />
                   </div>
                 </div>
               </div>

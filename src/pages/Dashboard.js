@@ -73,7 +73,12 @@ export default function Dashboard() {
     };
   }, [fetchCampaignsAndCounts]); // Use the stable fetch function
 
-  const handleSendCampaign = async (campaignId, contactCount) => {
+  const handleSendCampaign = async (
+    campaignId,
+    contactCount,
+    campaignBatchSize,
+    campaignBatchDelay,
+  ) => {
     if (
       !window.confirm(
         `Are you sure you want to send this campaign to ${contactCount} contacts?`,
@@ -82,8 +87,11 @@ export default function Dashboard() {
       return;
 
     // --- UPDATED BATCH SENDING LOGIC ---
-    const BATCH_SIZE = 5; // Send 5 messages per batch
-    const DELAY_MS = 2000; // Wait 2 seconds between batches
+    // Use campaign settings or defaults
+    const BATCH_SIZE = campaignBatchSize || 50;
+    const DELAY_MS = campaignBatchDelay || 2000;
+
+    console.log(`Config: Batch Size ${BATCH_SIZE}, Delay ${DELAY_MS}ms`);
 
     let offset = 0;
     const totalBatches = Math.ceil(contactCount / BATCH_SIZE);
@@ -258,6 +266,8 @@ export default function Dashboard() {
                             handleSendCampaign(
                               campaign._id,
                               campaign.contactCount || 0,
+                              campaign.batchSize,
+                              campaign.batchDelay,
                             )
                           }
                         >
