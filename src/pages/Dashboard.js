@@ -61,7 +61,7 @@ export default function Dashboard() {
   useEffect(() => {
     const handleCampaignUpdate = () => {
       console.log(
-        "Socket event received: campaignsUpdated. Refreshing dashboard."
+        "Socket event received: campaignsUpdated. Refreshing dashboard.",
       );
       fetchCampaignsAndCounts();
     };
@@ -73,17 +73,61 @@ export default function Dashboard() {
     };
   }, [fetchCampaignsAndCounts]); // Use the stable fetch function
 
-  const handleSendCampaign = async (campaignId) => {
-    if (!window.confirm("Are you sure you want to send this campaign?")) return;
+  const handleSendCampaign = async (campaignId, contactCount) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to send this campaign to ${contactCount} contacts?`,
+      )
+    )
+      return;
+
+    // --- UPDATED BATCH SENDING LOGIC ---
+    const BATCH_SIZE = 5; // Send 5 messages per batch
+    const DELAY_MS = 2000; // Wait 2 seconds between batches
+
+    let offset = 0;
+    const totalBatches = Math.ceil(contactCount / BATCH_SIZE);
+
+    // Simple progress toast/alert (You might want a real modal state for this later)
+    // For now, we'll use a simple blocking alert approach doesn't work well for updates.
+    // So we'll console log and maybe show a 'sending' status
+
+    console.log(
+      `Starting batch send for ${contactCount} contacts. ${totalBatches} batches.`,
+    );
+
     try {
-      const result = await authFetch(`/campaigns/${campaignId}/send`, {
-        method: "POST",
-      });
-      if (result.success) {
-        alert(result.data.message);
-        // We no longer need to call fetchCampaignsAndCounts() here,
-        // because the socket event will handle it automatically.
+      for (let i = 0; i < totalBatches; i++) {
+        const isLastBatch = i === totalBatches - 1;
+
+        console.log(`Sending batch ${i + 1}/${totalBatches}...`);
+
+        // Call the batch endpoint
+        const result = await authFetch(`/campaigns/${campaignId}/send-batch`, {
+          method: "POST",
+          body: JSON.stringify({
+            limit: BATCH_SIZE,
+            offset: offset,
+            finalBatch: isLastBatch,
+          }),
+        });
+
+        if (!result.success) {
+          console.error("Batch failed:", result);
+          alert(`Batch ${i + 1} failed: ${result.error}`);
+          break; // Stop sending on error
+        }
+
+        // Update offset for next batch
+        offset += BATCH_SIZE;
+
+        // Wait before next batch (unless it was the last one)
+        if (!isLastBatch) {
+          await new Promise((r) => setTimeout(r, DELAY_MS));
+        }
       }
+
+      alert("Campaign sending initiated successfully via batching!");
     } catch (error) {
       console.error("Error sending campaign:", error);
       alert(error.message);
@@ -93,7 +137,7 @@ export default function Dashboard() {
   const handleDeleteCampaign = async (campaignId) => {
     if (
       !window.confirm(
-        "Are you sure you want to permanently delete this campaign?"
+        "Are you sure you want to permanently delete this campaign?",
       )
     )
       return;
@@ -170,7 +214,7 @@ export default function Dashboard() {
                 .filter((campaign) =>
                   campaign.name
                     .toLowerCase()
-                    .includes(searchQuery.toLowerCase())
+                    .includes(searchQuery.toLowerCase()),
                 )
                 .map((campaign) => (
                   <div
@@ -197,7 +241,7 @@ export default function Dashboard() {
                       <div className="flex justify-between items-center font-medium text-white">
                         <span
                           className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusClass(
-                            campaign.status
+                            campaign.status,
                           )}`}
                         >
                           {campaign.status}
@@ -210,7 +254,12 @@ export default function Dashboard() {
                       {campaign.status !== "sent" ? (
                         <button
                           className={`${buttonStyle} w-full`}
-                          onClick={() => handleSendCampaign(campaign._id)}
+                          onClick={() =>
+                            handleSendCampaign(
+                              campaign._id,
+                              campaign.contactCount || 0,
+                            )
+                          }
                         >
                           Send Now
                         </button>
