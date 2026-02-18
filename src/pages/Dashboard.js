@@ -76,66 +76,36 @@ export default function Dashboard() {
   const handleSendCampaign = async (
     campaignId,
     contactCount,
-    campaignBatchSize,
-    campaignBatchDelay,
+    batchSize,
+    batchDelay,
+    messageDelay,
   ) => {
     if (
       !window.confirm(
-        `Are you sure you want to send this campaign to ${contactCount} contacts?`,
+        `Are you sure you want to send this campaign to ${contactCount} contacts?\n\nBatch Size: ${batchSize || 50}\nBatch Delay: ${(batchDelay || 2000) / 1000}s\nMessage Delay: ${(messageDelay || 2000) / 1000}s`,
       )
     )
       return;
 
-    // --- UPDATED BATCH SENDING LOGIC ---
-    // Use campaign settings or defaults
-    const BATCH_SIZE = campaignBatchSize || 50;
-    const DELAY_MS = campaignBatchDelay || 2000;
-
-    console.log(`Config: Batch Size ${BATCH_SIZE}, Delay ${DELAY_MS}ms`);
-
-    let offset = 0;
-    const totalBatches = Math.ceil(contactCount / BATCH_SIZE);
-
-    // Simple progress toast/alert (You might want a real modal state for this later)
-    // For now, we'll use a simple blocking alert approach doesn't work well for updates.
-    // So we'll console log and maybe show a 'sending' status
-
-    console.log(
-      `Starting batch send for ${contactCount} contacts. ${totalBatches} batches.`,
-    );
-
     try {
-      for (let i = 0; i < totalBatches; i++) {
-        const isLastBatch = i === totalBatches - 1;
+      // Send batch settings to backend so it can run the loop with these values
+      const result = await authFetch(`/campaigns/${campaignId}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batchSize: batchSize || 50,
+          batchDelay: batchDelay || 2000,
+          messageDelay: messageDelay || 2000,
+        }),
+      });
 
-        console.log(`Sending batch ${i + 1}/${totalBatches}...`);
-
-        // Call the batch endpoint
-        const result = await authFetch(`/campaigns/${campaignId}/send-batch`, {
-          method: "POST",
-          body: JSON.stringify({
-            limit: BATCH_SIZE,
-            offset: offset,
-            finalBatch: isLastBatch,
-          }),
-        });
-
-        if (!result.success) {
-          console.error("Batch failed:", result);
-          alert(`Batch ${i + 1} failed: ${result.error}`);
-          break; // Stop sending on error
-        }
-
-        // Update offset for next batch
-        offset += BATCH_SIZE;
-
-        // Wait before next batch (unless it was the last one)
-        if (!isLastBatch) {
-          await new Promise((r) => setTimeout(r, DELAY_MS));
-        }
+      if (result.success) {
+        alert(
+          `Campaign started! The server will send:\n- ${batchSize || 50} messages per batch\n- ${(batchDelay || 2000) / 1000}s wait between batches\n- ${(messageDelay || 2000) / 1000}s wait between messages`,
+        );
+      } else {
+        alert(`Error: ${result.error}`);
       }
-
-      alert("Campaign sending initiated successfully via batching!");
     } catch (error) {
       console.error("Error sending campaign:", error);
       alert(error.message);
@@ -268,6 +238,7 @@ export default function Dashboard() {
                               campaign.contactCount || 0,
                               campaign.batchSize,
                               campaign.batchDelay,
+                              campaign.messageDelay,
                             )
                           }
                         >
