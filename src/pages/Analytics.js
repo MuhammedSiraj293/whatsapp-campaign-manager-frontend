@@ -165,18 +165,22 @@ export default function Analytics() {
     fetchAllStats();
   }, [dateRangeFilter, customStartDate, customEndDate]);
 
-  if (isLoading) {
-    return <p className="text-center text-gray-400">Loading analytics...</p>;
+  if (isLoading && !stats) {
+    return (
+      <p className="text-center text-gray-400 mt-10">Loading analytics...</p>
+    );
   }
 
-  if (!stats) {
+  if (!stats && !isLoading) {
     return (
       <p className="text-center text-red-500">Could not load analytics data.</p>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8">
+    <div
+      className={`bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8 ${isLoading ? "opacity-70 transition-opacity" : "opacity-100 transition-opacity"}`}
+    >
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl font-bold text-white text-center md:text-left">
           Analytics Dashboard
