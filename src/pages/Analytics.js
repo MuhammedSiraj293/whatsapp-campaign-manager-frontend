@@ -13,6 +13,7 @@ import {
   FaSort,
   FaSortUp,
   FaSortDown,
+  FaCalendarAlt,
 } from "react-icons/fa";
 
 // Reusable component for the stat cards
@@ -50,6 +51,11 @@ export default function Analytics() {
     key: "lastSent",
     direction: "desc",
   });
+
+  // --- NEW STATE for Date Filter ---
+  const [dateRangeFilter, setDateRangeFilter] = useState("all_time"); // last_24h, last_7d, last_30d, custom, all_time
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   // --- SORT HANDLER ---
   const handleSort = (key) => {
@@ -105,9 +111,41 @@ export default function Analytics() {
     const fetchAllStats = async () => {
       try {
         setIsLoading(true);
+
+        const queryParams = new URLSearchParams();
+        if (dateRangeFilter !== "all_time") {
+          let startDate = new Date();
+          let endDate = new Date();
+
+          if (dateRangeFilter === "last_24h") {
+            startDate.setHours(startDate.getHours() - 24);
+          } else if (dateRangeFilter === "last_7d") {
+            startDate.setDate(startDate.getDate() - 7);
+          } else if (dateRangeFilter === "last_30d") {
+            startDate.setDate(startDate.getDate() - 30);
+          } else if (dateRangeFilter === "custom") {
+            if (!customStartDate || !customEndDate) {
+              // Don't fetch if custom dates aren't fully set yet
+              setIsLoading(false);
+              return;
+            }
+            startDate = new Date(customStartDate);
+            endDate = new Date(customEndDate);
+            // Ensure end date covers the whole day
+            endDate.setHours(23, 59, 59, 999);
+          }
+
+          queryParams.append("startDate", startDate.toISOString());
+          queryParams.append("endDate", endDate.toISOString());
+        }
+
+        const queryString = queryParams.toString()
+          ? `?${queryParams.toString()}`
+          : "";
+
         const [statsData, templateData] = await Promise.all([
-          authFetch("/analytics/stats"),
-          authFetch("/analytics/templates"),
+          authFetch(`/analytics/stats${queryString}`),
+          authFetch(`/analytics/templates${queryString}`),
         ]);
 
         if (statsData.success) {
@@ -125,7 +163,7 @@ export default function Analytics() {
     };
 
     fetchAllStats();
-  }, []);
+  }, [dateRangeFilter, customStartDate, customEndDate]);
 
   if (isLoading) {
     return <p className="text-center text-gray-400">Loading analytics...</p>;
@@ -139,9 +177,46 @@ export default function Analytics() {
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-white text-center mb-8">
-        Analytics Dashboard
-      </h1>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <h1 className="text-3xl font-bold text-white text-center md:text-left">
+          Analytics Dashboard
+        </h1>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4 bg-[#202d33] p-2 rounded-lg">
+          <div className="flex items-center gap-2 text-gray-400">
+            <FaCalendarAlt />
+            <select
+              value={dateRangeFilter}
+              onChange={(e) => setDateRangeFilter(e.target.value)}
+              className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+            >
+              <option value="all_time">All Time</option>
+              <option value="last_24h">Last 24 Hours</option>
+              <option value="last_7d">Last 7 Days</option>
+              <option value="last_30d">Last 30 Days</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+
+          {dateRangeFilter === "custom" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+              />
+              <span className="text-gray-400">to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
