@@ -1,9 +1,15 @@
 // frontend/src/pages/TemplateAnalytics.js
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { authFetch } from "../services/api";
-import { FaSort, FaSortUp, FaSortDown, FaCalendarAlt } from "react-icons/fa";
+import {
+  FaSort,
+  FaSortUp,
+  FaSortDown,
+  FaCalendarAlt,
+  FaLayerGroup,
+} from "react-icons/fa";
 
 // Reusable StatCard component (same as on the other analytics page)
 const StatCard = ({ title, value, className = "" }) => {
@@ -28,17 +34,24 @@ const formatTemplateName = (name) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+// Helper: compute percentage string
+const pct = (num, den) =>
+  den > 0 ? ((num / den) * 100).toFixed(1) + "%" : "0%";
+
 export default function TemplateAnalytics() {
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { templateName } = useParams(); // Get the template name from the URL
 
-  // --- NEW STATE for Date Filter ---
+  // --- State for Date Filter ---
   const [dateRangeFilter, setDateRangeFilter] = useState("all_time"); // last_24h, last_7d, last_30d, custom, all_time
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
 
-  // --- NEW STATE for Search and Sort ---
+  // --- State for Segment Filter (upper area) ---
+  const [selectedSegment, setSelectedSegment] = useState("all"); // "all" or segment name
+
+  // --- State for Search and Sort (segment table) ---
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "totalSent",
@@ -54,8 +67,61 @@ export default function TemplateAnalytics() {
     setSortConfig({ key, direction });
   };
 
-  // --- DERIVED STATE: Filtered & Sorted Segments ---
-  const filteredSegments = React.useMemo(() => {
+  // --- DERIVED STATE: Stats to display in top cards ---
+  // If a specific segment is selected, show that segment's stats; otherwise show global
+  const displayStats = useMemo(() => {
+    if (!analytics) return null;
+
+    if (selectedSegment === "all") {
+      return {
+        total: analytics.total,
+        sent: analytics.sent || 0,
+        totalDelivered: analytics.totalDelivered,
+        delivered: analytics.delivered,
+        read: analytics.read,
+        replies: analytics.replies,
+        failed: analytics.failed,
+        skipped: analytics.skipped || 0,
+        sentRate: analytics.sentRate || "0%",
+        totalDeliveryRate: analytics.totalDeliveryRate,
+        deliveryRate: analytics.deliveryRate,
+        readRate: analytics.readRate,
+        replyRate: analytics.replyRate,
+        failedRate: analytics.failedRate,
+        skippedRate: analytics.skippedRate || "0%",
+      };
+    }
+
+    // Find the matching segment
+    const seg = (analytics.segments || []).find(
+      (s) => s.name === selectedSegment,
+    );
+    if (!seg) return null;
+
+    const total = seg.totalSent;
+    const totalDelivered = (seg.delivered || 0) + (seg.read || 0);
+
+    return {
+      total,
+      sent: seg.sent || 0,
+      totalDelivered,
+      delivered: seg.delivered || 0,
+      read: seg.read || 0,
+      replies: seg.replies || 0,
+      failed: seg.failed || 0,
+      skipped: seg.skipped || 0,
+      sentRate: seg.sentRate || pct(seg.sent, total),
+      totalDeliveryRate: pct(totalDelivered, total),
+      deliveryRate: seg.deliveredRate || pct(seg.delivered, total),
+      readRate: seg.readRate || pct(seg.read, total),
+      replyRate: seg.replyRate || pct(seg.replies, total),
+      failedRate: seg.failedRate || pct(seg.failed, total),
+      skippedRate: seg.skippedRate || pct(seg.skipped, total),
+    };
+  }, [analytics, selectedSegment]);
+
+  // --- DERIVED STATE: Filtered & Sorted Segments (for the table) ---
+  const filteredSegments = useMemo(() => {
     if (!analytics || !analytics.segments) return [];
 
     let data = [...analytics.segments];
@@ -133,6 +199,8 @@ export default function TemplateAnalytics() {
         );
         if (data.success) {
           setAnalytics(data.data);
+          // Reset segment selection when data reloads
+          setSelectedSegment("all");
         }
       } catch (error) {
         console.error("Error fetching template analytics:", error);
@@ -160,11 +228,15 @@ export default function TemplateAnalytics() {
     );
   }
 
+  const segmentOptions = analytics?.segments || [];
+  const stats = displayStats || {};
+
   return (
     <div
       className={`bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8 ${isLoading ? "opacity-70 transition-opacity" : "opacity-100 transition-opacity"}`}
     >
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      {/* ── HEADER ROW ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white text-left">
             Template Analytics
@@ -174,89 +246,129 @@ export default function TemplateAnalytics() {
           </h2>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 bg-[#202d33] p-2 rounded-lg">
-          <div className="flex items-center gap-2 text-gray-400">
-            <FaCalendarAlt />
-            <select
-              value={dateRangeFilter}
-              onChange={(e) => setDateRangeFilter(e.target.value)}
-              className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
-            >
-              <option value="all_time">All Time</option>
-              <option value="last_24h">Last 24 Hours</option>
-              <option value="last_7d">Last 7 Days</option>
-              <option value="last_30d">Last 30 Days</option>
-              <option value="custom">Custom Range</option>
-            </select>
+        {/* Filters: Date + Segment */}
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          {/* Date Filter */}
+          <div className="flex items-center gap-2 bg-[#202d33] p-2 rounded-lg">
+            <div className="flex items-center gap-2 text-gray-400">
+              <FaCalendarAlt />
+              <select
+                value={dateRangeFilter}
+                onChange={(e) => setDateRangeFilter(e.target.value)}
+                className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+              >
+                <option value="all_time">All Time</option>
+                <option value="last_24h">Last 24 Hours</option>
+                <option value="last_7d">Last 7 Days</option>
+                <option value="last_30d">Last 30 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {dateRangeFilter === "custom" && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+                />
+                <span className="text-gray-400">to</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+            )}
           </div>
 
-          {dateRangeFilter === "custom" && (
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
-              />
-              <span className="text-gray-400">to</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
-              />
+          {/* Segment Filter — only show if segments exist */}
+          {segmentOptions.length > 0 && (
+            <div className="flex items-center gap-2 bg-[#202d33] p-2 rounded-lg">
+              <FaLayerGroup className="text-gray-400" />
+              <select
+                value={selectedSegment}
+                onChange={(e) => setSelectedSegment(e.target.value)}
+                className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+              >
+                <option value="all">All Segments</option>
+                {segmentOptions.map((seg) => (
+                  <option key={seg.name} value={seg.name}>
+                    {seg.name}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
         </div>
       </div>
 
-      {/* Display the stats in the card layout */}
+      {/* Active segment badge */}
+      {selectedSegment !== "all" && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-xs text-gray-400 uppercase tracking-wider">
+            Viewing segment:
+          </span>
+          <span className="inline-flex items-center gap-1 bg-emerald-700/30 border border-emerald-600 text-emerald-400 text-sm font-medium px-3 py-1 rounded-full">
+            {selectedSegment}
+            <button
+              onClick={() => setSelectedSegment("all")}
+              className="ml-1 text-emerald-300 hover:text-white transition-colors"
+              title="Clear segment filter"
+            >
+              ✕
+            </button>
+          </span>
+        </div>
+      )}
+
+      {/* ── STAT CARDS ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         <StatCard
           title="Total"
-          value={analytics.total}
+          value={stats.total ?? 0}
           className="border-l-4 border-violet-700"
         />
-        {/* ADDED SENT */}
         <StatCard
           title="Sent (Dispatched)"
-          value={`${analytics.sent || 0} (${analytics.sentRate || "0%"})`}
+          value={`${stats.sent ?? 0} (${stats.sentRate ?? "0%"})`}
           className="border-l-4 border-indigo-500"
         />
         <StatCard
           title="Total Delivered"
-          value={`${analytics.totalDelivered} (${analytics.totalDeliveryRate})`}
+          value={`${stats.totalDelivered ?? 0} (${stats.totalDeliveryRate ?? "0%"})`}
           className="border-l-4 border-blue-500"
         />
         <StatCard
           title="Delivered"
-          value={`${analytics.delivered} (${analytics.deliveryRate})`}
+          value={`${stats.delivered ?? 0} (${stats.deliveryRate ?? "0%"})`}
           className="border-l-4 border-cyan-500"
         />
         <StatCard
           title="Read"
-          value={`${analytics.read} (${analytics.readRate})`}
+          value={`${stats.read ?? 0} (${stats.readRate ?? "0%"})`}
           className="border-l-4 border-green-500"
         />
         <StatCard
           title="Replies"
-          value={`${analytics.replies} (${analytics.replyRate})`}
+          value={`${stats.replies ?? 0} (${stats.replyRate ?? "0%"})`}
           className="border-l-4 border-yellow-500"
         />
         <StatCard
           title="Failed"
-          value={`${analytics.failed} (${analytics.failedRate})`}
+          value={`${stats.failed ?? 0} (${stats.failedRate ?? "0%"})`}
           className="border-l-4 border-red-500"
         />
-        {/* ADDED SKIPPED */}
         <StatCard
           title="Skipped"
-          value={`${analytics.skipped || 0} (${analytics.skippedRate || "0%"})`}
+          value={`${stats.skipped ?? 0} (${stats.skippedRate ?? "0%"})`}
           className="border-l-4 border-gray-500"
         />
       </div>
 
-      {/* SEGMENT PERFORMANCE TABLE */}
+      {/* ── SEGMENT PERFORMANCE TABLE ── */}
       {analytics.segments && analytics.segments.length > 0 && (
         <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -328,10 +440,21 @@ export default function TemplateAnalytics() {
                 {filteredSegments.map((seg, idx) => (
                   <tr
                     key={idx}
-                    className="hover:bg-[#2a3942] transition-colors"
+                    onClick={() => setSelectedSegment(seg.name)}
+                    title={`Click to filter stats by "${seg.name}"`}
+                    className={`hover:bg-[#2a3942] transition-colors cursor-pointer ${
+                      selectedSegment === seg.name
+                        ? "bg-emerald-900/20 ring-1 ring-inset ring-emerald-700"
+                        : ""
+                    }`}
                   >
                     <td className="px-6 py-4 font-medium text-white">
                       {seg.name}
+                      {selectedSegment === seg.name && (
+                        <span className="ml-2 text-xs text-emerald-400">
+                          (active)
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">{seg.totalSent}</td>
                     <td className="px-6 py-4">
@@ -387,7 +510,7 @@ export default function TemplateAnalytics() {
                 {filteredSegments.length === 0 && (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="8"
                       className="px-6 py-8 text-center text-gray-500"
                     >
                       No segments found matching "{searchTerm}"
