@@ -10,9 +10,10 @@ import {
   FaCalendarAlt,
   FaLayerGroup,
   FaChevronDown,
+  FaCheck,
 } from "react-icons/fa";
 
-// Reusable StatCard component
+// Reusable StatCard
 const StatCard = ({ title, value, className = "" }) => (
   <div
     className={`bg-[#202d33] p-6 rounded-lg shadow-lg text-center ${className}`}
@@ -37,17 +38,14 @@ export default function TemplateAnalytics() {
   const [isLoading, setIsLoading] = useState(true);
   const { templateName } = useParams();
 
-  // Date filter
   const [dateRangeFilter, setDateRangeFilter] = useState("all_time");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
 
-  // Multi-select segment filter
-  const [selectedSegments, setSelectedSegments] = useState(new Set()); // empty = All
+  const [selectedSegments, setSelectedSegments] = useState(new Set());
   const [segmentDropdownOpen, setSegmentDropdownOpen] = useState(false);
   const segmentDropdownRef = useRef(null);
 
-  // Table search & sort
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "totalSent",
@@ -61,49 +59,40 @@ export default function TemplateAnalytics() {
     }));
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (
         segmentDropdownRef.current &&
         !segmentDropdownRef.current.contains(e.target)
-      ) {
+      )
         setSegmentDropdownOpen(false);
-      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Toggle a segment in/out of the selection
-  const toggleSegment = (name) => {
+  const toggleSegment = (name) =>
     setSelectedSegments((prev) => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      next.has(name) ? next.delete(name) : next.add(name);
       return next;
     });
-  };
 
   const clearSegments = () => setSelectedSegments(new Set());
+  const selectAll = () =>
+    setSelectedSegments(
+      new Set((analytics?.segments || []).map((s) => s.name)),
+    );
 
-  const selectAll = () => {
-    const allNames = new Set((analytics?.segments || []).map((s) => s.name));
-    setSelectedSegments(allNames);
-  };
-
-  // Aggregated stats for the top cards
   const displayStats = useMemo(() => {
     if (!analytics) return null;
-
     const segments = analytics.segments || [];
     const active =
       selectedSegments.size === 0
-        ? null // use global
+        ? null
         : segments.filter((s) => selectedSegments.has(s.name));
 
     if (!active) {
-      // Global stats
       return {
         total: analytics.total,
         sent: analytics.sent || 0,
@@ -123,7 +112,6 @@ export default function TemplateAnalytics() {
       };
     }
 
-    // Sum selected segments
     const sum = active.reduce(
       (acc, seg) => ({
         total: acc.total + (seg.totalSent || 0),
@@ -144,7 +132,6 @@ export default function TemplateAnalytics() {
         replies: 0,
       },
     );
-
     const totalDelivered = sum.delivered + sum.read;
     return {
       ...sum,
@@ -159,7 +146,6 @@ export default function TemplateAnalytics() {
     };
   }, [analytics, selectedSegments]);
 
-  // Filtered + sorted segments for the table
   const filteredSegments = useMemo(() => {
     if (!analytics?.segments) return [];
     let data = [...analytics.segments];
@@ -183,13 +169,13 @@ export default function TemplateAnalytics() {
 
   useEffect(() => {
     if (!templateName) return;
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
         const queryParams = new URLSearchParams();
         if (dateRangeFilter !== "all_time") {
-          let startDate = new Date();
-          let endDate = new Date();
+          let startDate = new Date(),
+            endDate = new Date();
           if (dateRangeFilter === "last_24h")
             startDate.setHours(startDate.getHours() - 24);
           else if (dateRangeFilter === "last_7d")
@@ -214,7 +200,7 @@ export default function TemplateAnalytics() {
         );
         if (data.success) {
           setAnalytics(data.data);
-          setSelectedSegments(new Set()); // reset on reload
+          setSelectedSegments(new Set());
         }
       } catch (err) {
         console.error("Error fetching template analytics:", err);
@@ -222,7 +208,7 @@ export default function TemplateAnalytics() {
         setIsLoading(false);
       }
     };
-    fetch();
+    fetchData();
   }, [templateName, dateRangeFilter, customStartDate, customEndDate]);
 
   if (isLoading && !analytics)
@@ -244,8 +230,6 @@ export default function TemplateAnalytics() {
   const allSelected =
     selectedSegments.size === segmentOptions.length &&
     segmentOptions.length > 0;
-
-  // Label for the segment button
   const segmentBtnLabel = noneSelected
     ? "All Segments"
     : selectedSegments.size === 1
@@ -259,10 +243,8 @@ export default function TemplateAnalytics() {
       {/* ── HEADER ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white text-left">
-            Template Analytics
-          </h1>
-          <h2 className="text-xl text-gray-400 text-left mt-2">
+          <h1 className="text-3xl font-bold text-white">Template Analytics</h1>
+          <h2 className="text-xl text-gray-400 mt-2">
             {formatTemplateName(analytics.templateName || templateName)}
           </h2>
         </div>
@@ -270,7 +252,7 @@ export default function TemplateAnalytics() {
         <div className="flex flex-col sm:flex-row items-center gap-3 flex-wrap">
           {/* Date Filter */}
           <div className="flex items-center gap-2 bg-[#202d33] p-2 rounded-lg">
-            <FaCalendarAlt className="text-gray-400" />
+            <FaCalendarAlt className="text-gray-400 text-sm" />
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
@@ -290,7 +272,7 @@ export default function TemplateAnalytics() {
                   onChange={(e) => setCustomStartDate(e.target.value)}
                   className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
                 />
-                <span className="text-gray-400">to</span>
+                <span className="text-gray-500 text-xs">to</span>
                 <input
                   type="date"
                   value={customEndDate}
@@ -301,81 +283,125 @@ export default function TemplateAnalytics() {
             )}
           </div>
 
-          {/* Segment Multi-Select Dropdown */}
+          {/* Segment Multi-Select */}
           {segmentOptions.length > 0 && (
             <div className="relative" ref={segmentDropdownRef}>
               <button
                 onClick={() => setSegmentDropdownOpen((o) => !o)}
-                className="flex items-center gap-2 bg-[#202d33] hover:bg-[#2a3942] text-white text-sm px-4 py-2.5 rounded-lg transition-colors border border-transparent focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all outline-none
+                  ${
+                    noneSelected
+                      ? "bg-[#202d33] text-gray-300 hover:bg-[#2a3942]"
+                      : "bg-emerald-600/20 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/30"
+                  }`}
               >
                 <FaLayerGroup
                   className={
                     noneSelected ? "text-gray-400" : "text-emerald-400"
                   }
                 />
-                <span
-                  className={
-                    noneSelected
-                      ? "text-gray-300"
-                      : "text-emerald-300 font-medium"
-                  }
-                >
-                  {segmentBtnLabel}
-                </span>
+                <span>{segmentBtnLabel}</span>
                 <FaChevronDown
-                  className={`text-gray-400 text-xs transition-transform ${segmentDropdownOpen ? "rotate-180" : ""}`}
+                  className={`text-xs transition-transform duration-200 ${segmentDropdownOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
               {segmentDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 z-50 bg-[#1a2530] border border-gray-700 rounded-lg shadow-2xl w-64 py-2 max-h-72 overflow-y-auto">
-                  {/* Select All / Clear */}
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
-                    <button
-                      onClick={allSelected ? clearSegments : selectAll}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
-                    >
-                      {allSelected ? "Deselect All" : "Select All"}
-                    </button>
-                    {!noneSelected && (
+                <div
+                  className="absolute right-0 top-full mt-2 z-50 w-68 rounded-xl overflow-hidden shadow-2xl"
+                  style={{ minWidth: "260px" }}
+                >
+                  {/* Dropdown header */}
+                  <div className="bg-[#111b21] px-4 py-3 flex items-center justify-between border-b border-white/5">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                      Segments
+                    </span>
+                    <div className="flex items-center gap-3">
                       <button
-                        onClick={clearSegments}
-                        className="text-xs text-gray-400 hover:text-white transition-colors"
+                        onClick={allSelected ? clearSegments : selectAll}
+                        className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
                       >
-                        Clear ({selectedSegments.size})
+                        {allSelected ? "Deselect All" : "Select All"}
                       </button>
-                    )}
+                      {!noneSelected && (
+                        <button
+                          onClick={clearSegments}
+                          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Segment list */}
-                  {segmentOptions.map((seg) => {
-                    const checked = selectedSegments.has(seg.name);
-                    return (
-                      <label
-                        key={seg.name}
-                        className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-                          checked
-                            ? "bg-emerald-900/25 text-emerald-300"
-                            : "text-gray-300 hover:bg-[#2a3942]"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleSegment(seg.name)}
-                          className="accent-emerald-500 w-4 h-4 rounded"
-                        />
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-medium truncate">
-                            {seg.name}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {seg.totalSent} sent
-                          </span>
+                  {/* Segment rows */}
+                  <div className="bg-[#161f27] max-h-64 overflow-y-auto">
+                    {segmentOptions.map((seg) => {
+                      const checked = selectedSegments.has(seg.name);
+                      return (
+                        <div
+                          key={seg.name}
+                          onClick={() => toggleSegment(seg.name)}
+                          className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-all select-none
+                            ${
+                              checked
+                                ? "bg-emerald-500/10 border-l-2 border-emerald-500"
+                                : "border-l-2 border-transparent hover:bg-white/5"
+                            }`}
+                        >
+                          {/* Custom check indicator — no white box */}
+                          <div
+                            className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all
+                            ${
+                              checked
+                                ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                                : "bg-white/5 border border-white/10"
+                            }`}
+                          >
+                            {checked && (
+                              <FaCheck className="text-white text-[9px]" />
+                            )}
+                          </div>
+
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span
+                              className={`text-sm font-medium truncate ${checked ? "text-emerald-300" : "text-gray-200"}`}
+                            >
+                              {seg.name}
+                            </span>
+                            <span className="text-xs text-gray-500 mt-0.5">
+                              {seg.totalSent.toLocaleString()} sent
+                            </span>
+                          </div>
+
+                          {/* Mini stats */}
+                          {checked && (
+                            <div className="text-right flex-shrink-0">
+                              <span className="text-xs text-emerald-400 font-medium">
+                                {seg.readRate}
+                              </span>
+                              <p className="text-[10px] text-gray-500">
+                                read rate
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      </label>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+
+                  {/* Footer count */}
+                  {!noneSelected && (
+                    <div className="bg-[#111b21] px-4 py-2 border-t border-white/5 text-center">
+                      <span className="text-xs text-gray-500">
+                        <span className="text-emerald-400 font-semibold">
+                          {selectedSegments.size}
+                        </span>{" "}
+                        segment{selectedSegments.size > 1 ? "s" : ""} selected —
+                        stats combined above
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -385,19 +411,19 @@ export default function TemplateAnalytics() {
 
       {/* Active segment badges */}
       {!noneSelected && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-gray-400 uppercase tracking-wider">
-            Segments:
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-gray-500 uppercase tracking-widest mr-1">
+            Filtering:
           </span>
           {[...selectedSegments].map((name) => (
             <span
               key={name}
-              className="inline-flex items-center gap-1 bg-emerald-700/30 border border-emerald-600 text-emerald-400 text-xs font-medium px-3 py-1 rounded-full"
+              className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium px-3 py-1 rounded-full"
             >
               {name}
               <button
                 onClick={() => toggleSegment(name)}
-                className="ml-1 text-emerald-300 hover:text-white transition-colors"
+                className="text-emerald-400/70 hover:text-white transition-colors ml-0.5 text-[10px]"
               >
                 ✕
               </button>
@@ -405,9 +431,9 @@ export default function TemplateAnalytics() {
           ))}
           <button
             onClick={clearSegments}
-            className="text-xs text-gray-500 hover:text-white underline transition-colors"
+            className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors underline underline-offset-2 ml-1"
           >
-            Clear all
+            clear all
           </button>
         </div>
       )}
@@ -524,7 +550,7 @@ export default function TemplateAnalytics() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-700/50">
                 {filteredSegments.map((seg, idx) => {
                   const isActive = selectedSegments.has(seg.name);
                   return (
@@ -532,22 +558,28 @@ export default function TemplateAnalytics() {
                       key={idx}
                       onClick={() => toggleSegment(seg.name)}
                       title={`Click to ${isActive ? "remove" : "add"} "${seg.name}"`}
-                      className={`transition-colors cursor-pointer ${
+                      className={`transition-all cursor-pointer ${
                         isActive
-                          ? "bg-emerald-900/20 ring-1 ring-inset ring-emerald-700 hover:bg-emerald-900/30"
-                          : "hover:bg-[#2a3942]"
+                          ? "bg-emerald-500/10 border-l-2 border-emerald-500 hover:bg-emerald-500/15"
+                          : "border-l-2 border-transparent hover:bg-[#2a3942]"
                       }`}
                     >
-                      <td className="px-6 py-4 font-medium text-white">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={isActive}
-                            onChange={() => toggleSegment(seg.name)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="accent-emerald-500 w-4 h-4 rounded"
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3 font-medium text-white">
+                          {/* Custom indicator dot/check */}
+                          <div
+                            className={`w-2 h-2 rounded-full flex-shrink-0 transition-all ${
+                              isActive
+                                ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]"
+                                : "bg-gray-600"
+                            }`}
                           />
                           {seg.name}
+                          {isActive && (
+                            <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full font-normal">
+                              active
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">{seg.totalSent}</td>
@@ -555,7 +587,7 @@ export default function TemplateAnalytics() {
                         <span className="text-indigo-400 font-bold">
                           ➡ {seg.sent}
                         </span>
-                        <span className="text-xs text-gray-400 ml-1">
+                        <span className="text-xs text-gray-500 ml-1">
                           ({seg.sentRate})
                         </span>
                       </td>
@@ -563,7 +595,7 @@ export default function TemplateAnalytics() {
                         <span className="text-cyan-400 font-bold">
                           ✔ {seg.delivered}
                         </span>
-                        <span className="text-xs text-gray-400 ml-1">
+                        <span className="text-xs text-gray-500 ml-1">
                           ({seg.deliveredRate})
                         </span>
                       </td>
@@ -571,7 +603,7 @@ export default function TemplateAnalytics() {
                         <span className="text-green-400 font-bold">
                           👁 {seg.read}
                         </span>
-                        <span className="text-xs text-gray-400 ml-1">
+                        <span className="text-xs text-gray-500 ml-1">
                           ({seg.readRate})
                         </span>
                       </td>
@@ -579,7 +611,7 @@ export default function TemplateAnalytics() {
                         <span className="text-red-400 font-bold">
                           ⚠ {seg.failed}
                         </span>
-                        <span className="text-xs text-gray-400 ml-1">
+                        <span className="text-xs text-gray-500 ml-1">
                           ({seg.failedRate})
                         </span>
                       </td>
@@ -587,7 +619,7 @@ export default function TemplateAnalytics() {
                         <span className="text-gray-400 font-bold">
                           ⚠ {seg.skipped}
                         </span>
-                        <span className="text-xs text-gray-500 ml-1">
+                        <span className="text-xs text-gray-600 ml-1">
                           ({seg.skippedRate})
                         </span>
                       </td>
@@ -595,7 +627,7 @@ export default function TemplateAnalytics() {
                         <span className="text-yellow-400 font-bold">
                           ↩ {seg.replies}
                         </span>
-                        <span className="text-xs text-gray-400 ml-1">
+                        <span className="text-xs text-gray-500 ml-1">
                           ({seg.replyRate})
                         </span>
                       </td>
