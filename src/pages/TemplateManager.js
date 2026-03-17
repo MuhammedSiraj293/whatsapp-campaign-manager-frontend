@@ -65,7 +65,7 @@ function useOutsideAlerter(ref, callback) {
 
 const TemplateManager = () => {
   const { authToken } = useContext(AuthContext);
-  // const [wabaAccounts, setWabaAccounts] = useState([]); // REMOVED unused
+  const [wabaAccounts, setWabaAccounts] = useState([]);
   const [selectedWabaId, setSelectedWabaId] = useState("");
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -183,9 +183,10 @@ const TemplateManager = () => {
         const res = await axios.get(`${API_URL}/api/waba/accounts`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
-        // setWabaAccounts(res.data.data); // REMOVED unused
-        if (res.data.data.length > 0) {
-          setSelectedWabaId(res.data.data[0].businessAccountId);
+        const accounts = res.data.data || [];
+        setWabaAccounts(accounts);
+        if (accounts.length > 0) {
+          setSelectedWabaId(accounts[0].businessAccountId);
         }
       } catch (err) {
         console.error("Failed to fetch WABA accounts", err);
@@ -581,6 +582,25 @@ const TemplateManager = () => {
               <div className="bg-white rounded-md shadow-sm border border-[#DADDE1]">
                 {/* FILTER BAR */}
                 <div className="p-3 flex flex-wrap gap-2 items-center border-b border-[#DADDE1] bg-white rounded-t-md relative z-20">
+                  {/* WABA ACCOUNT SWITCHER */}
+                  {wabaAccounts.length > 0 && (
+                    <div className="flex items-center gap-2 mr-2">
+                      <select
+                        className="select select-sm h-9 border-[#DADDE1] bg-[#F0F2F5] text-gray-800 font-medium rounded-sm text-sm focus:outline-none focus:border-blue-500 max-w-[220px]"
+                        value={selectedWabaId}
+                        onChange={(e) => {
+                          setSelectedWabaId(e.target.value);
+                          setTemplates([]);
+                        }}
+                      >
+                        {wabaAccounts.map((w) => (
+                          <option key={w.businessAccountId} value={w.businessAccountId}>
+                            {w.accountName || w.businessAccountId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="relative">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
                     <input
