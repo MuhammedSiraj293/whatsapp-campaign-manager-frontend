@@ -78,8 +78,21 @@ const TemplateForm = ({
 
   const [footerText, setFooterText] = useState(initialData?.footerText || "");
   const [buttons, setButtons] = useState(initialData?.buttons || []);
+  const [showBtnMenu, setShowBtnMenu] = useState(false);
 
   const bodyRef = useRef(null);
+  const btnMenuRef = useRef(null);
+
+  // ── Close button-type menu on outside click ───────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      if (btnMenuRef.current && !btnMenuRef.current.contains(e.target)) {
+        setShowBtnMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   // ── Init from existing template ───────────────────────────────────────────
   useEffect(() => {
@@ -151,6 +164,7 @@ const TemplateForm = ({
   const handleAddButton = (type) => {
     if (buttons.length >= 3) return;
     setButtons([...buttons, { type, text: "", url: "", phoneNumber: "" }]);
+    setShowBtnMenu(false);
   };
   const handleRemoveButton = (i) => setButtons(buttons.filter((_, idx) => idx !== i));
   const handleButtonChange = (i, field, val) => {
@@ -515,25 +529,28 @@ const TemplateForm = ({
                   Buttons <span className="text-gray-600 font-normal normal-case ml-1">• Optional</span>
                 </h3>
                 {buttons.length < 3 && (
-                  <div className="relative group">
+                  <div className="relative" ref={btnMenuRef}>
                     <button
                       type="button"
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30 transition-all flex items-center gap-1"
+                      onClick={() => setShowBtnMenu((v) => !v)}
                     >
                       <PlusIcon className="w-3.5 h-3.5" /> Add Button
                     </button>
-                    <div className="absolute right-0 top-full mt-1 bg-[#131f2b] border border-[#1e3040] rounded-xl shadow-xl z-10 w-48 overflow-hidden hidden group-hover:block">
-                      {["QUICK_REPLY", "URL", "PHONE_NUMBER"].map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-[#0c8ce9]/10 hover:text-white transition-all"
-                          onClick={() => handleAddButton(t)}
-                        >
-                          {t === "QUICK_REPLY" ? "Quick Reply" : t === "URL" ? "Visit Website (URL)" : "Call Phone Number"}
-                        </button>
-                      ))}
-                    </div>
+                    {showBtnMenu && (
+                      <div className="absolute right-0 top-full mt-1 bg-[#131f2b] border border-[#1e3040] rounded-xl shadow-xl z-50 w-52 overflow-hidden">
+                        {["QUICK_REPLY", "URL", "PHONE_NUMBER"].map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-[#0c8ce9]/10 hover:text-white transition-all"
+                            onClick={() => handleAddButton(t)}
+                          >
+                            {t === "QUICK_REPLY" ? "Quick Reply" : t === "URL" ? "Visit Website (URL)" : "Call Phone Number"}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
