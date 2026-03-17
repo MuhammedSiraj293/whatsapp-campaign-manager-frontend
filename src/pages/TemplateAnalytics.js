@@ -219,9 +219,20 @@ export default function TemplateAnalytics() {
     );
   if (!analytics && !isLoading)
     return (
-      <p className="text-center mt-10 text-red-500">
-        Could not load analytics for this template.
-      </p>
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full flex items-center justify-center">
+        <div className="text-center p-10">
+          <div className="text-5xl mb-4">📊</div>
+          <h2 className="text-2xl font-bold text-white mb-2">No data yet</h2>
+          <p className="text-gray-400 max-w-md">
+            No campaign messages have been sent using{" "}
+            <span className="text-white font-semibold">
+              {formatTemplateName(templateName)}
+            </span>{" "}
+            yet. Analytics will appear here once a campaign using this template
+            has been sent.
+          </p>
+        </div>
+      </div>
     );
 
   const segmentOptions = analytics?.segments || [];

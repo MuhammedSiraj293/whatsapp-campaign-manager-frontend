@@ -306,12 +306,10 @@ const TemplateManager = () => {
     // Ensure displaySent comes from graphData to match detailed view
     const displaySent =
       graphData.reduce((acc, curr) => acc + (curr.sent || 0), 0) ||
-      (analyticsData.summary ? 0 : selectedTemplate.messages_delivered) ||
-      0;
+      (selectedTemplate?.messages_delivered || 0);
     const displayDelivered =
       graphData.reduce((acc, curr) => acc + (curr.delivered || 0), 0) ||
-      (analyticsData.summary ? 0 : selectedTemplate.messages_delivered) ||
-      0;
+      (selectedTemplate?.messages_delivered || 0);
     const totalRead = graphData.reduce(
       (acc, curr) => acc + (curr.read || 0),
       0,
@@ -481,11 +479,15 @@ const TemplateManager = () => {
                       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border ${
                         selectedTemplate.status === "APPROVED"
                           ? "bg-[#E7F6D5] text-[#1F510F] border-[#E7F6D5]"
+                          : selectedTemplate.status === "REJECTED"
+                          ? "bg-[#FFEBEB] text-[#C0121A] border-[#FFEBEB]"
                           : "bg-gray-100 text-gray-600 border-gray-200"
                       }`}
                     >
                       {selectedTemplate.status === "APPROVED"
                         ? "Active - Quality pending"
+                        : selectedTemplate.status === "REJECTED"
+                        ? "Rejected"
                         : selectedTemplate.status}
                     </span>
                     <span>•</span>
@@ -520,19 +522,36 @@ const TemplateManager = () => {
               </div>
             </div>
 
-            {/* Warning Banner */}
-            <div className="bg-[#FFF5E5] border border-[#F5C32E] rounded-md p-3 flex gap-3 text-sm text-gray-800 mb-6">
-              <ExclamationCircleIcon className="w-5 h-5 text-[#F5C32E] shrink-0" />
-              <div>
-                <div className="font-semibold">
-                  This template was edited during the selected date range
-                </div>
+            {/* Status Banner — changes based on template status */}
+            {selectedTemplate.status === "REJECTED" ? (
+              <div className="bg-[#FFEBEB] border border-[#C0121A] rounded-md p-3 flex gap-3 text-sm text-[#C0121A] mb-6">
+                <ExclamationCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
                 <div>
-                  Insights show the total engagement for all versions of this
-                  message template in the date range you selected.
+                  <div className="font-semibold">This template was rejected by Meta</div>
+                  {selectedTemplate.rejected_reason && (
+                    <div className="mt-1 text-[#7f0a11]">
+                      Reason: <span className="font-medium">{selectedTemplate.rejected_reason}</span>
+                    </div>
+                  )}
+                  <div className="mt-1 text-[#7f0a11] text-xs">
+                    Edit the template to fix the issue and resubmit for review.
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-[#FFF5E5] border border-[#F5C32E] rounded-md p-3 flex gap-3 text-sm text-gray-800 mb-6">
+                <ExclamationCircleIcon className="w-5 h-5 text-[#F5C32E] shrink-0" />
+                <div>
+                  <div className="font-semibold">
+                    This template was edited during the selected date range
+                  </div>
+                  <div>
+                    Insights show the total engagement for all versions of this
+                    message template in the date range you selected.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Main Grid */}
             <div className="flex flex-col lg:flex-row gap-6">
