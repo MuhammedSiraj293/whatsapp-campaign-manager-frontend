@@ -135,10 +135,8 @@ const TemplateForm = ({
       if (["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType)) {
         if (headerFile) {
           try {
-            // Determine handle key based on type
-            let handleKey = "image_handle"; // default
-            if (headerType === "VIDEO") handleKey = "video_handle";
-            if (headerType === "DOCUMENT") handleKey = "document_handle";
+            // Meta API always uses "header_handle" regardless of media type (IMAGE, VIDEO, DOCUMENT)
+            const handleKey = "header_handle";
 
             // Upload to Backend -> Meta
             const formData = new FormData();
