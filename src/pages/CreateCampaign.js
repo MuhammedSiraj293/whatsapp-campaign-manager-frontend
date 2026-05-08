@@ -162,6 +162,16 @@ export default function CreateCampaign() {
       formData.append("headerImageUrl", headerImageUrl);
     }
 
+    // Extract header format from template to support Video/Document templates
+    let headerMediaType = "IMAGE";
+    if (selectedTemplateObject && selectedTemplateObject.components) {
+        const headerComp = selectedTemplateObject.components.find(c => c.type === "HEADER");
+        if (headerComp && ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerComp.format)) {
+            headerMediaType = headerComp.format;
+        }
+    }
+    formData.append("headerMediaType", headerMediaType);
+
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch(`${API_URL}/api/campaigns`, {
