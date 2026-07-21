@@ -49,32 +49,38 @@ export default function Logs() {
         Server Activity Logs
       </h1>
       <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-[#2a3942]">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Timestamp</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Level</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Message</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {logs.map((log) => (
-              <tr key={log._id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                  {new Date(log.createdAt).toLocaleString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getLogLevelClass(log.level)}`}>
-                    {log.level}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {log.message}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-[#2a3942]">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Timestamp</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Level</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">User</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Message</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {logs.map((log) => (
+                <tr key={log._id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getLogLevelClass(log.level)}`}>
+                      {log.level}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                    {log.performedBy ? `${log.performedBy.name} (${log.performedBy.email})` : 'System / Auto'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-300 break-words max-w-xl">
+                    {log.message}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {logs.length === 0 && <p className="text-center text-gray-500 py-8">No log entries found.</p>}
       </div>
     </div>
