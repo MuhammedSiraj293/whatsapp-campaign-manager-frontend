@@ -150,7 +150,7 @@ function App() {
           <Route
             path="/bot-studio"
             element={
-              <ProtectedRoute roles={["admin", "manager"]}>
+              <ProtectedRoute roles={["admin"]}>
                 <BotStudio />
               </ProtectedRoute>
             }
@@ -158,7 +158,7 @@ function App() {
           <Route
             path="/bot-studio/:flowId"
             element={
-              <ProtectedRoute roles={["admin", "manager"]}>
+              <ProtectedRoute roles={["admin"]}>
                 <FlowBuilder />
               </ProtectedRoute>
             }
@@ -168,7 +168,7 @@ function App() {
           <Route
             path="/auto-reply"
             element={
-              <ProtectedRoute roles={["admin", "manager"]}>
+              <ProtectedRoute roles={["admin"]}>
                 <AutoReply />
               </ProtectedRoute>
             }
@@ -177,7 +177,7 @@ function App() {
           <Route
             path="/properties"
             element={
-              <ProtectedRoute roles={["admin", "manager"]}>
+              <ProtectedRoute roles={["admin"]}>
                 <Properties />
               </ProtectedRoute>
             }
@@ -186,7 +186,7 @@ function App() {
           <Route
             path="/template-manager"
             element={
-              <ProtectedRoute roles={["admin", "manager"]}>
+              <ProtectedRoute roles={["admin"]}>
                 <TemplateManager />
               </ProtectedRoute>
             }

@@ -431,7 +431,7 @@ export default function CreateCampaign() {
                       id="contactList"
                       options={contactLists.map((l) => ({
                         value: l._id,
-                        label: `${l.name} (${l.contacts?.length || 0})`,
+                        label: `${l.name} (${l.contactCount || 0})`,
                       }))}
                       value={
                         selectedList
@@ -456,7 +456,7 @@ export default function CreateCampaign() {
                       id="exclusionList"
                       options={contactLists.map((l) => ({
                         value: l._id,
-                        label: `${l.name} (${l.contacts?.length || 0})`,
+                        label: `${l.name} (${l.contactCount || 0})`,
                       }))}
                       value={
                         selectedExclusionList
@@ -465,7 +465,7 @@ export default function CreateCampaign() {
                               label:
                                 contactLists.find(
                                   (l) => l._id === selectedExclusionList,
-                                )?.name || "",
+                                  )?.name || "",
                             }
                           : null
                       }

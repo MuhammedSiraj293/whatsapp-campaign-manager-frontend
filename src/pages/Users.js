@@ -25,6 +25,7 @@ export default function Users() {
   const [editRole, setEditRole] = useState('viewer');
   const [editAssignedWabas, setEditAssignedWabas] = useState([]);
   const [editAssignedContactLists, setEditAssignedContactLists] = useState([]);
+  const [editPassword, setEditPassword] = useState('');
 
   const { user: loggedInUser } = useContext(AuthContext);
 
@@ -106,21 +107,26 @@ export default function Users() {
     setEditRole(user.role);
     setEditAssignedWabas((user.assignedWabas || []).map(w => w._id || w));
     setEditAssignedContactLists((user.assignedContactLists || []).map(c => c._id || c));
+    setEditPassword('');
     setIsEditModalOpen(true);
   };
 
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        name: editName,
+        email: editEmail,
+        role: editRole,
+        assignedWabas: editAssignedWabas,
+        assignedContactLists: editAssignedContactLists
+      };
+      if (editPassword) {
+        payload.password = editPassword;
+      }
       const data = await authFetch(`/users/${editingUser._id}`, {
         method: 'PUT',
-        body: JSON.stringify({
-          name: editName,
-          email: editEmail,
-          role: editRole,
-          assignedWabas: editAssignedWabas,
-          assignedContactLists: editAssignedContactLists
-        }),
+        body: JSON.stringify(payload),
       });
       if (data.success) {
         alert('User updated successfully!');
@@ -282,6 +288,18 @@ export default function Users() {
                       <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
                     </select>
+                  </div>
+
+                  {/* Password Reset (Optional) */}
+                  <div>
+                    <label className="block mb-1 text-sm font-semibold text-gray-400">Change Password (optional)</label>
+                    <input
+                      type="password"
+                      placeholder="Leave blank to keep current password"
+                      value={editPassword}
+                      onChange={(e) => setEditPassword(e.target.value)}
+                      className={inputStyle}
+                    />
                   </div>
 
                   {/* Assignments - only if NOT admin */}

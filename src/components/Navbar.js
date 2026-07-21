@@ -173,15 +173,17 @@ export default function Navbar() {
                         {user.role !== "viewer" && (
                           <>
                             <DropdownItem to="/contacts">Contacts</DropdownItem>
-                            <DropdownItem to="/properties">
-                              Properties
-                            </DropdownItem>
+                            {user.role === "admin" && (
+                              <DropdownItem to="/properties">
+                                Properties
+                              </DropdownItem>
+                            )}
                           </>
                         )}
                       </NavDropdown>
 
                       {/* 4. AUTOMATION DROPDOWN */}
-                      {user.role !== "viewer" && (
+                      {user.role === "admin" && (
                         <NavDropdown
                           title="Automation"
                           active={[
@@ -193,11 +195,9 @@ export default function Navbar() {
                           <DropdownItem to="/auto-reply">
                             Auto-Reply
                           </DropdownItem>
-                          {["admin", "manager"].includes(user.role) && (
-                            <DropdownItem to="/bot-studio">
-                              Bot Studio
-                            </DropdownItem>
-                          )}
+                          <DropdownItem to="/bot-studio">
+                            Bot Studio
+                          </DropdownItem>
                           <DropdownItem to="/template-manager">
                             Templates
                           </DropdownItem>
