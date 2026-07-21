@@ -1,7 +1,8 @@
 // frontend/src/components/ContactViewModal.js
 
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { authFetch } from "../services/api";
+import { AuthContext } from "../context/AuthContext";
 import { FaEdit, FaTrash, FaSave, FaEye } from "react-icons/fa";
 import { MdCancel } from "react-icons/md";
 
@@ -11,6 +12,7 @@ export default function ContactViewModal({
   onClose,
   onRefresh,
 }) {
+  const { user } = useContext(AuthContext);
   const [editingContactId, setEditingContactId] = useState(null);
   const [updatedData, setUpdatedData] = useState({});
   const [filter, setFilter] = useState("");
@@ -19,6 +21,8 @@ export default function ContactViewModal({
   const [selectedContactIds, setSelectedContactIds] = useState(new Set()); // New Selection State
 
   if (!list) return null; // The modal is controlled by the 'list' prop
+
+  const isAuthorizedToMutate = user?.role === "admin" || (list.createdBy && list.createdBy.toString() === user?._id?.toString());
 
   const handleEditClick = (contact) => {
     setEditingContactId(contact._id);
@@ -232,7 +236,7 @@ export default function ContactViewModal({
             <h2 className="text-xl font-bold text-white">
               Contacts in "{list.name}" ({contacts.length})
             </h2>
-            {selectedContactIds.size > 0 && (
+            {isAuthorizedToMutate && selectedContactIds.size > 0 && (
               <button
                 onClick={handleBulkDelete}
                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
@@ -274,17 +278,19 @@ export default function ContactViewModal({
           <table className="min-w-full">
             <thead className="bg-[#2a3942]">
               <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
-                    checked={
-                      filteredContacts.length > 0 &&
-                      selectedContactIds.size === filteredContacts.length
-                    }
-                    onChange={toggleSelectAll}
-                  />
-                </th>
+                {isAuthorizedToMutate && (
+                  <th className="px-6 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
+                      checked={
+                        filteredContacts.length > 0 &&
+                        selectedContactIds.size === filteredContacts.length
+                      }
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
                   Phone Number
                 </th>
@@ -345,14 +351,16 @@ export default function ContactViewModal({
                     </>
                   ) : (
                     <>
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
-                          checked={selectedContactIds.has(contact._id)}
-                          onChange={() => toggleSelectContact(contact._id)}
-                        />
-                      </td>
+                      {isAuthorizedToMutate && (
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
+                            checked={selectedContactIds.has(contact._id)}
+                            onChange={() => toggleSelectContact(contact._id)}
+                          />
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {contact.phoneNumber}
                       </td>
@@ -367,18 +375,24 @@ export default function ContactViewModal({
                         >
                           <FaEye />
                         </button>
-                        <button
-                          onClick={() => handleEditClick(contact)}
-                          className="text-gray-400 hover:text-gray-300"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteContact(contact._id)}
-                          className="text-red-500 hover:text-red-400"
-                        >
-                          <FaTrash />
-                        </button>
+                        {isAuthorizedToMutate && (
+                          <>
+                            <button
+                              onClick={() => handleEditClick(contact)}
+                              className="text-gray-400 hover:text-gray-300"
+                              title="Edit Contact"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteContact(contact._id)}
+                              className="text-red-500 hover:text-red-400"
+                              title="Delete Contact"
+                            >
+                              <FaTrash />
+                            </button>
+                          </>
+                        )}
                       </td>
                     </>
                   )}

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { authFetch } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import ContactViewModal from "../components/ContactViewModal";
 import AddContactsModal from "../components/AddContactsModal"; // Import the new modal
 import {
@@ -16,6 +17,7 @@ import {
 
 export default function Contacts() {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newListName, setNewListName] = useState("");
@@ -307,24 +309,28 @@ export default function Contacts() {
                         </td>
                         <td className="px-6 py-5">
                           <div className="flex items-center justify-center gap-3 opacity-70 group-hover:opacity-100 transition-opacity">
-                            <ActionButton
-                              onClick={() => setAddingContactList(list)}
-                              icon={<FaFileImport />}
-                              label="Add Contacts"
-                              color="sky"
-                            />
+                            {(user?.role === "admin" || (list.createdBy && list.createdBy.toString() === user?._id?.toString())) && (
+                              <ActionButton
+                                onClick={() => setAddingContactList(list)}
+                                icon={<FaFileImport />}
+                                label="Add Contacts"
+                                color="sky"
+                              />
+                            )}
                             <ActionButton
                               onClick={() => handleViewContacts(list)}
                               icon={<FaEye />}
                               label="View Contacts"
                               color="gray"
                             />
-                            <ActionButton
-                              onClick={() => handleDeleteList(list._id)}
-                              icon={<FaTrash />}
-                              label="Delete"
-                              color="red"
-                            />
+                            {(user?.role === "admin" || (list.createdBy && list.createdBy.toString() === user?._id?.toString())) && (
+                              <ActionButton
+                                onClick={() => handleDeleteList(list._id)}
+                                icon={<FaTrash />}
+                                label="Delete"
+                                color="red"
+                              />
+                            )}
                           </div>
                         </td>
                       </tr>
