@@ -80,14 +80,14 @@ export default function AddContactsModal({ list, onClose, onRefresh }) {
               <strong>Format Required:</strong> The first line must be headers
               (separated by tabs).
               <br />
-              Example: <code>phoneNumber name email</code>
+              Example: <code>phoneNumber name var1</code>
             </p>
           </div>
 
           <textarea
             className="w-full bg-[#111b21] text-gray-200 p-4 rounded-lg border border-gray-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all font-mono text-sm"
             rows="10"
-            placeholder={`phoneNumber\tname\temail\n971500000000\tJohn Doe\tjohn@example.com`}
+            placeholder={`phoneNumber\tname\tvar1\n971500000000\tJohn Doe\tvalue1`}
             value={pastedData}
             onChange={(e) => setPastedData(e.target.value)}
           ></textarea>
