@@ -1,6 +1,6 @@
 // frontend/src/context/AlertContext.js
 
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import { FaCheckCircle, FaExclamationCircle, FaInfoCircle, FaTimes } from "react-icons/fa";
 
 export const AlertContext = createContext();
@@ -8,8 +8,12 @@ export const AlertContext = createContext();
 export function AlertProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   // Function to add a toast manually
-  const showAlert = (message, type = null) => {
+  const showAlert = useCallback((message, type = null) => {
     if (!message) return;
     const id = Date.now() + Math.random().toString(36).substr(2, 9);
     
@@ -50,11 +54,7 @@ export function AlertProvider({ children }) {
     setTimeout(() => {
       removeToast(id);
     }, 4500);
-  };
-
-  const removeToast = (id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  }, [removeToast]);
 
   // Override window.alert globally on mount
   useEffect(() => {
@@ -63,7 +63,7 @@ export function AlertProvider({ children }) {
         showAlert(message);
       }
     };
-  }, []);
+  }, [showAlert]);
 
   return (
     <AlertContext.Provider value={{ showAlert }}>
