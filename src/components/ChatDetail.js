@@ -407,9 +407,9 @@ export default function ChatDetail({
 
             <Avatar contactId={activeConversationId} name={contactName} />
             <div className="flex flex-col">
-              <h1 className="text-white font-medium">{activeConversationId}</h1>
+              <h1 className="text-white font-medium">{contactName || activeConversationId}</h1>
               <p className="text-[#8796a1] text-xs">
-                {contactName || "online"}
+                {contactName ? activeConversationId : "online"}
               </p>
             </div>
           </div>
