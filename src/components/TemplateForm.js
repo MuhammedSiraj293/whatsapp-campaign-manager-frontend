@@ -329,6 +329,8 @@ const TemplateForm = ({
               const formData = new FormData();
               formData.append("file", card.file);
               formData.append("wabaId", wabaId);
+              formData.append("templateName", name);
+              formData.append("cardIndex", idx);
               const uploadRes = await axios.post(
                 `${API_URL}/api/media/upload-template-media`,
                 formData,
@@ -347,6 +349,8 @@ const TemplateForm = ({
                 {
                   wabaId,
                   url: card.previewUrl,
+                  templateName: name,
+                  cardIndex: idx,
                 },
                 {
                   headers: {
