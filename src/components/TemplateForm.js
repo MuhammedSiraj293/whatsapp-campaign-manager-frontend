@@ -862,12 +862,40 @@ const TemplateForm = ({
                     </h3>
                   </div>
                   <div className="p-5">
+                    {/* Formatting Toolbar */}
+                    <div className="flex flex-wrap gap-1.5 mb-2 p-2 bg-[#0f1923] rounded-lg border border-[#1e3040]">
+                      <FmtBtn title="Bold (Ctrl+B)" onClick={() => applyFormat("*", "*")}>
+                        <span className="font-bold text-sm">B</span>
+                      </FmtBtn>
+                      <FmtBtn title="Italic (Ctrl+I)" onClick={() => applyFormat("_", "_")}>
+                        <span className="italic text-sm">I</span>
+                      </FmtBtn>
+                      <FmtBtn title="Strikethrough (Ctrl+U)" onClick={() => applyFormat("~", "~")}>
+                        <span className="line-through text-sm">S</span>
+                      </FmtBtn>
+                      <FmtBtn title="Monospace (Ctrl+M)" onClick={() => applyFormat("```", "```")}>
+                        <span className="font-mono text-sm">{"<>"}</span>
+                      </FmtBtn>
+                      <div className="w-px h-6 bg-[#1e3040] self-center mx-1" />
+                      <FmtBtn title="Insert variable" onClick={insertVariable}>
+                        <PlusIcon className="w-3 h-3" />
+                        <span>Variable</span>
+                      </FmtBtn>
+                      <div className="ml-auto flex items-center gap-2 text-[10px] text-gray-600">
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+B</kbd> Bold
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+I</kbd> Italic
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+U</kbd> Strike
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+M</kbd> Mono
+                      </div>
+                    </div>
+
                     <textarea
                       ref={bodyRef}
                       className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all resize-none leading-relaxed h-28 font-mono"
                       placeholder="Type your message header intro text here..."
                       value={bodyText}
                       onChange={(e) => setBodyText(e.target.value)}
+                      onKeyDown={handleBodyKeyDown}
                     />
                     <div className="flex justify-end mt-1 text-[10px] text-gray-600">
                       {bodyText.length}/1024
