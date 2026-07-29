@@ -14,6 +14,8 @@ const TemplatePreview = ({
   footerText,
   buttons,
   language,
+  isCarousel,
+  carouselCards,
 }) => {
   // Logic to handle both passed template object OR individual props (for form preview)
   const isStatic = !!template;
@@ -24,6 +26,8 @@ const TemplatePreview = ({
   let pBodyText = bodyText;
   let pFooterText = footerText;
   let pButtons = buttons || [];
+  let pIsCarousel = isCarousel || false;
+  let pCarouselCards = carouselCards || [];
 
   if (isStatic && template) {
     pHeaderType = "NONE";
@@ -32,18 +36,43 @@ const TemplatePreview = ({
     pBodyText = "";
     pFooterText = "";
     pButtons = [];
+    pIsCarousel = false;
+    pCarouselCards = [];
 
-    template.components.forEach((c) => {
-      if (c.type === "HEADER") {
-        pHeaderType = c.format;
-        if (c.format === "TEXT") pHeaderText = c.text;
-      }
-      if (c.type === "BODY") pBodyText = c.text;
-      if (c.type === "FOOTER") pFooterText = c.text;
-      if (c.type === "BUTTONS") {
-        pButtons = c.buttons;
-      }
-    });
+    const carouselComp = template.components.find((c) => c.type === "CAROUSEL");
+    if (carouselComp) {
+      pIsCarousel = true;
+      pBodyText = template.components.find((c) => c.type === "BODY")?.text || "";
+      pCarouselCards = carouselComp.cards.map((card) => {
+        const header = card.components.find((cc) => cc.type === "HEADER");
+        const body = card.components.find((cc) => cc.type === "BODY");
+        const cardButtons = card.components.find((cc) => cc.type === "BUTTONS");
+        
+        let sampleUrl = "";
+        if (header?.example?.header_handle?.[0]) {
+          sampleUrl = header.example.header_handle[0].startsWith("http") ? header.example.header_handle[0] : "";
+        }
+        
+        return {
+          headerType: header?.format || "IMAGE",
+          headerMediaUrl: sampleUrl || "",
+          bodyText: body?.text || "",
+          buttons: cardButtons?.buttons || []
+        };
+      });
+    } else {
+      template.components.forEach((c) => {
+        if (c.type === "HEADER") {
+          pHeaderType = c.format;
+          if (c.format === "TEXT") pHeaderText = c.text;
+        }
+        if (c.type === "BODY") pBodyText = c.text;
+        if (c.type === "FOOTER") pFooterText = c.text;
+        if (c.type === "BUTTONS") {
+          pButtons = c.buttons;
+        }
+      });
+    }
   }
 
   // Helper to format WhatsApp text
@@ -120,70 +149,139 @@ const TemplatePreview = ({
         <div className="w-16 h-3 bg-gray-900 rounded-b-lg"></div>
       </div>
       <div className="mt-8 flex flex-col gap-2">
-        <div className="bg-white rounded-lg p-2 shadow-sm max-w-[85%] self-start relative">
-          {/* Header Media */}
-          {pHeaderType === "IMAGE" && (
-            <div className="rounded-t-lg bg-gray-200 h-32 flex items-center justify-center overflow-hidden mb-2">
-              {pHeaderMediaUrl ? (
-                <img
-                  src={pHeaderMediaUrl}
-                  alt="Header"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="flex items-center gap-1 text-gray-500 text-xs font-medium">
-                  <PhotoIcon className="w-4 h-4" /> Image Header
-                </span>
-              )}
-            </div>
-          )}
-          {pHeaderType === "VIDEO" && (
-            <div className="rounded-t-lg bg-gray-200 h-32 flex items-center justify-center overflow-hidden mb-2">
-              {pHeaderMediaUrl ? (
-                <video
-                  src={pHeaderMediaUrl}
-                  className="w-full h-full object-cover"
-                  controls
-                />
-              ) : (
-                <span className="flex items-center gap-1 text-gray-500 text-xs font-medium">
-                  <VideoCameraIcon className="w-4 h-4" /> Video Header
-                </span>
-              )}
-            </div>
-          )}
-          {pHeaderType === "DOCUMENT" && (
-            <div className="bg-gray-100 p-3 rounded mb-2 flex items-center gap-3 border border-gray-200">
-              <DocumentTextIcon className="w-8 h-8 text-gray-400" />
-              <div className="text-xs text-gray-600 font-medium">
-                {pHeaderMediaUrl ? "Document.pdf" : "Document Header"}
+        {pIsCarousel ? (
+          <>
+            {/* Carousel Main Intro Message */}
+            <div className="bg-white rounded-lg p-2 shadow-sm max-w-[85%] self-start relative mb-1">
+              <div className="text-sm text-gray-800 whitespace-pre-wrap leading-snug">
+                {pBodyText ? formatMessage(pBodyText) : "Enter body text..."}
+              </div>
+              <div className="text-[10px] text-gray-400 text-right mt-1">
+                10:00 AM
               </div>
             </div>
-          )}
-          {pHeaderType === "LOCATION" && (
-            <div className="bg-gray-200 h-32 rounded-md mb-2 flex items-center justify-center text-gray-500 text-xs flex-col gap-1">
-              <span>📍 Location Header</span>
-            </div>
-          )}
 
-          {pHeaderType === "TEXT" && pHeaderText && (
-            <div className="font-bold text-sm mb-1 text-gray-900">
-              {pHeaderText}
+            {/* Carousel Cards horizontal scroll */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent max-w-full">
+              {pCarouselCards.length === 0 ? (
+                <div className="bg-white rounded-lg p-4 text-center text-xs text-gray-400 border border-gray-200 w-48 shrink-0">
+                  No cards added yet
+                </div>
+              ) : (
+                pCarouselCards.map((card, idx) => (
+                  <div key={idx} className="bg-white rounded-lg shadow-sm border border-gray-200 shrink-0 w-48 overflow-hidden flex flex-col">
+                    {/* Media */}
+                    <div className="bg-gray-200 h-28 flex items-center justify-center overflow-hidden relative">
+                      {card.headerMediaUrl || card.previewUrl ? (
+                        <img
+                          src={card.headerMediaUrl || card.previewUrl}
+                          alt={`Card ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex items-center gap-1 text-gray-400 text-[10px] font-medium">
+                          <PhotoIcon className="w-3.5 h-3.5" /> Card {idx + 1} Image
+                        </span>
+                      )}
+                    </div>
+                    {/* Text Details & Buttons */}
+                    <div className="p-2 flex-1 flex flex-col justify-between">
+                      <div className="text-xs text-gray-800 whitespace-pre-wrap leading-snug font-medium line-clamp-3 mb-2">
+                        {card.bodyText || card.body || "Enter card description..."}
+                      </div>
+                      <div className="border-t border-gray-100 pt-1.5 space-y-1 mt-auto">
+                        {(card.buttons || pButtons || []).map((btn, btnIdx) => (
+                          <div
+                            key={btnIdx}
+                            className="w-full text-center text-[#00A5F4] font-semibold text-[10px] py-1 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-center gap-1 border border-gray-100"
+                          >
+                            {btn.type === "URL" && (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                className="w-3 h-3"
+                              >
+                                <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
+                                <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
+                              </svg>
+                            )}
+                            {btn.text || "Button Label"}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          )}
-          <div className="text-sm text-gray-800 whitespace-pre-wrap leading-snug">
-            {pBodyText ? formatMessage(pBodyText) : "Enter body text..."}
-          </div>
-          {pFooterText && (
-            <div className="text-xs text-gray-500 mt-1">{pFooterText}</div>
-          )}
-          <div className="text-[10px] text-gray-400 text-right mt-1">
-            10:00 AM
-          </div>
-        </div>
+          </>
+        ) : (
+          <div className="bg-white rounded-lg p-2 shadow-sm max-w-[85%] self-start relative">
+            {/* Header Media */}
+            {pHeaderType === "IMAGE" && (
+              <div className="rounded-t-lg bg-gray-200 h-32 flex items-center justify-center overflow-hidden mb-2">
+                {pHeaderMediaUrl ? (
+                  <img
+                    src={pHeaderMediaUrl}
+                    alt="Header"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="flex items-center gap-1 text-gray-500 text-xs font-medium">
+                    <PhotoIcon className="w-4 h-4" /> Image Header
+                  </span>
+                )}
+              </div>
+            )}
+            {pHeaderType === "VIDEO" && (
+              <div className="rounded-t-lg bg-gray-200 h-32 flex items-center justify-center overflow-hidden mb-2">
+                {pHeaderMediaUrl ? (
+                  <video
+                    src={pHeaderMediaUrl}
+                    className="w-full h-full object-cover"
+                    controls
+                  />
+                ) : (
+                  <span className="flex items-center gap-1 text-gray-500 text-xs font-medium">
+                    <VideoCameraIcon className="w-4 h-4" /> Video Header
+                  </span>
+                )}
+              </div>
+            )}
+            {pHeaderType === "DOCUMENT" && (
+              <div className="bg-gray-100 p-3 rounded mb-2 flex items-center gap-3 border border-gray-200">
+                <DocumentTextIcon className="w-8 h-8 text-gray-400" />
+                <div className="text-xs text-gray-600 font-medium">
+                  {pHeaderMediaUrl ? "Document.pdf" : "Document Header"}
+                </div>
+              </div>
+            )}
+            {pHeaderType === "LOCATION" && (
+              <div className="bg-gray-200 h-32 rounded-md mb-2 flex items-center justify-center text-gray-500 text-xs flex-col gap-1">
+                <span>📍 Location Header</span>
+              </div>
+            )}
 
-        {/* Buttons */}
-        {pButtons.map((btn, idx) => (
+            {pHeaderType === "TEXT" && pHeaderText && (
+              <div className="font-bold text-sm mb-1 text-gray-900">
+                {pHeaderText}
+              </div>
+            )}
+            <div className="text-sm text-gray-800 whitespace-pre-wrap leading-snug">
+              {pBodyText ? formatMessage(pBodyText) : "Enter body text..."}
+            </div>
+            {pFooterText && (
+              <div className="text-xs text-gray-500 mt-1">{pFooterText}</div>
+            )}
+            <div className="text-[10px] text-gray-400 text-right mt-1">
+              10:00 AM
+            </div>
+          </div>
+        )}
+
+        {/* Buttons (Standard only) */}
+        {!pIsCarousel && pButtons.map((btn, idx) => (
           <div
             key={idx}
             className="bg-white rounded-lg p-2.5 shadow-sm max-w-[90%] self-start w-full text-center text-[#00A5F4] font-medium text-sm cursor-pointer hover:bg-gray-50 mt-1 ml-1 flex items-center justify-center gap-2"
@@ -195,7 +293,7 @@ const TemplatePreview = ({
                 fill="currentColor"
                 className="w-4 h-4"
               >
-                <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
+                <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06 l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
                 <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
               </svg>
             )}

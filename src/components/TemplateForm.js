@@ -80,14 +80,34 @@ const TemplateForm = ({
   const [buttons, setButtons] = useState(initialData?.buttons || []);
   const [showBtnMenu, setShowBtnMenu] = useState(false);
 
+  // --- Carousel support states ---
+  const [isCarousel, setIsCarousel] = useState(false);
+  const [carouselCards, setCarouselCards] = useState([
+    { id: 1, file: null, previewUrl: "", body: "", buttonUrls: [] },
+    { id: 2, file: null, previewUrl: "", body: "", buttonUrls: [] },
+  ]);
+  const [carouselButtons, setCarouselButtons] = useState([]);
+  const [showCarouselBtnMenu, setShowCarouselBtnMenu] = useState(false);
+
   const bodyRef = useRef(null);
   const btnMenuRef = useRef(null);
+  const carouselBtnMenuRef = useRef(null);
 
-  // ── Close button-type menu on outside click ───────────────────────────────
+  // --- Automatic Category check for Carousel ---
+  useEffect(() => {
+    if (isCarousel) {
+      setCategory("MARKETING");
+    }
+  }, [isCarousel]);
+
+  // --- Close button menus on outside click ---
   useEffect(() => {
     const handler = (e) => {
       if (btnMenuRef.current && !btnMenuRef.current.contains(e.target)) {
         setShowBtnMenu(false);
+      }
+      if (carouselBtnMenuRef.current && !carouselBtnMenuRef.current.contains(e.target)) {
+        setShowCarouselBtnMenu(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -97,24 +117,65 @@ const TemplateForm = ({
   // ── Init from existing template ───────────────────────────────────────────
   useEffect(() => {
     if (initialData && initialData.components) {
-      initialData.components.forEach((c) => {
-        if (c.type === "HEADER") {
-          setHeaderType(c.format);
-          if (c.format === "TEXT") setHeaderText(c.text);
-        }
-        if (c.type === "BODY") setBodyText(c.text);
-        if (c.type === "FOOTER") setFooterText(c.text);
-        if (c.type === "BUTTONS") {
-          setButtons(
-            c.buttons.map((b) => ({
+      const carouselComp = initialData.components.find((c) => c.type === "CAROUSEL");
+      if (carouselComp) {
+        setIsCarousel(true);
+        const bodyComp = initialData.components.find((c) => c.type === "BODY");
+        setBodyText(bodyComp?.text || "");
+        
+        // Initialize cards
+        const cardComps = carouselComp.cards.map((card, index) => {
+          const header = card.components.find((cc) => cc.type === "HEADER");
+          const body = card.components.find((cc) => cc.type === "BODY");
+          const cardBtns = card.components.find((cc) => cc.type === "BUTTONS");
+          
+          let previewUrl = "";
+          if (header?.example?.header_handle?.[0]) {
+            previewUrl = header.example.header_handle[0];
+          }
+          
+          return {
+            id: index + 1,
+            file: null,
+            previewUrl: previewUrl,
+            body: body?.text || "",
+            buttonUrls: cardBtns?.buttons?.map((b) => b.url || "") || []
+          };
+        });
+        setCarouselCards(cardComps);
+
+        // Initialize global carousel buttons from first card
+        const firstCardBtns = carouselComp.cards[0]?.components.find((cc) => cc.type === "BUTTONS");
+        if (firstCardBtns) {
+          setCarouselButtons(
+            firstCardBtns.buttons.map((b) => ({
               type: b.type,
               text: b.text,
-              url: b.url || "",
-              phoneNumber: b.phone_number || "",
+              url: b.url || ""
             }))
           );
         }
-      });
+      } else {
+        setIsCarousel(false);
+        initialData.components.forEach((c) => {
+          if (c.type === "HEADER") {
+            setHeaderType(c.format);
+            if (c.format === "TEXT") setHeaderText(c.text);
+          }
+          if (c.type === "BODY") setBodyText(c.text);
+          if (c.type === "FOOTER") setFooterText(c.text);
+          if (c.type === "BUTTONS") {
+            setButtons(
+              c.buttons.map((b) => ({
+                type: b.type,
+                text: b.text,
+                url: b.url || "",
+                phoneNumber: b.phone_number || "",
+              }))
+            );
+          }
+        });
+      }
       setName(initialData.name);
       setCategory(initialData.category);
       setLanguage(initialData.language);
@@ -183,9 +244,163 @@ const TemplateForm = ({
     }
   };
 
+  // --- Carousel card handlers ---
+  const handleAddCard = () => {
+    if (carouselCards.length >= 10) return;
+    setCarouselCards([
+      ...carouselCards,
+      {
+        id: Date.now(),
+        file: null,
+        previewUrl: "",
+        body: "",
+        buttonUrls: carouselButtons.map(() => "")
+      }
+    ]);
+  };
+  const handleRemoveCard = (id) => {
+    if (carouselCards.length <= 2) return;
+    setCarouselCards(carouselCards.filter((c) => c.id !== id));
+  };
+  const handleCardFileChange = (idx, file) => {
+    const newCards = [...carouselCards];
+    newCards[idx].file = file;
+    newCards[idx].previewUrl = file ? URL.createObjectURL(file) : "";
+    setCarouselCards(newCards);
+  };
+  const handleCardBodyChange = (idx, text) => {
+    const newCards = [...carouselCards];
+    newCards[idx].body = text;
+    setCarouselCards(newCards);
+  };
+  const handleCardButtonUrlChange = (cardIdx, btnIdx, val) => {
+    const newCards = [...carouselCards];
+    newCards[cardIdx].buttonUrls[btnIdx] = val;
+    setCarouselCards(newCards);
+  };
+
+  // --- Carousel global buttons handlers ---
+  const handleAddCarouselButton = (type) => {
+    if (carouselButtons.length >= 2) return;
+    const newButtons = [...carouselButtons, { type, text: "", url: "" }];
+    setCarouselButtons(newButtons);
+    setCarouselCards(
+      carouselCards.map((c) => ({
+        ...c,
+        buttonUrls: [...(c.buttonUrls || []), ""]
+      }))
+    );
+    setShowCarouselBtnMenu(false);
+  };
+  const handleRemoveCarouselButton = (btnIdx) => {
+    setCarouselButtons(carouselButtons.filter((_, idx) => idx !== btnIdx));
+    setCarouselCards(
+      carouselCards.map((c) => ({
+        ...c,
+        buttonUrls: (c.buttonUrls || []).filter((_, idx) => idx !== btnIdx)
+      }))
+    );
+  };
+  const handleCarouselButtonChange = (btnIdx, field, val) => {
+    const newButtons = [...carouselButtons];
+    newButtons[btnIdx][field] = val;
+    setCarouselButtons(newButtons);
+  };
+
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+
+    if (isCarousel) {
+      if (carouselCards.some((c) => !c.file && !c.previewUrl)) {
+        alert("Please upload an image for every carousel card.");
+        return;
+      }
+      if (carouselCards.some((c) => !c.body.trim())) {
+        alert("Please enter a description for every carousel card.");
+        return;
+      }
+
+      try {
+        const cardsComponents = await Promise.all(
+          carouselCards.map(async (card, idx) => {
+            let handle = "";
+            if (card.file) {
+              const formData = new FormData();
+              formData.append("file", card.file);
+              formData.append("wabaId", wabaId);
+              const uploadRes = await axios.post(
+                `${API_URL}/api/media/upload-template-media`,
+                formData,
+                {
+                  headers: {
+                    Authorization: `Bearer ${authToken}`,
+                    "Content-Type": "multipart/form-data",
+                  },
+                }
+              );
+              handle = uploadRes.data?.handle;
+            } else {
+              handle = card.previewUrl;
+            }
+
+            return {
+              components: [
+                {
+                  type: "HEADER",
+                  format: "IMAGE",
+                  example: {
+                    header_handle: [handle],
+                  },
+                },
+                {
+                  type: "BODY",
+                  text: card.body,
+                },
+                ...(carouselButtons.length > 0
+                  ? [
+                      {
+                        type: "BUTTONS",
+                        buttons: carouselButtons.map((btn, btnIdx) => {
+                          if (btn.type === "URL") {
+                            return {
+                              type: "URL",
+                              text: btn.text,
+                              url: card.buttonUrls[btnIdx] || btn.url,
+                            };
+                          }
+                          return {
+                            type: "QUICK_REPLY",
+                            text: btn.text,
+                          };
+                        }),
+                      },
+                    ]
+                  : []),
+              ],
+            };
+          })
+        );
+
+        const components = [
+          {
+            type: "BODY",
+            text: bodyText || "Explore our latest listings!",
+          },
+          {
+            type: "CAROUSEL",
+            cards: cardsComponents,
+          },
+        ];
+
+        onSubmit({ name, category: "MARKETING", language, components });
+      } catch (err) {
+        console.error("Failed uploading carousel media:", err);
+        alert("Failed to upload card media. Please check your connection and try again.");
+      }
+      return;
+    }
+
     const components = [];
 
     if (headerType !== "NONE") {
@@ -349,274 +564,506 @@ const TemplateForm = ({
                     className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all appearance-none"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
+                    disabled={isCarousel}
                   >
                     <option value="MARKETING">Marketing</option>
                     <option value="UTILITY">Utility</option>
                     <option value="AUTHENTICATION">Authentication</option>
                   </select>
                 </div>
-              </div>
-            </div>
-
-            {/* ── CARD: Header ──────────────────────────────────────────────── */}
-            <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
-              <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040] flex justify-between items-center">
-                <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
-                  Header <span className="text-gray-600 font-normal normal-case ml-1">• Optional</span>
-                </h3>
-                <select
-                  className="bg-[#1a2d3d] border border-[#1e3040] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#0c8ce9] transition-all"
-                  value={headerType}
-                  onChange={(e) => { setHeaderType(e.target.value); setHeaderFile(null); setHeaderMediaUrl(null); }}
-                >
-                  <option value="NONE">None</option>
-                  <option value="TEXT">Text</option>
-                  <option value="IMAGE">Image</option>
-                  <option value="VIDEO">Video</option>
-                  <option value="DOCUMENT">Document</option>
-                  <option value="LOCATION">Location</option>
-                </select>
-              </div>
-              <div className="p-5">
-                {headerType === "NONE" && (
-                  <p className="text-xs text-gray-600 italic">No header selected.</p>
-                )}
-                {headerType === "TEXT" && (
-                  <div className="relative">
+                <div className="w-44 flex flex-col justify-end pb-3">
+                  <label className="inline-flex items-center text-xs font-semibold text-gray-300 cursor-pointer select-none">
                     <input
-                      type="text"
-                      className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all"
-                      placeholder="Enter header text (max 60 chars)…"
-                      value={headerText}
-                      onChange={(e) => setHeaderText(e.target.value)}
-                      maxLength={60}
+                      type="checkbox"
+                      className="form-checkbox bg-[#0f1923] border-[#1e3040] rounded text-[#0c8ce9] focus:ring-0 mr-2 w-4 h-4"
+                      checked={isCarousel}
+                      onChange={(e) => {
+                        setIsCarousel(e.target.checked);
+                        if (e.target.checked) setCategory("MARKETING");
+                      }}
+                      disabled={!!initialData}
                     />
-                    <span className="absolute right-3 top-2.5 text-[10px] text-gray-600">{headerText.length}/60</span>
-                  </div>
-                )}
-                {["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType) && (
-                  <div className="border-2 border-dashed border-[#1e3040] hover:border-[#0c8ce9]/40 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-all group">
-                    <div className="w-12 h-12 rounded-full bg-[#0f1923] flex items-center justify-center mb-3 group-hover:bg-[#0c8ce9]/10 transition-all">
-                      {headerType === "IMAGE" && <PhotoIcon className="w-6 h-6 text-[#0c8ce9]" />}
-                      {headerType === "VIDEO" && <VideoCameraIcon className="w-6 h-6 text-[#0c8ce9]" />}
-                      {headerType === "DOCUMENT" && <DocumentTextIcon className="w-6 h-6 text-[#0c8ce9]" />}
-                    </div>
-                    <div className="text-sm font-semibold text-gray-300 mb-1">
-                      {headerFile ? headerFile.name : `Upload ${headerType.toLowerCase()}`}
-                    </div>
-                    <div className="text-xs text-gray-600 mb-4">
-                      {headerType === "IMAGE" ? "JPG, PNG, WebP" : headerType === "VIDEO" ? "MP4, 3GP" : "PDF"}
-                    </div>
-                    <label className="cursor-pointer px-4 py-2 text-xs font-semibold rounded-lg bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30 transition-all">
-                      Choose File
-                      <input type="file" className="hidden" accept="image/*,video/*,application/pdf" onChange={handleFileChange} />
-                    </label>
-                    {headerFile && (
-                      <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
-                        <span>✓</span> {headerFile.name}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {headerType === "LOCATION" && (
-                  <div className="bg-[#0f1923] rounded-lg p-4 text-center text-xs text-gray-500 border border-[#1e3040]">
-                    📍 Location header — no file needed
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── CARD: Body ────────────────────────────────────────────────── */}
-            <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
-              <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040]">
-                <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">Body</h3>
-              </div>
-              <div className="p-5">
-                {/* Formatting Toolbar */}
-                <div className="flex flex-wrap gap-1.5 mb-2 p-2 bg-[#0f1923] rounded-lg border border-[#1e3040]">
-                  <FmtBtn title="Bold (Ctrl+B)" onClick={() => applyFormat("*", "*")}>
-                    <span className="font-bold text-sm">B</span>
-                  </FmtBtn>
-                  <FmtBtn title="Italic (Ctrl+I)" onClick={() => applyFormat("_", "_")}>
-                    <span className="italic text-sm">I</span>
-                  </FmtBtn>
-                  <FmtBtn title="Strikethrough (Ctrl+U)" onClick={() => applyFormat("~", "~")}>
-                    <span className="line-through text-sm">S</span>
-                  </FmtBtn>
-                  <FmtBtn title="Monospace (Ctrl+M)" onClick={() => applyFormat("```", "```")}>
-                    <span className="font-mono text-sm">{"<>"}</span>
-                  </FmtBtn>
-                  <div className="w-px h-6 bg-[#1e3040] self-center mx-1" />
-                  <FmtBtn title="Insert variable" onClick={insertVariable}>
-                    <PlusIcon className="w-3 h-3" />
-                    <span>Variable</span>
-                  </FmtBtn>
-                  <div className="ml-auto flex items-center gap-2 text-[10px] text-gray-600">
-                    <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+B</kbd> Bold
-                    <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+I</kbd> Italic
-                    <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+U</kbd> Strike
-                    <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+M</kbd> Mono
-                  </div>
-                </div>
-
-                <textarea
-                  ref={bodyRef}
-                  className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all resize-none leading-relaxed h-40 font-mono"
-                  placeholder="Type your message here…&#10;Use *bold*, _italic_, ~strikethrough~, ```monospace```"
-                  value={bodyText}
-                  onChange={(e) => setBodyText(e.target.value)}
-                  onKeyDown={handleBodyKeyDown}
-                />
-                <div className="flex justify-end mt-1">
-                  <span className={`text-[10px] ${bodyText.length > 900 ? "text-amber-400" : "text-gray-600"}`}>
-                    {bodyText.length}/1024
-                  </span>
-                </div>
-
-                {/* Variable Samples */}
-                {variables.length > 0 && (
-                  <div className="mt-4 bg-[#0f1923] rounded-lg border border-[#1e3040] p-4">
-                    <h4 className="text-[10px] font-bold text-[#5f9ec0] uppercase tracking-widest mb-3">
-                      Variable Samples
-                    </h4>
-                    <div className="space-y-2">
-                      {variables.map((v) => (
-                        <div key={v.key} className="flex gap-3 items-center">
-                          <div className="w-12 text-center font-mono text-xs text-[#0c8ce9] bg-[#0c8ce9]/10 border border-[#0c8ce9]/20 px-2 py-1.5 rounded">
-                            {v.key}
-                          </div>
-                          <input
-                            type="text"
-                            className="flex-1 bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
-                            placeholder={`Sample for ${v.key}`}
-                            value={v.sample}
-                            onChange={(e) => handleVariableChange(v.key, "sample", e.target.value)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── CARD: Footer ─────────────────────────────────────────────── */}
-            <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
-              <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040]">
-                <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
-                  Footer <span className="text-gray-600 font-normal normal-case ml-1">• Optional</span>
-                </h3>
-              </div>
-              <div className="p-5">
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all"
-                    placeholder="e.g. Reply STOP to unsubscribe"
-                    value={footerText}
-                    onChange={(e) => setFooterText(e.target.value)}
-                    maxLength={60}
-                  />
-                  <span className="absolute right-3 top-2.5 text-[10px] text-gray-600">{footerText.length}/60</span>
+                    Carousel Layout
+                  </label>
                 </div>
               </div>
             </div>
 
-            {/* ── CARD: Buttons ────────────────────────────────────────────── */}
-            <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
-              <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040] flex justify-between items-center">
-                <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
-                  Buttons <span className="text-gray-600 font-normal normal-case ml-1">• Optional</span>
-                </h3>
-                {buttons.length < 3 && (
-                  <div className="relative" ref={btnMenuRef}>
-                    <button
-                      type="button"
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30 transition-all flex items-center gap-1"
-                      onClick={() => setShowBtnMenu((v) => !v)}
+            {!isCarousel ? (
+              <>
+                {/* ── CARD: Header ──────────────────────────────────────────────── */}
+                <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
+                  <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040] flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
+                      Header <span className="text-gray-600 font-normal normal-case ml-1">• Optional</span>
+                    </h3>
+                    <select
+                      className="bg-[#1a2d3d] border border-[#1e3040] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#0c8ce9] transition-all"
+                      value={headerType}
+                      onChange={(e) => { setHeaderType(e.target.value); setHeaderFile(null); setHeaderMediaUrl(null); }}
                     >
-                      <PlusIcon className="w-3.5 h-3.5" /> Add Button
-                    </button>
-                    {showBtnMenu && (
-                      <div className="absolute right-0 top-full mt-1 bg-[#131f2b] border border-[#1e3040] rounded-xl shadow-xl z-50 w-52 overflow-hidden">
-                        {["QUICK_REPLY", "URL", "PHONE_NUMBER"].map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-[#0c8ce9]/10 hover:text-white transition-all"
-                            onClick={() => handleAddButton(t)}
-                          >
-                            {t === "QUICK_REPLY" ? "Quick Reply" : t === "URL" ? "Visit Website (URL)" : "Call Phone Number"}
-                          </button>
-                        ))}
+                      <option value="NONE">None</option>
+                      <option value="TEXT">Text</option>
+                      <option value="IMAGE">Image</option>
+                      <option value="VIDEO">Video</option>
+                      <option value="DOCUMENT">Document</option>
+                      <option value="LOCATION">Location</option>
+                    </select>
+                  </div>
+                  <div className="p-5">
+                    {headerType === "NONE" && (
+                      <p className="text-xs text-gray-600 italic">No header selected.</p>
+                    )}
+                    {headerType === "TEXT" && (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all"
+                          placeholder="Enter header text (max 60 chars)…"
+                          value={headerText}
+                          onChange={(e) => setHeaderText(e.target.value)}
+                          maxLength={60}
+                        />
+                        <span className="absolute right-3 top-2.5 text-[10px] text-gray-600">{headerText.length}/60</span>
+                      </div>
+                    )}
+                    {["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType) && (
+                      <div className="border-2 border-dashed border-[#1e3040] hover:border-[#0c8ce9]/40 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-all group">
+                        <div className="w-12 h-12 rounded-full bg-[#0f1923] flex items-center justify-center mb-3 group-hover:bg-[#0c8ce9]/10 transition-all">
+                          {headerType === "IMAGE" && <PhotoIcon className="w-6 h-6 text-[#0c8ce9]" />}
+                          {headerType === "VIDEO" && <VideoCameraIcon className="w-6 h-6 text-[#0c8ce9]" />}
+                          {headerType === "DOCUMENT" && <DocumentTextIcon className="w-6 h-6 text-[#0c8ce9]" />}
+                        </div>
+                        <div className="text-sm font-semibold text-gray-300 mb-1">
+                          {headerFile ? headerFile.name : `Upload ${headerType.toLowerCase()}`}
+                        </div>
+                        <div className="text-xs text-gray-600 mb-4">
+                          {headerType === "IMAGE" ? "JPG, PNG, WebP" : headerType === "VIDEO" ? "MP4, 3GP" : "PDF"}
+                        </div>
+                        <label className="cursor-pointer px-4 py-2 text-xs font-semibold rounded-lg bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30 transition-all">
+                          Choose File
+                          <input type="file" className="hidden" accept="image/*,video/*,application/pdf" onChange={handleFileChange} />
+                        </label>
+                        {headerFile && (
+                          <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
+                            <span>✓</span> {headerFile.name}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {headerType === "LOCATION" && (
+                      <div className="bg-[#0f1923] rounded-lg p-4 text-center text-xs text-gray-500 border border-[#1e3040]">
+                        📍 Location header — no file needed
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-              <div className="p-5 space-y-3">
-                {buttons.length === 0 ? (
-                  <p className="text-xs text-gray-600 italic">No buttons added yet.</p>
-                ) : (
-                  buttons.map((btn, idx) => (
-                    <div key={idx} className="bg-[#0f1923] border border-[#1e3040] rounded-xl p-4 relative group">
+                </div>
+
+                {/* ── CARD: Body ────────────────────────────────────────────────── */}
+                <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
+                  <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040]">
+                    <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">Body</h3>
+                  </div>
+                  <div className="p-5">
+                    {/* Formatting Toolbar */}
+                    <div className="flex flex-wrap gap-1.5 mb-2 p-2 bg-[#0f1923] rounded-lg border border-[#1e3040]">
+                      <FmtBtn title="Bold (Ctrl+B)" onClick={() => applyFormat("*", "*")}>
+                        <span className="font-bold text-sm">B</span>
+                      </FmtBtn>
+                      <FmtBtn title="Italic (Ctrl+I)" onClick={() => applyFormat("_", "_")}>
+                        <span className="italic text-sm">I</span>
+                      </FmtBtn>
+                      <FmtBtn title="Strikethrough (Ctrl+U)" onClick={() => applyFormat("~", "~")}>
+                        <span className="line-through text-sm">S</span>
+                      </FmtBtn>
+                      <FmtBtn title="Monospace (Ctrl+M)" onClick={() => applyFormat("```", "```")}>
+                        <span className="font-mono text-sm">{"<>"}</span>
+                      </FmtBtn>
+                      <div className="w-px h-6 bg-[#1e3040] self-center mx-1" />
+                      <FmtBtn title="Insert variable" onClick={insertVariable}>
+                        <PlusIcon className="w-3 h-3" />
+                        <span>Variable</span>
+                      </FmtBtn>
+                      <div className="ml-auto flex items-center gap-2 text-[10px] text-gray-600">
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+B</kbd> Bold
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+I</kbd> Italic
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+U</kbd> Strike
+                        <kbd className="px-1.5 py-0.5 bg-[#1e3040] rounded text-gray-500 font-mono">Ctrl+M</kbd> Mono
+                      </div>
+                    </div>
+
+                    <textarea
+                      ref={bodyRef}
+                      className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all resize-none leading-relaxed h-40 font-mono"
+                      placeholder="Type your message here…&#10;Use *bold*, _italic_, ~strikethrough~, ```monospace```"
+                      value={bodyText}
+                      onChange={(e) => setBodyText(e.target.value)}
+                      onKeyDown={handleBodyKeyDown}
+                    />
+                    <div className="flex justify-end mt-1">
+                      <span className={`text-[10px] ${bodyText.length > 900 ? "text-amber-400" : "text-gray-600"}`}>
+                        {bodyText.length}/1024
+                      </span>
+                    </div>
+
+                    {/* Variable Samples */}
+                    {variables.length > 0 && (
+                      <div className="mt-4 bg-[#0f1923] rounded-lg border border-[#1e3040] p-4">
+                        <h4 className="text-[10px] font-bold text-[#5f9ec0] uppercase tracking-widest mb-3">
+                          Variable Samples
+                        </h4>
+                        <div className="space-y-2">
+                          {variables.map((v) => (
+                            <div key={v.key} className="flex gap-3 items-center">
+                              <div className="w-12 text-center font-mono text-xs text-[#0c8ce9] bg-[#0c8ce9]/10 border border-[#0c8ce9]/20 px-2 py-1.5 rounded">
+                                {v.key}
+                              </div>
+                              <input
+                                type="text"
+                                className="flex-1 bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
+                                placeholder={`Sample for ${v.key}`}
+                                value={v.sample}
+                                onChange={(e) => handleVariableChange(v.key, "sample", e.target.value)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── CARD: Footer ─────────────────────────────────────────────── */}
+                <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
+                  <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040]">
+                    <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
+                      Footer <span className="text-gray-600 font-normal normal-case ml-1">• Optional</span>
+                    </h3>
+                  </div>
+                  <div className="p-5">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all"
+                        placeholder="e.g. Reply STOP to unsubscribe"
+                        value={footerText}
+                        onChange={(e) => setFooterText(e.target.value)}
+                        maxLength={60}
+                      />
+                      <span className="absolute right-3 top-2.5 text-[10px] text-gray-600">{footerText.length}/60</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── CARD: Buttons ────────────────────────────────────────────── */}
+                <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
+                  <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040] flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
+                      Buttons <span className="text-gray-600 font-normal normal-case ml-1">• Optional</span>
+                    </h3>
+                    {buttons.length < 3 && (
+                      <div className="relative" ref={btnMenuRef}>
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30 transition-all flex items-center gap-1"
+                          onClick={() => setShowBtnMenu((v) => !v)}
+                        >
+                          <PlusIcon className="w-3.5 h-3.5" /> Add Button
+                        </button>
+                        {showBtnMenu && (
+                          <div className="absolute right-0 top-full mt-1 bg-[#131f2b] border border-[#1e3040] rounded-xl shadow-xl z-50 w-52 overflow-hidden">
+                            {["QUICK_REPLY", "URL", "PHONE_NUMBER"].map((t) => (
+                              <button
+                                key={t}
+                                type="button"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-[#0c8ce9]/10 hover:text-white transition-all"
+                                onClick={() => handleAddButton(t)}
+                              >
+                                {t === "QUICK_REPLY" ? "Quick Reply" : t === "URL" ? "Visit Website (URL)" : "Call Phone Number"}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5 space-y-3">
+                    {buttons.length === 0 ? (
+                      <p className="text-xs text-gray-600 italic">No buttons added yet.</p>
+                    ) : (
+                      buttons.map((btn, idx) => (
+                        <div key={idx} className="bg-[#0f1923] border border-[#1e3040] rounded-xl p-4 relative group">
+                          <button
+                            type="button"
+                            className="absolute top-3 right-3 text-gray-600 hover:text-red-400 transition-colors"
+                            onClick={() => handleRemoveButton(idx)}
+                          >
+                            <XMarkIcon className="w-4 h-4" />
+                          </button>
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#0c8ce9]/10 border border-[#0c8ce9]/20 text-[10px] text-[#0c8ce9] font-bold uppercase mb-3">
+                            {btn.type.replace("_", " ")}
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                                Button Text
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
+                                placeholder="Button label"
+                                value={btn.text}
+                                onChange={(e) => handleButtonChange(idx, "text", e.target.value)}
+                              />
+                            </div>
+                            {btn.type === "URL" && (
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                                  Website URL
+                                </label>
+                                <input
+                                  type="url"
+                                  className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
+                                  placeholder="https://…"
+                                  value={btn.url}
+                                  onChange={(e) => handleButtonChange(idx, "url", e.target.value)}
+                                />
+                              </div>
+                            )}
+                            {btn.type === "PHONE_NUMBER" && (
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                                  Phone Number
+                                </label>
+                                <input
+                                  type="tel"
+                                  className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
+                                  placeholder="+1 234 567 8900"
+                                  value={btn.phoneNumber}
+                                  onChange={(e) => handleButtonChange(idx, "phoneNumber", e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* ── CAROUSEL BUILDER ── */}
+                {/* Intro Message Body */}
+                <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
+                  <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040]">
+                    <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
+                      Carousel Intro Body Text
+                    </h3>
+                  </div>
+                  <div className="p-5">
+                    <textarea
+                      ref={bodyRef}
+                      className="w-full bg-[#0f1923] border border-[#1e3040] rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] focus:ring-1 focus:ring-[#0c8ce9]/40 transition-all resize-none leading-relaxed h-28 font-mono"
+                      placeholder="Type your message header intro text here..."
+                      value={bodyText}
+                      onChange={(e) => setBodyText(e.target.value)}
+                    />
+                    <div className="flex justify-end mt-1 text-[10px] text-gray-600">
+                      {bodyText.length}/1024
+                    </div>
+                  </div>
+                </div>
+
+                {/* Global Carousel Button Settings */}
+                <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
+                  <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040] flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
+                      Card Buttons <span className="text-gray-600 font-normal normal-case ml-1">• Max 2</span>
+                    </h3>
+                    {carouselButtons.length < 2 && (
+                      <div className="relative" ref={carouselBtnMenuRef}>
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30 transition-all flex items-center gap-1"
+                          onClick={() => setShowCarouselBtnMenu((v) => !v)}
+                        >
+                          <PlusIcon className="w-3.5 h-3.5" /> Add Card Button
+                        </button>
+                        {showCarouselBtnMenu && (
+                          <div className="absolute right-0 top-full mt-1 bg-[#131f2b] border border-[#1e3040] rounded-xl shadow-xl z-50 w-52 overflow-hidden">
+                            {["QUICK_REPLY", "URL"].map((t) => (
+                              <button
+                                key={t}
+                                type="button"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-[#0c8ce9]/10 hover:text-white transition-all"
+                                onClick={() => handleAddCarouselButton(t)}
+                              >
+                                {t === "QUICK_REPLY" ? "Quick Reply" : "Visit Website (URL)"}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5 space-y-3">
+                    {carouselButtons.length === 0 ? (
+                      <p className="text-xs text-gray-600 italic">No card buttons added yet.</p>
+                    ) : (
+                      carouselButtons.map((btn, idx) => (
+                        <div key={idx} className="bg-[#0f1923] border border-[#1e3040] rounded-xl p-4 relative">
+                          <button
+                            type="button"
+                            className="absolute top-3 right-3 text-gray-600 hover:text-red-400"
+                            onClick={() => handleRemoveCarouselButton(idx)}
+                          >
+                            <XMarkIcon className="w-4 h-4" />
+                          </button>
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#0c8ce9]/10 border border-[#0c8ce9]/20 text-[10px] text-[#0c8ce9] font-bold uppercase mb-3">
+                            {btn.type.replace("_", " ")}
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                                Button Label
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9]"
+                                placeholder="Button label text"
+                                value={btn.text}
+                                onChange={(e) => handleCarouselButtonChange(idx, "text", e.target.value)}
+                              />
+                            </div>
+                            {btn.type === "URL" && (
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                                  Default / Base URL
+                                </label>
+                                <input
+                                  type="url"
+                                  className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9]"
+                                  placeholder="https://..."
+                                  value={btn.url}
+                                  onChange={(e) => handleCarouselButtonChange(idx, "url", e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Carousel Cards list */}
+                <div className="bg-[#131f2b] rounded-xl border border-[#1e3040] shadow-md overflow-hidden">
+                  <div className="px-5 py-3 bg-[#0f1923] border-b border-[#1e3040] flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-[#5f9ec0] uppercase tracking-widest">
+                      Cards List <span className="text-gray-600 font-normal normal-case ml-1">• 2 to 10 cards</span>
+                    </h3>
+                    {carouselCards.length < 10 && (
                       <button
                         type="button"
-                        className="absolute top-3 right-3 text-gray-600 hover:text-red-400 transition-colors"
-                        onClick={() => handleRemoveButton(idx)}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30 transition-all flex items-center gap-1"
+                        onClick={handleAddCard}
                       >
-                        <XMarkIcon className="w-4 h-4" />
+                        <PlusIcon className="w-3.5 h-3.5" /> Add Card
                       </button>
-                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#0c8ce9]/10 border border-[#0c8ce9]/20 text-[10px] text-[#0c8ce9] font-bold uppercase mb-3">
-                        {btn.type.replace("_", " ")}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
-                            Button Text
-                          </label>
-                          <input
-                            type="text"
-                            className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
-                            placeholder="Button label"
-                            value={btn.text}
-                            onChange={(e) => handleButtonChange(idx, "text", e.target.value)}
-                          />
+                    )}
+                  </div>
+                  <div className="p-5 space-y-4">
+                    {carouselCards.map((card, cardIdx) => (
+                      <div key={card.id} className="bg-[#0f1923] border border-[#1e3040] rounded-xl p-4 relative">
+                        {carouselCards.length > 2 && (
+                          <button
+                            type="button"
+                            className="absolute top-3 right-3 text-gray-600 hover:text-red-400"
+                            onClick={() => handleRemoveCard(card.id)}
+                          >
+                            <XMarkIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                        <div className="text-xs font-bold text-[#5f9ec0] tracking-wide mb-3">
+                          Card #{cardIdx + 1}
                         </div>
-                        {btn.type === "URL" && (
+                        <div className="space-y-3">
+                          {/* Image upload */}
                           <div>
                             <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
-                              Website URL
+                              Card Media Header (Image)
                             </label>
-                            <input
-                              type="url"
-                              className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
-                              placeholder="https://…"
-                              value={btn.url}
-                              onChange={(e) => handleButtonChange(idx, "url", e.target.value)}
-                            />
+                            <div className="border-2 border-dashed border-[#1e3040] hover:border-[#0c8ce9]/40 rounded-xl p-4 flex flex-col items-center justify-center text-center transition-all">
+                              {card.previewUrl ? (
+                                <div className="w-full max-w-[200px] h-24 rounded overflow-hidden relative">
+                                  <img src={card.previewUrl} className="w-full h-full object-cover" />
+                                  <button
+                                    type="button"
+                                    className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1"
+                                    onClick={() => handleCardFileChange(cardIdx, null)}
+                                  >
+                                    <XMarkIcon className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center">
+                                  <PhotoIcon className="w-6 h-6 text-[#0c8ce9] mb-1" />
+                                  <span className="text-[10px] text-gray-400 mb-2">Upload image (JPEG/PNG)</span>
+                                  <label className="cursor-pointer px-3 py-1 text-[10px] font-semibold rounded bg-[#0c8ce9]/10 hover:bg-[#0c8ce9]/20 text-[#0c8ce9] border border-[#0c8ce9]/30">
+                                    Choose Image
+                                    <input
+                                      type="file"
+                                      className="hidden"
+                                      accept="image/*"
+                                      onChange={(e) => handleCardFileChange(cardIdx, e.target.files[0])}
+                                    />
+                                  </label>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        {btn.type === "PHONE_NUMBER" && (
+
+                          {/* Description */}
                           <div>
                             <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
-                              Phone Number
+                              Card Body Text (Max 160 characters)
                             </label>
                             <input
-                              type="tel"
-                              className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9] transition-all"
-                              placeholder="+1 234 567 8900"
-                              value={btn.phoneNumber}
-                              onChange={(e) => handleButtonChange(idx, "phoneNumber", e.target.value)}
+                              type="text"
+                              className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9]"
+                              placeholder="Enter details..."
+                              value={card.body}
+                              maxLength={160}
+                              onChange={(e) => handleCardBodyChange(cardIdx, e.target.value)}
                             />
                           </div>
-                        )}
+
+                          {/* Card URL input buttons */}
+                          {carouselButtons.map((btn, btnIdx) => {
+                            if (btn.type !== "URL") return null;
+                            return (
+                              <div key={btnIdx}>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+                                  URL for Button "{btn.text || 'Link'}"
+                                </label>
+                                <input
+                                  type="url"
+                                  className="w-full bg-[#131f2b] border border-[#1e3040] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#0c8ce9]"
+                                  placeholder="https://..."
+                                  value={card.buttonUrls[btnIdx] || ""}
+                                  onChange={(e) => handleCardButtonUrlChange(cardIdx, btnIdx, e.target.value)}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>{/* end left column */}
 
           {/* ── RIGHT COLUMN: Preview ────────────────────────────────────── */}
