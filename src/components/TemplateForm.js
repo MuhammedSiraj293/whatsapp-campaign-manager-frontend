@@ -359,6 +359,23 @@ const TemplateForm = ({
               handle = card.previewUrl;
             }
 
+            const parseTemplateUrl = (fullUrl) => {
+              try {
+                const urlObj = new URL(fullUrl);
+                const origin = urlObj.origin + "/";
+                const suffix = urlObj.pathname.substring(1) + urlObj.search + urlObj.hash;
+                return {
+                  baseUrl: origin + "{{1}}",
+                  suffix: suffix || "link"
+                };
+              } catch (e) {
+                return {
+                  baseUrl: "https://thecapitalavenue.com/{{1}}",
+                  suffix: fullUrl || "link"
+                };
+              }
+            };
+
             return {
               components: [
                 {
@@ -378,10 +395,13 @@ const TemplateForm = ({
                         type: "BUTTONS",
                         buttons: carouselButtons.map((btn, btnIdx) => {
                           if (btn.type === "URL") {
+                            const cardUrl = card.buttonUrls[btnIdx] || btn.url || "";
+                            const parsed = parseTemplateUrl(cardUrl);
                             return {
                               type: "URL",
                               text: btn.text,
-                              url: card.buttonUrls[btnIdx] || btn.url,
+                              url: parsed.baseUrl,
+                              example: [parsed.suffix],
                             };
                           }
                           return {
