@@ -997,7 +997,7 @@ const TemplateForm = ({
                             <div className="border-2 border-dashed border-[#1e3040] hover:border-[#0c8ce9]/40 rounded-xl p-4 flex flex-col items-center justify-center text-center transition-all">
                               {card.previewUrl ? (
                                 <div className="w-full max-w-[200px] h-24 rounded overflow-hidden relative">
-                                  <img src={card.previewUrl} className="w-full h-full object-cover" />
+                                  <img src={card.previewUrl} alt={`Card ${cardIdx + 1} preview`} className="w-full h-full object-cover" />
                                   <button
                                     type="button"
                                     className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1"
