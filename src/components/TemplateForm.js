@@ -340,6 +340,21 @@ const TemplateForm = ({
                 }
               );
               handle = uploadRes.data?.handle;
+            } else if (card.previewUrl && card.previewUrl.startsWith("http")) {
+              // Existing card image was kept. Call the backend to download it and get a Meta handle automatically
+              const uploadRes = await axios.post(
+                `${API_URL}/api/media/upload-template-media`,
+                {
+                  wabaId,
+                  url: card.previewUrl,
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${authToken}`,
+                  },
+                }
+              );
+              handle = uploadRes.data?.handle;
             } else {
               handle = card.previewUrl;
             }
