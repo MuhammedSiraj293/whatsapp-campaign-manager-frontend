@@ -54,6 +54,7 @@ export default function ChatDetail({
   onReact,
   onBack,
   contactName,
+  contactUsername,
   onLoadMore, // Pagination
   hasMore,
   loading,
@@ -407,9 +408,18 @@ export default function ChatDetail({
 
             <Avatar contactId={activeConversationId} name={contactName} />
             <div className="flex flex-col">
-              <h1 className="text-white font-medium">{contactName || activeConversationId}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-white font-medium">
+                  {contactName || activeConversationId}
+                </h1>
+                {contactUsername && (
+                  <span className="text-emerald-400 text-sm font-semibold">
+                    @{contactUsername}
+                  </span>
+                )}
+              </div>
               <p className="text-[#8796a1] text-xs">
-                {contactName ? activeConversationId : "online"}
+                {activeConversationId}
               </p>
             </div>
           </div>

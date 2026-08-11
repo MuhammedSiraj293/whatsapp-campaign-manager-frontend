@@ -647,6 +647,10 @@ export default function Replies() {
                   conversations.find((c) => c._id === activeConversationId)
                     ?.name
                 }
+                contactUsername={
+                  conversations.find((c) => c._id === activeConversationId)
+                    ?.username
+                }
                 onSendMessage={handleSendReply}
                 onSendMedia={handleSendMedia}
                 onDeleteMessage={handleDeleteMessage}
