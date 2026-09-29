@@ -4,15 +4,15 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { authFetch } from "../services/api";
 
-const StatCard = ({ title, value, className = "" }) => {
+const StatCard = ({ title, value, className = "", valueClassName = "text-gray-800" }) => {
   return (
     <div
-      className={`bg-[#202d33] p-6 rounded-lg shadow-lg text-center ${className}`}
+      className={`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center ${className}`}
     >
-      <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+      <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
         {title}
       </h2>
-      <p className="text-3xl font-bold text-white mt-1">{value}</p>
+      <p className={`text-3xl font-bold ${valueClassName}`}>{value}</p>
     </div>
   );
 };
@@ -94,25 +94,26 @@ export default function CampaignAnalytics() {
   };
 
   if (isLoading) {
-    return <p className="text-center text-gray-400">Loading analytics...</p>;
+    return <p className="text-center text-gray-500 mt-10">Loading analytics...</p>;
   }
   if (!analytics) {
     return (
-      <p className="text-center text-red-500">
+      <p className="text-center text-red-500 mt-10">
         Could not load analytics for this campaign.
       </p>
     );
   }
 
   return (
-    <div className="min-h-screen w-full p-4 md:p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-black">
-      <div className="flex justify-between items-center mb-2">
-        <h1 className="text-3xl font-bold text-white">Campaign Analytics</h1>
-        <button onClick={handleCsvExport} className="send-button">
-          Export to CSV
-        </button>
-      </div>
-      <h2 className="text-xl text-gray-300 text-center mb-8">
+    <div className="min-h-screen w-full bg-gray-50">
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        <div className="flex justify-between items-center mb-2">
+          <h1 className="text-3xl font-bold text-gray-800">Campaign Analytics</h1>
+          <button onClick={handleCsvExport} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+            Export to CSV
+          </button>
+        </div>
+        <h2 className="text-xl text-gray-500 text-center mb-8">
         {analytics.name}
       </h2>
       {/* PREPARATION STAGE */}
@@ -142,7 +143,7 @@ export default function CampaignAnalytics() {
             className="border-l-4 border-green-500"
           />
           <StatCard
-            title="Blocked / Invalid Numbers"
+            title="Failed / Invalid Numbers"
             value={`${analytics.failed} (${analytics.failedRate})`}
             className="border-l-4 border-red-500"
           />
@@ -172,34 +173,38 @@ export default function CampaignAnalytics() {
       </div>
 
       {/* --- NEW GOOGLE SHEETS EXPORT SECTION --- */}
-      <div className="mt-12 bg-[#202d33] p-6 rounded-lg shadow-lg">
-        <h3 className="text-xl font-bold text-white mb-4">
+      <div className="mt-12 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
           Export Replies to Google Sheets
         </h3>
         <div className="flex flex-col md:flex-row gap-4">
           <input
             type="text"
             placeholder="Paste your Google Sheet ID here"
-            className="bg-[#2c3943] rounded-lg outline-none text-sm text-neutral-200 w-full px-3 py-2 placeholder:text-sm placeholder:text-[#8796a1]"
+            className="bg-gray-50 border border-gray-200 rounded-lg outline-none text-sm text-gray-800 w-full px-4 py-2 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
           />
           <button
             onClick={handleSheetExport}
-            className="send-button whitespace-nowrap"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors whitespace-nowrap"
           >
             Export Replies
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-gray-500 mt-3 font-medium">
           **Reminder**: You must share your Google Sheet with the service
-          account email
-          `sheets-manager@whatsapp-crm-472112.iam.gserviceaccount.com`.
+          account email{" "}
+          <span className="text-gray-700 bg-gray-100 px-1 py-0.5 rounded">
+            sheets-manager@whatsapp-crm-472112.iam.gserviceaccount.com
+          </span>
+          .
         </p>
       </div>
 
       {/* --- NEW DETAILED ANALYTICS TABLE --- */}
       <DetailedAnalyticsTable campaignId={campaignId} />
+      </div>
     </div>
   );
 }
@@ -263,21 +268,21 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
   };
 
   return (
-    <div className="mt-12">
-      <h2 className="text-2xl text-white mb-6">Detailed Analytics</h2>
+    <div className="mt-12 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <h2 className="text-xl font-bold text-gray-800 mb-6">Detailed Analytics</h2>
 
       {/* --- FILTER & CONTROLS SECTION --- */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
         <div className="flex gap-4 w-full md:w-auto">
           <input
             type="text"
             placeholder="Search by Name or Phone..."
-            className="bg-[#202d33] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full md:w-64"
+            className="bg-gray-50 text-gray-800 px-4 py-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-emerald-500 w-full md:w-64 placeholder-gray-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <select
-            className="bg-[#202d33] text-white px-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
+            className="bg-gray-50 text-gray-800 px-4 py-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-emerald-500"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -291,69 +296,69 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
         </div>
       </div>
 
-      <div className="bg-[#202d33] rounded-lg shadow-lg overflow-x-auto">
-        <table className="min-w-full text-left text-sm text-gray-400">
-          <thead className="bg-[#2a3942] text-xs uppercase text-gray-300">
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-left text-sm text-gray-600">
+          <thead className="bg-gray-50 text-xs uppercase text-gray-500 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-3">Phone Number</th>
-              <th className="px-6 py-3">Contact Name</th>
-              <th className="px-6 py-3">Message ID</th>
-              <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3">Failure Reason</th>
-              <th className="px-6 py-3">Last Updated</th>
+              <th className="px-6 py-4 font-semibold">Phone Number</th>
+              <th className="px-6 py-4 font-semibold">Contact Name</th>
+              <th className="px-6 py-4 font-semibold">Message ID</th>
+              <th className="px-6 py-4 font-semibold">Status</th>
+              <th className="px-6 py-4 font-semibold">Failure Reason</th>
+              <th className="px-6 py-4 font-semibold">Last Updated</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-gray-100">
             {loading && details.length === 0 ? (
               <tr>
                 <td
                   colSpan="6"
-                  className="px-6 py-4 text-center text-emerald-500"
+                  className="px-6 py-8 text-center text-gray-500"
                 >
                   Loading...
                 </td>
               </tr>
             ) : details.length === 0 ? (
               <tr>
-                <td colSpan="6" className="px-6 py-4 text-center">
+                <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                   No data found matching your filters.
                 </td>
               </tr>
             ) : (
               details.map((item) => (
-                <tr key={item._id} className="hover:bg-[#2a3942]">
-                  <td className="px-6 py-4 text-white font-medium">
+                <tr key={item._id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-gray-800 font-medium">
                     {item.phoneNumber}
                   </td>
                   <td className="px-6 py-4">{item.contactName}</td>
                   <td
-                    className="px-6 py-4 truncate max-w-xs"
+                    className="px-6 py-4 truncate max-w-xs text-gray-400"
                     title={item.wamid}
                   >
                     {item.wamid}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-semibold
+                      className={`px-3 py-1 rounded-full text-xs font-medium
                         ${
                           item.status === "read"
-                            ? "bg-green-500/20 text-green-500"
+                            ? "bg-emerald-50 text-emerald-700"
                             : item.status === "delivered"
-                              ? "bg-blue-500/20 text-blue-500"
+                              ? "bg-blue-50 text-blue-700"
                               : item.status === "failed"
-                                ? "bg-red-500/20 text-red-500"
+                                ? "bg-rose-50 text-rose-700"
                                 : item.status === "skipped"
-                                  ? "bg-gray-500/20 text-gray-400"
-                                  : "bg-gray-500/20 text-gray-500"
+                                  ? "bg-gray-100 text-gray-600"
+                                  : "bg-gray-100 text-gray-600"
                         }`}
                     >
                       {item.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-red-400">
+                  <td className="px-6 py-4 text-rose-500">
                     {item.failureReason}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-gray-500">
                     {new Date(item.updatedAt).toLocaleString()}
                   </td>
                 </tr>
@@ -364,17 +369,17 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
       </div>
 
       {/* --- FOOTER / PAGINATION --- */}
-      <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm">
-        <div className="mb-2 md:mb-0">
+      <div className="flex flex-col md:flex-row justify-between items-center mt-6 text-gray-500 text-sm border-t border-gray-100 pt-6">
+        <div className="mb-4 md:mb-0">
           Total Records:{" "}
-          <span className="text-white font-bold">{totalRecords}</span>
+          <span className="text-gray-800 font-bold">{totalRecords}</span>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span>Records per page:</span>
             <select
-              className="bg-[#202d33] text-white px-2 py-1 rounded outline-none focus:ring-1 focus:ring-emerald-500"
+              className="bg-gray-50 text-gray-800 border border-gray-200 px-2 py-1 rounded outline-none focus:ring-2 focus:ring-emerald-500"
               value={limit}
               onChange={handleLimitChange}
             >
@@ -390,25 +395,25 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
             <button
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={page === 1}
-              className={`px-3 py-1 rounded ${
+              className={`px-3 py-1 rounded font-medium transition-colors ${
                 page === 1
-                  ? "text-gray-600 cursor-not-allowed"
-                  : "text-emerald-500 hover:text-emerald-400"
+                  ? "text-gray-300 cursor-not-allowed"
+                  : "text-emerald-600 hover:bg-emerald-50"
               }`}
             >
               PREVIOUS
             </button>
             <span>
-              Page <span className="text-white">{page}</span> of{" "}
+              Page <span className="text-gray-800 font-medium">{page}</span> of{" "}
               {totalPages || 1}
             </span>
             <button
               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={page === totalPages || totalPages === 0}
-              className={`px-3 py-1 rounded ${
+              className={`px-3 py-1 rounded font-medium transition-colors ${
                 page === totalPages || totalPages === 0
-                  ? "text-gray-600 cursor-not-allowed"
-                  : "text-emerald-500 hover:text-emerald-400"
+                  ? "text-gray-300 cursor-not-allowed"
+                  : "text-emerald-600 hover:bg-emerald-50"
               }`}
             >
               NEXT

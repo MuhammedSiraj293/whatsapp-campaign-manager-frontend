@@ -14,14 +14,14 @@ import {
 } from "react-icons/fa";
 
 // Reusable StatCard
-const StatCard = ({ title, value, className = "" }) => (
+const StatCard = ({ title, value, className = "", valueClassName = "text-gray-800" }) => (
   <div
-    className={`bg-[#202d33] p-6 rounded-lg shadow-lg text-center ${className}`}
+    className={`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center ${className}`}
   >
-    <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
       {title}
     </h2>
-    <p className="text-3xl font-bold text-white mt-1">{value}</p>
+    <p className={`text-3xl font-bold ${valueClassName}`}>{value}</p>
   </div>
 );
 
@@ -213,19 +213,19 @@ export default function TemplateAnalytics() {
 
   if (isLoading && !analytics)
     return (
-      <p className="bg-gray-900 text-center mt-10 text-gray-400">
+      <p className="bg-gray-50 text-center pt-20 text-gray-500 min-h-screen">
         Loading template analytics...
       </p>
     );
   if (!analytics && !isLoading)
     return (
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full flex items-center justify-center">
-        <div className="text-center p-10">
+      <div className="bg-gray-50 min-h-screen w-full flex items-center justify-center">
+        <div className="text-center p-10 bg-white rounded-2xl shadow-sm border border-gray-100 max-w-lg">
           <div className="text-5xl mb-4">📊</div>
-          <h2 className="text-2xl font-bold text-white mb-2">No data yet</h2>
-          <p className="text-gray-400 max-w-md">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">No data yet</h2>
+          <p className="text-gray-500">
             No campaign messages have been sent using{" "}
-            <span className="text-white font-semibold">
+            <span className="text-gray-800 font-semibold">
               {formatTemplateName(templateName)}
             </span>{" "}
             yet. Analytics will appear here once a campaign using this template
@@ -249,25 +249,26 @@ export default function TemplateAnalytics() {
 
   return (
     <div
-      className={`bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen w-full p-4 md:p-8 ${isLoading ? "opacity-70" : "opacity-100"} transition-opacity`}
+      className={`bg-gray-50 min-h-screen w-full ${isLoading ? "opacity-70" : "opacity-100"} transition-opacity`}
     >
-      {/* ── HEADER ── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Template Analytics</h1>
-          <h2 className="text-xl text-gray-400 mt-2">
-            {formatTemplateName(analytics.templateName || templateName)}
-          </h2>
-        </div>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        {/* ── HEADER ── */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Template Analytics</h1>
+            <h2 className="text-xl text-gray-500 mt-2">
+              {formatTemplateName(analytics.templateName || templateName)}
+            </h2>
+          </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 flex-wrap">
           {/* Date Filter */}
-          <div className="flex items-center gap-2 bg-[#202d33] p-2 rounded-lg">
-            <FaCalendarAlt className="text-gray-400 text-sm" />
+          <div className="flex items-center gap-2 bg-white border border-gray-200 p-2 rounded-lg shadow-sm">
+            <FaCalendarAlt className="text-gray-400 text-sm ml-1" />
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
-              className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+              className="bg-gray-50 text-gray-700 text-sm rounded-md px-3 py-2 border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
             >
               <option value="all_time">All Time</option>
               <option value="last_24h">Last 24 Hours</option>
@@ -281,14 +282,14 @@ export default function TemplateAnalytics() {
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+                  className="bg-gray-50 text-gray-700 text-sm rounded-md px-3 py-2 w-32 border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
-                <span className="text-gray-500 text-xs">to</span>
+                <span className="text-gray-500 text-xs font-medium">to</span>
                 <input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="bg-[#2a3942] text-white text-sm rounded-md px-3 py-2 w-32 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+                  className="bg-gray-50 text-gray-700 text-sm rounded-md px-3 py-2 w-32 border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
             )}
@@ -299,16 +300,16 @@ export default function TemplateAnalytics() {
             <div className="relative" ref={segmentDropdownRef}>
               <button
                 onClick={() => setSegmentDropdownOpen((o) => !o)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all outline-none
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all outline-none border shadow-sm
                   ${
                     noneSelected
-                      ? "bg-[#202d33] text-gray-300 hover:bg-[#2a3942]"
-                      : "bg-emerald-600/20 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/30"
+                      ? "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
                   }`}
               >
                 <FaLayerGroup
                   className={
-                    noneSelected ? "text-gray-400" : "text-emerald-400"
+                    noneSelected ? "text-gray-400" : "text-emerald-600"
                   }
                 />
                 <span>{segmentBtnLabel}</span>
@@ -319,25 +320,25 @@ export default function TemplateAnalytics() {
 
               {segmentDropdownOpen && (
                 <div
-                  className="absolute right-0 top-full mt-2 z-50 w-68 rounded-xl overflow-hidden shadow-2xl"
+                  className="absolute right-0 top-full mt-2 z-50 w-68 rounded-xl overflow-hidden shadow-lg border border-gray-100 bg-white"
                   style={{ minWidth: "260px" }}
                 >
                   {/* Dropdown header */}
-                  <div className="bg-[#111b21] px-4 py-3 flex items-center justify-between border-b border-white/5">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                  <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
                       Segments
                     </span>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={allSelected ? clearSegments : selectAll}
-                        className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                        className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
                       >
                         {allSelected ? "Deselect All" : "Select All"}
                       </button>
                       {!noneSelected && (
                         <button
                           onClick={clearSegments}
-                          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                          className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
                         >
                           Clear
                         </button>
@@ -346,7 +347,7 @@ export default function TemplateAnalytics() {
                   </div>
 
                   {/* Segment rows */}
-                  <div className="bg-[#161f27] max-h-64 overflow-y-auto">
+                  <div className="max-h-64 overflow-y-auto">
                     {segmentOptions.map((seg) => {
                       const checked = selectedSegments.has(seg.name);
                       return (
@@ -356,17 +357,17 @@ export default function TemplateAnalytics() {
                           className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-all select-none
                             ${
                               checked
-                                ? "bg-emerald-500/10 border-l-2 border-emerald-500"
-                                : "border-l-2 border-transparent hover:bg-white/5"
+                                ? "bg-emerald-50 border-l-2 border-emerald-500"
+                                : "border-l-2 border-transparent hover:bg-gray-50"
                             }`}
                         >
                           {/* Custom check indicator — no white box */}
                           <div
-                            className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all
+                            className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all border
                             ${
                               checked
-                                ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
-                                : "bg-white/5 border border-white/10"
+                                ? "bg-emerald-500 border-emerald-500 shadow-sm"
+                                : "bg-white border-gray-300"
                             }`}
                           >
                             {checked && (
@@ -376,7 +377,7 @@ export default function TemplateAnalytics() {
 
                           <div className="flex flex-col min-w-0 flex-1">
                             <span
-                              className={`text-sm font-medium truncate ${checked ? "text-emerald-300" : "text-gray-200"}`}
+                              className={`text-sm font-medium truncate ${checked ? "text-emerald-800" : "text-gray-700"}`}
                             >
                               {seg.name}
                             </span>
@@ -477,7 +478,7 @@ export default function TemplateAnalytics() {
             className="border-l-4 border-green-500"
           />
           <StatCard
-            title="Blocked / Invalid Numbers"
+            title="Failed / Invalid Numbers"
             value={`${stats.failed ?? 0} (${stats.failedRate ?? "0%"})`}
             className="border-l-4 border-red-500"
           />
@@ -508,16 +509,16 @@ export default function TemplateAnalytics() {
 
       {/* ── SEGMENT PERFORMANCE TABLE ── */}
       {segmentOptions.length > 0 && (
-        <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h3 className="text-xl font-semibold text-white">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-8">
+          <div className="px-6 py-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h3 className="text-xl font-semibold text-gray-800">
               Segment Performance
             </h3>
             <div className="relative w-full md:w-64">
               <input
                 type="text"
                 placeholder="Search segments..."
-                className="w-full bg-[#111b21] text-white rounded-lg px-4 py-2 pl-10 focus:outline-none ring-1 ring-gray-600 focus:ring-emerald-500"
+                className="w-full bg-gray-50 text-gray-800 rounded-lg px-4 py-2 pl-10 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-gray-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -540,8 +541,8 @@ export default function TemplateAnalytics() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-gray-300">
-              <thead className="bg-[#111b21] uppercase text-xs font-semibold text-gray-500">
+            <table className="w-full text-left text-gray-600 text-sm">
+              <thead className="bg-gray-50 uppercase text-xs font-semibold text-gray-500 border-b border-gray-100">
                 <tr>
                   {[
                     { key: "name", label: "Segment Name" },
@@ -555,7 +556,7 @@ export default function TemplateAnalytics() {
                   ].map((col) => (
                     <th
                       key={col.key}
-                      className="px-6 py-3 cursor-pointer hover:bg-[#1f2c33] select-none"
+                      className="px-6 py-4 cursor-pointer hover:bg-gray-100 select-none transition-colors"
                       onClick={() => handleSort(col.key)}
                     >
                       <div className="flex items-center gap-1">
@@ -567,14 +568,14 @@ export default function TemplateAnalytics() {
                             <FaSortDown />
                           )
                         ) : (
-                          <FaSort className="text-gray-600" />
+                          <FaSort className="text-gray-300" />
                         )}
                       </div>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/50">
+              <tbody className="divide-y divide-gray-100">
                 {filteredSegments.map((seg, idx) => {
                   const isActive = selectedSegments.has(seg.name);
                   return (
@@ -584,31 +585,31 @@ export default function TemplateAnalytics() {
                       title={`Click to ${isActive ? "remove" : "add"} "${seg.name}"`}
                       className={`transition-all cursor-pointer ${
                         isActive
-                          ? "bg-emerald-500/10 border-l-2 border-emerald-500 hover:bg-emerald-500/15"
-                          : "border-l-2 border-transparent hover:bg-[#2a3942]"
+                          ? "bg-emerald-50 border-l-2 border-emerald-500 hover:bg-emerald-100"
+                          : "border-l-2 border-transparent hover:bg-gray-50"
                       }`}
                     >
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-3 font-medium text-white">
+                        <div className="flex items-center gap-3 font-medium text-gray-800">
                           {/* Custom indicator dot/check */}
                           <div
                             className={`w-2 h-2 rounded-full flex-shrink-0 transition-all ${
                               isActive
-                                ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]"
-                                : "bg-gray-600"
+                                ? "bg-emerald-500 shadow-sm"
+                                : "bg-gray-300"
                             }`}
                           />
                           {seg.name}
                           {isActive && (
-                            <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full font-normal">
-                              active
+                            <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold">
+                              ACTIVE
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">{seg.totalSent}</td>
+                      <td className="px-6 py-4 font-medium">{seg.totalSent}</td>
                       <td className="px-6 py-4">
-                        <span className="text-indigo-400 font-bold">
+                        <span className="text-indigo-600 font-bold">
                           ➡ {seg.sent}
                         </span>
                         <span className="text-xs text-gray-500 ml-1">
@@ -616,7 +617,7 @@ export default function TemplateAnalytics() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-cyan-400 font-bold">
+                        <span className="text-blue-600 font-bold">
                           ✔ {seg.delivered}
                         </span>
                         <span className="text-xs text-gray-500 ml-1">
@@ -624,7 +625,7 @@ export default function TemplateAnalytics() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-green-400 font-bold">
+                        <span className="text-emerald-600 font-bold">
                           👁 {seg.read}
                         </span>
                         <span className="text-xs text-gray-500 ml-1">
@@ -632,7 +633,7 @@ export default function TemplateAnalytics() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-red-400 font-bold">
+                        <span className="text-rose-600 font-bold">
                           ⚠ {seg.failed}
                         </span>
                         <span className="text-xs text-gray-500 ml-1">
@@ -640,15 +641,15 @@ export default function TemplateAnalytics() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-gray-400 font-bold">
+                        <span className="text-gray-500 font-bold">
                           ⚠ {seg.skipped}
                         </span>
-                        <span className="text-xs text-gray-600 ml-1">
+                        <span className="text-xs text-gray-500 ml-1">
                           ({seg.skippedRate})
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-yellow-400 font-bold">
+                        <span className="text-yellow-600 font-bold">
                           ↩ {seg.replies}
                         </span>
                         <span className="text-xs text-gray-500 ml-1">
@@ -673,6 +674,7 @@ export default function TemplateAnalytics() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
