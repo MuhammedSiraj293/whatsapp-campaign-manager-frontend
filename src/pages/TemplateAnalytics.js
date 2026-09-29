@@ -450,47 +450,60 @@ export default function TemplateAnalytics() {
       )}
 
       {/* ── STAT CARDS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        <StatCard
-          title="Total"
-          value={stats.total ?? 0}
-          className="border-l-4 border-violet-700"
-        />
-        <StatCard
-          title="Sent (Dispatched)"
-          value={`${stats.sent ?? 0} (${stats.sentRate ?? "0%"})`}
-          className="border-l-4 border-indigo-500"
-        />
-        <StatCard
-          title="Total Delivered"
-          value={`${stats.totalDelivered ?? 0} (${stats.totalDeliveryRate ?? "0%"})`}
-          className="border-l-4 border-blue-500"
-        />
-        <StatCard
-          title="Delivered"
-          value={`${stats.delivered ?? 0} (${stats.deliveryRate ?? "0%"})`}
-          className="border-l-4 border-cyan-500"
-        />
-        <StatCard
-          title="Read"
-          value={`${stats.read ?? 0} (${stats.readRate ?? "0%"})`}
-          className="border-l-4 border-green-500"
-        />
-        <StatCard
-          title="Replies"
-          value={`${stats.replies ?? 0} (${stats.replyRate ?? "0%"})`}
-          className="border-l-4 border-yellow-500"
-        />
-        <StatCard
-          title="Failed"
-          value={`${stats.failed ?? 0} (${stats.failedRate ?? "0%"})`}
-          className="border-l-4 border-red-500"
-        />
-        <StatCard
-          title="Excluded (Duplicates)"
-          value={`${stats.skipped ?? 0} (${stats.skippedRate ?? "0%"})`}
-          className="border-l-4 border-gray-500"
-        />
+      {/* PREPARATION STAGE */}
+      <div className="mb-8">
+        <h3 className="text-lg font-bold text-gray-400 mb-4 uppercase tracking-wider border-b border-gray-700 pb-2">1. Preparation Phase</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <StatCard
+            title="Total Uploaded Contacts"
+            value={stats.total ?? 0}
+            className="border-l-4 border-violet-700"
+          />
+          <StatCard
+            title="Cleaned / Removed Duplicates"
+            value={`${stats.skipped ?? 0} (${stats.skippedRate ?? "0%"})`}
+            className="border-l-4 border-gray-500"
+          />
+        </div>
+      </div>
+
+      {/* DELIVERY STAGE */}
+      <div className="mb-8">
+        <h3 className="text-lg font-bold text-gray-400 mb-4 uppercase tracking-wider border-b border-gray-700 pb-2">2. Delivery Phase</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            title="Successfully Received"
+            value={`${stats.totalDelivered ?? 0} (${stats.totalDeliveryRate ?? "0%"})`}
+            className="border-l-4 border-green-500"
+          />
+          <StatCard
+            title="Blocked / Invalid Numbers"
+            value={`${stats.failed ?? 0} (${stats.failedRate ?? "0%"})`}
+            className="border-l-4 border-red-500"
+          />
+          <StatCard
+            title="Sending Right Now..."
+            value={`${stats.sent ?? 0} (${stats.sentRate ?? "0%"})`}
+            className="border-l-4 border-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* ENGAGEMENT STAGE */}
+      <div className="mb-8">
+        <h3 className="text-lg font-bold text-gray-400 mb-4 uppercase tracking-wider border-b border-gray-700 pb-2">3. Engagement Phase</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <StatCard
+            title="Opened / Read"
+            value={`${stats.read ?? 0} (${stats.readRate ?? "0%"})`}
+            className="border-l-4 border-green-400"
+          />
+          <StatCard
+            title="Responses"
+            value={`${stats.replies ?? 0} (${stats.replyRate ?? "0%"})`}
+            className="border-l-4 border-yellow-500"
+          />
+        </div>
       </div>
 
       {/* ── SEGMENT PERFORMANCE TABLE ── */}
