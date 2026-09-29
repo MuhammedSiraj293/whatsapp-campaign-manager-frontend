@@ -153,7 +153,7 @@ export default function CampaignAnalytics() {
         />
         {/* --- NEW SKIPPED CARD --- */}
         <StatCard
-          title="Skipped"
+          title="Smart Excluded (Duplicates)"
           value={`${analytics.skipped || 0} (${analytics.skippedRate || "0%"})`}
           className="border-l-4 border-gray-500"
         />
