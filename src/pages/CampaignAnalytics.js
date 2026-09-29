@@ -118,56 +118,62 @@ export default function CampaignAnalytics() {
       </h2>
       {/* PREPARATION STAGE */}
       <div className="mb-8">
-        <h3 className="text-lg font-bold text-gray-400 mb-4 uppercase tracking-wider border-b border-gray-700 pb-2">1. Preparation Phase</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+          1. Preparation Phase
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <StatCard
             title="Total Uploaded Contacts"
             value={analytics.totalSent}
-            className="border-l-4 border-violet-700"
+            className="col-span-1 md:col-span-6 border-l-4 border-violet-700"
           />
           <StatCard
             title="Cleaned / Removed Duplicates"
             value={`${analytics.skipped || 0} (${analytics.skippedRate || "0%"})`}
-            className="border-l-4 border-gray-500"
+            className="col-span-1 md:col-span-6 border-l-4 border-gray-500"
           />
         </div>
       </div>
 
       {/* DELIVERY STAGE */}
       <div className="mb-8">
-        <h3 className="text-lg font-bold text-gray-400 mb-4 uppercase tracking-wider border-b border-gray-700 pb-2">2. Delivery Phase</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+          2. Delivery Phase
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <StatCard
             title="Successfully Received"
             value={`${analytics.totalDelivered} (${analytics.totalDeliveryRate})`}
-            className="border-l-4 border-green-500"
+            className="col-span-1 md:col-span-4 border-l-4 border-green-500"
           />
           <StatCard
             title="Failed / Invalid Numbers"
             value={`${analytics.failed} (${analytics.failedRate})`}
-            className="border-l-4 border-red-500"
+            className="col-span-1 md:col-span-4 border-l-4 border-red-500"
           />
           <StatCard
             title="Sending Right Now..."
             value={`${analytics.sent || 0} (${analytics.sentRate || "0%"})`}
-            className="border-l-4 border-indigo-500"
+            className="col-span-1 md:col-span-4 border-l-4 border-indigo-500"
           />
         </div>
       </div>
 
       {/* ENGAGEMENT STAGE */}
       <div className="mb-8">
-        <h3 className="text-lg font-bold text-gray-400 mb-4 uppercase tracking-wider border-b border-gray-700 pb-2">3. Engagement Phase</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+          3. Engagement Phase
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <StatCard
             title="Opened / Read"
             value={`${analytics.read} (${analytics.readRate})`}
-            className="border-l-4 border-green-400"
+            className="col-span-1 md:col-span-6 border-l-4 border-green-400"
           />
           <StatCard
             title="Responses"
             value={`${analytics.replies} (${analytics.replyRate})`}
-            className="border-l-4 border-yellow-500"
+            className="col-span-1 md:col-span-6 border-l-4 border-yellow-500"
           />
         </div>
       </div>
