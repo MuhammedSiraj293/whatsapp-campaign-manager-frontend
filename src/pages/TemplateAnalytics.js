@@ -487,7 +487,7 @@ export default function TemplateAnalytics() {
           className="border-l-4 border-red-500"
         />
         <StatCard
-          title="Smart Excluded"
+          title="Excluded (Duplicates)"
           value={`${stats.skipped ?? 0} (${stats.skippedRate ?? "0%"})`}
           className="border-l-4 border-gray-500"
         />
