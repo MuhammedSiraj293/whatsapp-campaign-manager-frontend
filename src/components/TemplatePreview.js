@@ -144,9 +144,9 @@ const TemplatePreview = ({
   };
 
   return (
-    <div className="bg-[#E5DDD5] p-4 rounded-lg shadow-inner h-[600px] w-full max-w-sm mx-auto overflow-y-auto relative border-4 border-gray-800 rounded-3xl">
-      <div className="absolute top-0 left-0 right-0 h-6 bg-gray-800 rounded-t-2xl z-10 flex justify-center">
-        <div className="w-16 h-3 bg-gray-900 rounded-b-lg"></div>
+    <div className="bg-[#efeae2] p-4 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1)] h-[600px] w-full max-w-sm mx-auto overflow-y-auto relative border-8 border-white rounded-[2.5rem] scrollbar-hide">
+      <div className="absolute top-0 left-0 right-0 h-6 bg-white z-10 flex justify-center">
+        <div className="w-20 h-4 bg-gray-100 rounded-b-2xl"></div>
       </div>
       <div className="mt-8 flex flex-col gap-2">
         {pIsCarousel ? (

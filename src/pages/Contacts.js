@@ -139,7 +139,7 @@ export default function Contacts() {
       {/* --- ANALYTICS DASHBOARD --- */}
       {stats && (
         <div className="max-w-7xl mx-auto mb-10">
-          <h2 className="text-2xl font-bold text-white mb-6">Overview</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatsCard
               title="Total Contacts"
@@ -170,8 +170,8 @@ export default function Contacts() {
 
           {/* Unsubscribe Reasons Breakdown */}
           {stats.reasons && stats.reasons.length > 0 && (
-            <div className="bg-[#202d33] p-6 rounded-xl border border-gray-700 shadow-lg mb-8">
-              <h3 className="text-lg font-bold text-white mb-4">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg mb-8">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
                 Unsubscribe Reasons
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -186,15 +186,15 @@ export default function Contacts() {
                         reasonFilter: r.reason,
                       })
                     }
-                    className="bg-[#2c3943] p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-[#374151] transition-colors group border border-gray-700/50 hover:border-emerald-500/30"
+                    className="bg-gray-50 p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors group border border-gray-200 hover:border-gray-300"
                   >
                     <span
-                      className="text-gray-300 text-sm truncate mr-2 group-hover:text-white"
+                      className="text-gray-700 text-sm truncate mr-2 group-hover:text-gray-900"
                       title={r.reason}
                     >
                       {r.reason}
                     </span>
-                    <span className="bg-red-900/50 text-red-300 text-xs px-2 py-1 rounded-full font-bold">
+                    <span className="bg-red-50 text-red-700 text-xs px-2 py-1 rounded-full font-bold">
                       {r.count}
                     </span>
                   </div>
@@ -209,8 +209,8 @@ export default function Contacts() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-baseline gap-3">
-            <h2 className="text-2xl font-bold text-white">Contact Lists</h2>
-            <span className="text-emerald-400 font-mono text-sm bg-emerald-900/30 px-2 py-1 rounded-md border border-emerald-900/50">
+            <h2 className="text-2xl font-bold text-gray-900">Contact Lists</h2>
+            <span className="text-emerald-600 font-mono text-sm bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
               {lists.length} Lists
             </span>
           </div>
@@ -223,7 +223,7 @@ export default function Contacts() {
                 placeholder="Search Lists..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#202d33] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5"
+                className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5"
               />
             </div>
 
@@ -237,7 +237,7 @@ export default function Contacts() {
                 placeholder="New list name"
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
-                className="bg-[#202d33] border border-gray-700 text-neutral-200 text-sm rounded-lg block w-full md:w-48 p-2.5"
+                className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg block w-full md:w-48 p-2.5"
               />
               <button
                 type="submit"
@@ -250,16 +250,16 @@ export default function Contacts() {
         </div>
 
         {/* --- TABLE LAYOUT --- */}
-        <div className="bg-[#202d33] rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
           {isLoading ? (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-              <p className="text-gray-400">Loading your lists...</p>
+              <p className="text-gray-500">Loading your lists...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-gray-300">
-                <thead className="bg-[#111b21] uppercase text-xs font-semibold text-gray-400 border-b border-gray-700">
+              <table className="w-full text-left text-gray-600">
+                <thead className="bg-gray-50 uppercase text-xs font-semibold text-gray-600 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-5 tracking-wider">List Name</th>
                     <th className="px-6 py-5 tracking-wider">Contacts</th>
@@ -268,7 +268,7 @@ export default function Contacts() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700/50">
+                <tbody className="divide-y divide-gray-100">
                   {lists.length === 0 ? (
                     <tr>
                       <td
@@ -288,22 +288,22 @@ export default function Contacts() {
                     lists.map((list, index) => (
                       <tr
                         key={list._id}
-                        className="hover:bg-[#2a3942]/50 transition-all duration-200 group"
+                        className="hover:bg-gray-50 transition-all duration-200 group"
                       >
-                        <td className="px-6 py-5 font-medium text-white">
+                        <td className="px-6 py-5 font-medium text-gray-900">
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-900/80 to-emerald-800/20 flex items-center justify-center text-emerald-400 border border-emerald-900/50 shadow-sm group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200 shadow-sm group-hover:scale-105 transition-transform">
                               <span className="font-bold text-sm">
                                 {index + 1}
                               </span>
                             </div>
-                            <span className="text-lg group-hover:text-emerald-400 transition-colors">
+                            <span className="text-lg group-hover:text-emerald-600 transition-colors">
                               {list.name}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-5">
-                          <span className="bg-[#111b21] border border-gray-700 text-gray-300 py-1.5 px-4 rounded-full text-sm font-medium shadow-sm">
+                          <span className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-4 rounded-full text-sm font-medium shadow-sm">
                             {list.contactCount || 0}
                           </span>
                         </td>
@@ -349,19 +349,19 @@ export default function Contacts() {
 // Helper Components for Cleaner JSX
 const StatsCard = ({ title, value, icon, color, onClick }) => {
   const colors = {
-    blue: "text-blue-400 bg-blue-900/30",
-    emerald: "text-emerald-400 bg-emerald-900/30",
-    red: "text-red-400 bg-red-900/30",
-    amber: "text-amber-400 bg-amber-900/30",
+    blue: "text-blue-600 bg-blue-50",
+    emerald: "text-emerald-600 bg-emerald-50",
+    red: "text-red-600 bg-red-50",
+    amber: "text-yellow-600 bg-yellow-50",
   };
 
   return (
     <div
       onClick={onClick}
-      className={`bg-[#202d33] p-6 rounded-xl border border-gray-700 flex items-center justify-between shadow-lg ${onClick ? "cursor-pointer hover:bg-[#2a3942] transition-colors" : ""}`}
+      className={`bg-white p-6 rounded-xl border border-gray-200 flex items-center justify-between shadow-lg ${onClick ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
     >
       <div>
-        <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold">
+        <p className="text-gray-500 text-xs uppercase tracking-wider font-semibold">
           {title}
         </p>
         <h3
@@ -381,9 +381,9 @@ const StatsCard = ({ title, value, icon, color, onClick }) => {
 
 const ActionButton = ({ onClick, icon, label, color }) => {
   const colors = {
-    sky: "text-sky-400 hover:bg-sky-900/30",
-    gray: "text-gray-400 hover:bg-gray-700",
-    red: "text-red-400 hover:bg-red-900/30",
+    sky: "text-indigo-600 hover:bg-indigo-50",
+    gray: "text-gray-500 hover:bg-gray-100",
+    red: "text-red-600 hover:bg-red-50",
   };
 
   return (

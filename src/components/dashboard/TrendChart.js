@@ -12,8 +12,8 @@ import {
 
 const TrendChart = ({ data }) => {
   return (
-    <div className="bg-[#202d33] p-6 rounded-lg shadow-md">
-      <h3 className="text-xl font-semibold text-white mb-4">
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h3 className="text-xl font-semibold text-gray-900 mb-4">
         Engagement Trend
       </h3>
       <ResponsiveContainer width="100%" height={300}>
@@ -23,24 +23,24 @@ const TrendChart = ({ data }) => {
               <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
               <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="colorHot" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.6} />
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+            <linearGradient id="colorEngaged" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.6} />
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="colorWarm" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#f97316" stopOpacity={0.6} />
-              <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+            <linearGradient id="colorUnresponsive" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6} />
+              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
-          <YAxis stroke="#9ca3af" fontSize={12} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="date" stroke="#4b5563" fontSize={12} />
+          <YAxis stroke="#4b5563" fontSize={12} />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#2a3942",
-              border: "1px solid #374151",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e5e7eb",
               borderRadius: "8px",
-              color: "#fff",
+              color: "#111827",
             }}
           />
           <Legend wrapperStyle={{ color: "#9ca3af" }} iconType="circle" />
@@ -54,19 +54,19 @@ const TrendChart = ({ data }) => {
           />
           <Area
             type="monotone"
-            dataKey="hotCount"
-            stroke="#ef4444"
+            dataKey="engagedCount"
+            stroke="#10b981"
             fillOpacity={1}
-            fill="url(#colorHot)"
-            name="Hot Leads"
+            fill="url(#colorEngaged)"
+            name="Engaged"
           />
           <Area
             type="monotone"
-            dataKey="warmCount"
-            stroke="#f97316"
+            dataKey="unresponsiveCount"
+            stroke="#f59e0b"
             fillOpacity={1}
-            fill="url(#colorWarm)"
-            name="Warm Leads"
+            fill="url(#colorUnresponsive)"
+            name="Unresponsive"
           />
         </AreaChart>
       </ResponsiveContainer>

@@ -116,7 +116,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-        <div className="text-white">Loading details...</div>
+        <div className="text-gray-900">Loading details...</div>
       </div>
     );
   }
@@ -131,17 +131,17 @@ const ContactDetailModal = ({ contactId, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="bg-[#202d33] w-full max-w-4xl max-h-[90vh] rounded-lg shadow-xl overflow-hidden flex flex-col relative"
+        className="bg-white border border-gray-200 w-full max-w-4xl max-h-[90vh] rounded-lg shadow-xl overflow-hidden flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* --- UNSUBSCRIBE CONFIRMATION MODAL --- */}
         {showUnsubscribe && (
           <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-90">
-            <div className="bg-[#2a3942] p-6 rounded-lg w-full max-w-sm border border-gray-600 shadow-2xl">
-              <h3 className="text-xl font-bold text-white mb-4">
+            <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg w-full max-w-sm border border-gray-200 shadow-2xl">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
                 Confirm Unsubscribe
               </h3>
-              <p className="text-gray-300 mb-4 text-sm">
+              <p className="text-gray-700 mb-4 text-sm">
                 Select a reason for unsubscribing <b>{contact.name}</b>.
               </p>
 
@@ -154,7 +154,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                 ].map((r) => (
                   <label
                     key={r}
-                    className="flex items-center gap-2 text-gray-200 cursor-pointer"
+                    className="flex items-center gap-2 text-gray-900 cursor-pointer"
                   >
                     <input
                       type="radio"
@@ -162,7 +162,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                       value={r}
                       checked={unsubscribeReason === r}
                       onChange={(e) => setUnsubscribeReason(e.target.value)}
-                      className="text-emerald-500 focus:ring-emerald-500 bg-[#111b21] border-gray-600"
+                      className="text-emerald-600 focus:ring-emerald-500 bg-white border border-gray-200 shadow-sm border-gray-200"
                     />
                     {r}
                   </label>
@@ -171,7 +171,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
 
               {unsubscribeReason === "Other" && (
                 <textarea
-                  className="w-full bg-[#111b21] text-white text-sm p-2 rounded border border-gray-600 mb-4 outline-none focus:border-emerald-500"
+                  className="w-full bg-white border border-gray-200 shadow-sm text-gray-900 text-sm p-2 rounded border border-gray-200 mb-4 outline-none focus:border-emerald-500"
                   placeholder="Enter reason..."
                   rows="2"
                   value={customReason}
@@ -182,13 +182,13 @@ const ContactDetailModal = ({ contactId, onClose }) => {
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowUnsubscribe(false)}
-                  className="text-gray-400 hover:text-white px-3 py-1.5"
+                  className="text-gray-500 hover:text-gray-900 px-3 py-1.5"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmUnsubscribe}
-                  className="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded"
+                  className="bg-red-600 hover:bg-red-500 text-gray-900 px-4 py-1.5 rounded"
                 >
                   Unsubscribe
                 </button>
@@ -198,25 +198,25 @@ const ContactDetailModal = ({ contactId, onClose }) => {
         )}
 
         {/* Header */}
-        <div className="bg-[#2a3942] p-6 border-b border-gray-700 flex justify-between items-center">
+        <div className="bg-gray-50 border border-gray-200 p-6 border-b border-gray-200 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               {contact.name || "Unknown"}
-              <span className="text-lg text-gray-400 font-normal">
+              <span className="text-lg text-gray-500 font-normal">
                 ({contact.phoneNumber})
               </span>
               {!contact.isSubscribed && (
-                <span className="bg-red-900 text-red-200 text-xs px-2 py-1 rounded ml-2">
+                <span className="bg-red-50 text-red-700 text-xs px-2 py-1 rounded ml-2">
                   UNSUBSCRIBED
                 </span>
               )}
             </h2>
-            <div className="text-sm text-emerald-500 flex items-center gap-3">
+            <div className="text-sm text-emerald-600 flex items-center gap-3">
               <span>{contact.contactList?.name}</span>
               {contact.isSubscribed && (
                 <button
                   onClick={handleUnsubscribeClick}
-                  className="text-red-400 hover:text-red-300 underline text-xs"
+                  className="text-red-600 hover:text-red-300 underline text-xs"
                 >
                   Unsubscribe Manually
                 </button>
@@ -224,14 +224,14 @@ const ContactDetailModal = ({ contactId, onClose }) => {
             </div>
             {/* Show Reason if Unsubscribed */}
             {!contact.isSubscribed && contact.unsubscribeReason && (
-              <div className="text-xs text-gray-400 mt-1">
+              <div className="text-xs text-gray-500 mt-1">
                 Reason: {contact.unsubscribeReason}
               </div>
             )}
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl"
+            className="text-gray-500 hover:text-gray-900 text-2xl"
           >
             &times;
           </button>
@@ -240,32 +240,32 @@ const ContactDetailModal = ({ contactId, onClose }) => {
         <div className="flex-1 overflow-y-auto p-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-[#2a3942] p-4 rounded text-center">
-              <div className="text-gray-400 text-sm uppercase mb-1">Sent</div>
-              <div className="text-2xl font-bold text-white flex justify-center items-center gap-2">
-                <FaPaperPlane className="text-blue-400" /> {stats.sent}
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded text-center">
+              <div className="text-gray-500 text-sm uppercase mb-1">Sent</div>
+              <div className="text-2xl font-bold text-gray-900 flex justify-center items-center gap-2">
+                <FaPaperPlane className="text-blue-600" /> {stats.sent}
               </div>
             </div>
-            <div className="bg-[#2a3942] p-4 rounded text-center">
-              <div className="text-gray-400 text-sm uppercase mb-1">
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded text-center">
+              <div className="text-gray-500 text-sm uppercase mb-1">
                 Delivered
               </div>
-              <div className="text-2xl font-bold text-white flex justify-center items-center gap-2">
-                <FaCheckDouble className="text-gray-400" /> {stats.delivered}
+              <div className="text-2xl font-bold text-gray-900 flex justify-center items-center gap-2">
+                <FaCheckDouble className="text-gray-500" /> {stats.delivered}
               </div>
             </div>
-            <div className="bg-[#2a3942] p-4 rounded text-center">
-              <div className="text-gray-400 text-sm uppercase mb-1">Read</div>
-              <div className="text-2xl font-bold text-white flex justify-center items-center gap-2">
-                <FaCheckDouble className="text-blue-400" /> {stats.read}
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded text-center">
+              <div className="text-gray-500 text-sm uppercase mb-1">Read</div>
+              <div className="text-2xl font-bold text-gray-900 flex justify-center items-center gap-2">
+                <FaCheckDouble className="text-blue-600" /> {stats.read}
               </div>
             </div>
-            <div className="bg-[#2a3942] p-4 rounded text-center">
-              <div className="text-gray-400 text-sm uppercase mb-1">
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded text-center">
+              <div className="text-gray-500 text-sm uppercase mb-1">
                 Replied
               </div>
-              <div className="text-2xl font-bold text-white flex justify-center items-center gap-2">
-                <FaReply className="text-emerald-400" /> {stats.replied}
+              <div className="text-2xl font-bold text-gray-900 flex justify-center items-center gap-2">
+                <FaReply className="text-emerald-600" /> {stats.replied}
               </div>
             </div>
           </div>
@@ -273,9 +273,9 @@ const ContactDetailModal = ({ contactId, onClose }) => {
           {/* Tags & Notes Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Tags */}
-            <div className="bg-[#2a3942] p-4 rounded">
-              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                <FaTag className="text-emerald-400" /> Tags
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded">
+              <h3 className="text-gray-900 font-semibold mb-3 flex items-center gap-2">
+                <FaTag className="text-emerald-600" /> Tags
               </h3>
               <div className="flex flex-wrap gap-2 mb-3">
                 {tags.map((tag, idx) => (
@@ -286,7 +286,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                     {tag}
                     <button
                       onClick={() => handleRemoveTag(tag)}
-                      className="hover:text-white"
+                      className="hover:text-gray-900"
                     >
                       <FaTimes />
                     </button>
@@ -296,7 +296,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  className="flex-1 bg-[#111b21] text-white text-sm px-3 py-2 rounded border border-gray-600 focus:border-emerald-500 outline-none"
+                  className="flex-1 bg-white border border-gray-200 shadow-sm text-gray-900 text-sm px-3 py-2 rounded border border-gray-200 focus:border-emerald-500 outline-none"
                   placeholder="Add a tag..."
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
@@ -304,7 +304,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                 />
                 <button
                   onClick={handleAddTag}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded text-sm disabled:opacity-50"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-gray-900 px-3 py-2 rounded text-sm disabled:opacity-50"
                   disabled={!newTag.trim()}
                 >
                   <FaPlus />
@@ -313,12 +313,12 @@ const ContactDetailModal = ({ contactId, onClose }) => {
             </div>
 
             {/* Notes */}
-            <div className="bg-[#2a3942] p-4 rounded flex flex-col">
-              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                <FaStickyNote className="text-yellow-400" /> Notes
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded flex flex-col">
+              <h3 className="text-gray-900 font-semibold mb-3 flex items-center gap-2">
+                <FaStickyNote className="text-yellow-600" /> Notes
               </h3>
               <textarea
-                className="flex-1 bg-[#111b21] text-white text-sm px-3 py-2 rounded border border-gray-600 focus:border-emerald-500 outline-none resize-none h-24"
+                className="flex-1 bg-white border border-gray-200 shadow-sm text-gray-900 text-sm px-3 py-2 rounded border border-gray-200 focus:border-emerald-500 outline-none resize-none h-24"
                 placeholder="Add notes about this contact..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -327,7 +327,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm flex items-center gap-2 ml-auto disabled:opacity-50"
+                  className="bg-blue-600 hover:bg-blue-500 text-gray-900 px-4 py-2 rounded text-sm flex items-center gap-2 ml-auto disabled:opacity-50"
                 >
                   <FaSave /> {saving ? "Saving..." : "Save Details"}
                 </button>
@@ -336,7 +336,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
           </div>
 
           {/* Timeline */}
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <FaInfoCircle /> Activity Timeline
           </h3>
           <div className="space-y-4">
@@ -345,7 +345,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
             ) : (
               timeline.map((event, idx) => (
                 <div key={idx} className="flex gap-4">
-                  <div className="w-24 flex-shrink-0 text-sm text-gray-400 text-right pt-1">
+                  <div className="w-24 flex-shrink-0 text-sm text-gray-500 text-right pt-1">
                     {new Date(event.date).toLocaleDateString()}
                     <br />
                     {new Date(event.date).toLocaleTimeString([], {
@@ -370,22 +370,22 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                   <div
                     className={`flex-1 p-3 rounded-lg border ${
                       event.type === "incoming_message"
-                        ? "bg-[#202d33] border-emerald-900/50"
+                        ? "bg-white border border-gray-200 border-emerald-900/50"
                         : event.type === "campaign_event"
-                          ? "bg-[#202d33] border-blue-900/50"
-                          : "bg-[#202d33] border-gray-700"
+                          ? "bg-white border border-gray-200 border-blue-900/50"
+                          : "bg-white border border-gray-200 border-gray-200"
                     }`}
                   >
                     {event.type === "campaign_event" && (
                       <div>
-                        <div className="text-blue-400 font-semibold mb-1">
+                        <div className="text-blue-600 font-semibold mb-1">
                           Campaign: {event.campaignName}
                         </div>
-                        <div className="text-sm text-gray-300">
+                        <div className="text-sm text-gray-700">
                           Status:{" "}
                           <span className="uppercase">{event.status}</span>
                           {event.details && (
-                            <span className="text-red-400 ml-2">
+                            <span className="text-red-600 ml-2">
                               ({event.details})
                             </span>
                           )}
@@ -397,7 +397,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                       event.type === "outgoing_message") && (
                       <div>
                         <div
-                          className={`${event.type === "incoming_message" ? "text-emerald-400" : "text-gray-300"} font-semibold mb-1 flex items-center gap-2`}
+                          className={`${event.type === "incoming_message" ? "text-emerald-600" : "text-gray-700"} font-semibold mb-1 flex items-center gap-2`}
                         >
                           {event.type === "incoming_message" ? (
                             <FaWhatsapp />
@@ -408,7 +408,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                             ? "User Replied"
                             : "Bot Replied"}
                         </div>
-                        <div className="text-sm text-gray-200">
+                        <div className="text-sm text-gray-900">
                           {event.content}
                         </div>
                         {event.media && (
@@ -416,7 +416,7 @@ const ContactDetailModal = ({ contactId, onClose }) => {
                             href={event.media}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-400 underline mt-2 inline-block"
+                            className="text-xs text-blue-600 underline mt-2 inline-block"
                           >
                             View Media
                           </a>

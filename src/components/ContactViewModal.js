@@ -145,54 +145,54 @@ export default function ContactViewModal({
       onClick={onClose}
     >
       <div
-        className="bg-[#202d33] rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col relative"
+        className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* --- STATS OVERLAY MODAL --- */}
         {viewingStats && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 rounded-lg">
-            <div className="bg-[#111b21] p-6 rounded-lg shadow-2xl w-full max-w-md border border-gray-700">
+            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">
+                <h3 className="text-xl font-bold text-gray-900">
                   Contact Preview
                 </h3>
                 <button
                   onClick={() => setViewingStats(null)}
-                  className="text-gray-400 hover:text-white font-bold text-xl"
+                  className="text-gray-500 hover:text-gray-900 font-bold text-xl"
                 >
                   &times;
                 </button>
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between border-b border-gray-800 pb-2">
-                  <span className="text-gray-400">Name</span>
-                  <span className="text-white font-medium">
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500">Name</span>
+                  <span className="text-gray-900 font-medium">
                     {viewingStats.contact.name || "-"}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-gray-800 pb-2">
-                  <span className="text-gray-400">Phone</span>
-                  <span className="text-white font-medium">
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500">Phone</span>
+                  <span className="text-gray-900 font-medium">
                     {viewingStats.contact.phoneNumber}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-gray-800 pb-2">
-                  <span className="text-gray-400">Status</span>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500">Status</span>
                   {viewingStats.contact.isSubscribed !== false ? (
-                    <span className="bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded text-xs">
+                    <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs">
                       Subscribed
                     </span>
                   ) : (
-                    <span className="bg-red-900 text-red-300 px-2 py-0.5 rounded text-xs">
+                    <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs">
                       Unsubscribed
                     </span>
                   )}
                 </div>
                 {viewingStats.contact.isSubscribed === false && (
-                  <div className="flex justify-between border-b border-gray-800 pb-2">
-                    <span className="text-gray-400">Unsubscribe Reason</span>
-                    <span className="text-red-400 italic text-right text-sm">
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-gray-500">Unsubscribe Reason</span>
+                    <span className="text-red-600 italic text-right text-sm">
                       {viewingStats.contact.unsubscribeReason ||
                         "Not specified"}
                     </span>
@@ -201,27 +201,27 @@ export default function ContactViewModal({
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-2 mt-4">
-                  <div className="bg-[#2a3942] p-3 rounded text-center">
-                    <div className="text-xl font-bold text-emerald-400">
+                  <div className="bg-gray-50 p-3 rounded-lg text-center border border-gray-200">
+                    <div className="text-xl font-bold text-emerald-600">
                       {viewingStats.stats.campaignsSent}
                     </div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                       Sent
                     </div>
                   </div>
-                  <div className="bg-[#2a3942] p-3 rounded text-center">
-                    <div className="text-xl font-bold text-sky-400">
+                  <div className="bg-gray-50 p-3 rounded-lg text-center border border-gray-200">
+                    <div className="text-xl font-bold text-sky-600">
                       {viewingStats.stats.repliesCount}
                     </div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                       Replied
                     </div>
                   </div>
-                  <div className="bg-[#2a3942] p-3 rounded text-center">
-                    <div className="text-xl font-bold text-red-400">
+                  <div className="bg-gray-50 p-3 rounded-lg text-center border border-gray-200">
+                    <div className="text-xl font-bold text-red-600">
                       {viewingStats.stats.campaignsFailed}
                     </div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                       Failed
                     </div>
                   </div>
@@ -231,15 +231,15 @@ export default function ContactViewModal({
           </div>
         )}
 
-        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-gray-900">
               Contacts in "{list.name}" ({contacts.length})
             </h2>
             {isAuthorizedToMutate && selectedContactIds.size > 0 && (
               <button
                 onClick={handleBulkDelete}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-gray-900 px-3 py-1 rounded text-sm transition-colors"
                 title="Delete Selected"
               >
                 Delete Selected ({selectedContactIds.size})
@@ -248,23 +248,23 @@ export default function ContactViewModal({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl"
+            className="text-gray-500 hover:text-gray-900 text-2xl"
           >
             &times;
           </button>
         </div>
 
         {/* --- 4. ADD THE SEARCH BAR --- */}
-        <div className="p-4 border-b border-gray-700 flex gap-4">
+        <div className="p-4 border-b border-gray-200 flex gap-4">
           <input
             type="text"
             placeholder="Search by name or phone number..."
-            className="bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5"
+            className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 block w-full p-2.5"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
           <select
-            className="bg-[#2c3943] border border-gray-700 text-neutral-200 text-sm rounded-lg focus:ring-emerald-500 block p-2.5"
+            className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 block p-2.5"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -276,13 +276,13 @@ export default function ContactViewModal({
 
         <div className="p-6 overflow-y-auto">
           <table className="min-w-full">
-            <thead className="bg-[#2a3942]">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 {isAuthorizedToMutate && (
                   <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
+                      className="rounded bg-white border-gray-300 text-emerald-500 focus:ring-emerald-500"
                       checked={
                         filteredContacts.length > 0 &&
                         selectedContactIds.size === filteredContacts.length
@@ -291,18 +291,18 @@ export default function ContactViewModal({
                     />
                   </th>
                 )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                   Phone Number
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className="divide-y divide-gray-100">
               {filteredContacts.map((contact) => (
                 <tr key={contact._id}>
                   {editingContactId === contact._id ? (
@@ -318,7 +318,7 @@ export default function ContactViewModal({
                               phoneNumber: e.target.value,
                             })
                           }
-                          className="bg-[#2c3943] text-white text-sm rounded-md p-1 w-full"
+                          className="bg-[#2c3943] text-gray-900 text-sm rounded-md p-1 w-full"
                         />
                       </td>
                       <td className="px-6 py-4">
@@ -331,7 +331,7 @@ export default function ContactViewModal({
                               name: e.target.value,
                             })
                           }
-                          className="bg-[#2c3943] text-white text-sm rounded-md p-1 w-full"
+                          className="bg-[#2c3943] text-gray-900 text-sm rounded-md p-1 w-full"
                         />
                       </td>
                       <td className="px-6 py-4 flex gap-4">
@@ -343,7 +343,7 @@ export default function ContactViewModal({
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className="text-gray-400 hover:text-white"
+                          className="text-gray-500 hover:text-gray-900"
                         >
                           <MdCancel />
                         </button>
@@ -355,22 +355,22 @@ export default function ContactViewModal({
                         <td className="px-6 py-4">
                           <input
                             type="checkbox"
-                            className="rounded bg-[#202d33] border-gray-600 text-emerald-500 focus:ring-emerald-500"
+                            className="rounded bg-white border-gray-300 text-emerald-500 focus:ring-emerald-500"
                             checked={selectedContactIds.has(contact._id)}
                             onChange={() => toggleSelectContact(contact._id)}
                           />
                         </td>
                       )}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {contact.phoneNumber}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {contact.name || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-4">
                         <button
                           onClick={() => handleViewStats(contact._id)}
-                          className="text-sky-400 hover:text-sky-300"
+                          className="text-sky-600 hover:text-sky-300"
                           title="View Stats"
                         >
                           <FaEye />
@@ -379,14 +379,14 @@ export default function ContactViewModal({
                           <>
                             <button
                               onClick={() => handleEditClick(contact)}
-                              className="text-gray-400 hover:text-gray-300"
+                              className="text-gray-500 hover:text-gray-600"
                               title="Edit Contact"
                             >
                               <FaEdit />
                             </button>
                             <button
                               onClick={() => handleDeleteContact(contact._id)}
-                              className="text-red-500 hover:text-red-400"
+                              className="text-red-500 hover:text-red-600"
                               title="Delete Contact"
                             >
                               <FaTrash />

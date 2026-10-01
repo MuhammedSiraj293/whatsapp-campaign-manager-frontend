@@ -10,15 +10,15 @@ import {
 
 const StatusDonutChart = ({ data }) => {
   const chartData = [
-    { name: "Hot", value: data.hotLeadsCount || 0, color: "#ef4444" },
-    { name: "Warm", value: data.warmLeadsCount || 0, color: "#f97316" },
-    { name: "Cold", value: data.coldLeadsCount || 0, color: "#3b82f6" },
+    { name: "Engaged", value: data.engagedLeadsCount || 0, color: "#10b981" },
+    { name: "Unresponsive", value: data.unresponsiveLeadsCount || 0, color: "#f59e0b" },
+    { name: "New", value: data.newLeadsCount || 0, color: "#3b82f6" },
     { name: "Dead", value: data.deadLeadsCount || 0, color: "#6b7280" },
   ];
 
   return (
-    <div className="bg-[#202d33] p-6 rounded-lg shadow-md">
-      <h3 className="text-xl font-semibold text-white mb-4">
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h3 className="text-xl font-semibold text-gray-900 mb-4">
         Status Distribution
       </h3>
       <ResponsiveContainer width="100%" height={300}>
@@ -38,17 +38,17 @@ const StatusDonutChart = ({ data }) => {
           </Pie>
           <Tooltip
             contentStyle={{
-              backgroundColor: "#2a3942",
-              border: "1px solid #374151",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e5e7eb",
               borderRadius: "8px",
-              color: "#fff",
+              color: "#111827",
             }}
           />
           <Legend
-            wrapperStyle={{ color: "#9ca3af" }}
+            wrapperStyle={{ color: "#4b5563" }}
             iconType="circle"
             formatter={(value, entry) => (
-              <span style={{ color: "#9ca3af" }}>
+              <span style={{ color: "#4b5563" }}>
                 {value}: {entry.value}
               </span>
             )}

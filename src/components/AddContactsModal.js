@@ -54,20 +54,20 @@ export default function AddContactsModal({ list, onClose, onRefresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-[#202d33] rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700 transform transition-all">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl border border-gray-200 transform transition-all">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-700">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <div>
-            <h3 className="text-xl font-bold text-white">Add Contacts</h3>
-            <p className="text-gray-400 text-sm mt-1">
+            <h3 className="text-xl font-bold text-gray-900">Add Contacts</h3>
+            <p className="text-gray-500 text-sm mt-1">
               Adding to:{" "}
-              <span className="text-emerald-400 font-medium">{list.name}</span>
+              <span className="text-emerald-600 font-medium">{list.name}</span>
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-500 hover:text-gray-900 transition-colors"
           >
             <FaTimes size={24} />
           </button>
@@ -75,8 +75,8 @@ export default function AddContactsModal({ list, onClose, onRefresh }) {
 
         {/* Body */}
         <div className="p-6">
-          <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4 mb-4">
-            <p className="text-yellow-200 text-sm">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p className="text-yellow-800 text-sm">
               <strong>Format Required:</strong> The first line must be headers
               (separated by tabs).
               <br />
@@ -85,7 +85,7 @@ export default function AddContactsModal({ list, onClose, onRefresh }) {
           </div>
 
           <textarea
-            className="w-full bg-[#111b21] text-gray-200 p-4 rounded-lg border border-gray-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all font-mono text-sm"
+            className="w-full bg-gray-50 text-gray-900 p-4 rounded-lg border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all font-mono text-sm"
             rows="10"
             placeholder={`phoneNumber\tname\tvar1\n971500000000\tJohn Doe\tvalue1`}
             value={pastedData}
@@ -94,10 +94,10 @@ export default function AddContactsModal({ list, onClose, onRefresh }) {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
+        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg text-gray-300 hover:bg-gray-700 font-medium transition-colors"
+            className="px-5 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors"
           >
             Cancel
           </button>

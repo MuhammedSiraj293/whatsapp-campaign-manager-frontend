@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { authFetch } from "../services/api";
 import { FaTrash, FaSearch } from "react-icons/fa";
+import { ListBulletIcon, Squares2X2Icon, CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, format, isSameMonth, isSameDay, subMonths, addMonths } from "date-fns";
 import { useWaba } from "../context/WabaContext";
 
 export default function Enquiries() {
@@ -25,6 +27,8 @@ export default function Enquiries() {
   // Selection State
   const [selectedIds, setSelectedIds] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [viewMode, setViewMode] = useState("list");
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
   // WABA Context
   const { activeWaba } = useWaba();
@@ -69,7 +73,8 @@ export default function Enquiries() {
       setPage(1); // Reset to page 1 on new search
       setDebouncedSearch(search);
     }, 500);
-    return () => clearTimeout(timer);
+    
+  return () => clearTimeout(timer);
   }, [search]);
 
   // Fetch when filters change
@@ -160,35 +165,159 @@ export default function Enquiries() {
   const getStatusClass = (status) => {
     switch (status) {
       case "completed":
-        return "bg-green-900/40 text-green-400 border border-green-800";
+        return "bg-green-100 text-green-700 border border-green-200";
       case "contacted":
-        return "bg-blue-900/40 text-blue-400 border border-blue-800";
+        return "bg-blue-100 text-blue-700 border border-blue-200";
       case "pending":
-        return "bg-yellow-900/40 text-yellow-400 border border-yellow-800";
+        return "bg-yellow-100 text-yellow-700 border border-yellow-200";
       case "handover":
-        return "bg-purple-900/40 text-purple-400 border border-purple-800";
+        return "bg-purple-100 text-purple-700 border border-purple-200";
       default:
-        return "bg-gray-800 text-gray-400 border border-gray-700";
+        return "bg-gray-100 text-gray-700 border border-gray-200";
     }
   };
 
+  const renderBoardView = () => {
+    const statuses = ['pending', 'contacted', 'handover', 'completed'];
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 overflow-x-auto pb-4">
+        {statuses.map(status => {
+          const colEnquiries = enquiries.filter(e => e.status.toLowerCase() === status);
+          return (
+            <div key={status} className="bg-gray-100 rounded-xl p-3 min-w-[280px]">
+              <div className="flex justify-between items-center mb-4 px-1">
+                <h3 className="font-semibold text-gray-700 capitalize">{status}</h3>
+                <span className="bg-gray-200 text-gray-600 text-xs py-0.5 px-2 rounded-full font-medium">{colEnquiries.length}</span>
+              </div>
+              <div className="flex flex-col gap-3 h-[600px] overflow-y-auto scrollbar-hide pb-10">
+                {colEnquiries.length === 0 ? (
+                  <div className="text-center text-sm text-gray-400 py-4">No enquiries</div>
+                ) : (
+                  colEnquiries.map(enquiry => (
+                    <div key={enquiry._id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow relative group">
+                      {isSelectionMode && (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(enquiry._id)}
+                          onChange={() => handleSelectOne(enquiry._id)}
+                          className="absolute top-3 right-3 w-4 h-4 text-indigo-600 bg-white border-gray-300 rounded focus:ring-indigo-600 z-10"
+                        />
+                      )}
+                      <div className="font-semibold text-gray-900 mb-1 pr-6">{enquiry.name || "N/A"}</div>
+                      <div className="text-xs text-gray-500 mb-3">{enquiry.phoneNumber}</div>
+                      <div className="flex justify-between items-end mt-2 pt-2 border-t border-gray-50">
+                        <div className="text-xs font-medium text-indigo-600 truncate max-w-[120px]">{enquiry.projectName || "-"}</div>
+                        <div className="text-[10px] text-gray-400">{new Date(enquiry.createdAt).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderCalendarView = () => {
+    const monthStart = startOfMonth(calendarDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+
+    const dateFormat = "d";
+    const rows = [];
+    let days = [];
+    let day = startDate;
+    let formattedDate = "";
+
+    const nextMonth = () => setCalendarDate(addMonths(calendarDate, 1));
+    const prevMonth = () => setCalendarDate(subMonths(calendarDate, 1));
+
+    while (day <= endDate) {
+      for (let i = 0; i < 7; i++) {
+        formattedDate = format(day, dateFormat);
+        const cloneDay = day;
+        
+        // Find enquiries for this day
+        const dayEnquiries = enquiries.filter(e => isSameDay(new Date(e.createdAt), cloneDay));
+
+        days.push(
+          <div
+            key={day}
+            className={`min-h-[120px] bg-white border border-gray-100 p-2 ${
+              !isSameMonth(day, monthStart)
+                ? "text-gray-300 bg-gray-50"
+                : "text-gray-700"
+            }`}
+          >
+            <div className="flex justify-end">
+              <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-indigo-600 text-white' : ''}`}>
+                {formattedDate}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1 mt-1 overflow-y-auto max-h-[80px] scrollbar-hide">
+              {dayEnquiries.map(enq => (
+                <div key={enq._id} className={`text-[10px] px-1.5 py-0.5 rounded truncate ${getStatusClass(enq.status)}`}>
+                  {enq.name || enq.phoneNumber}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+        day = addDays(day, 1);
+      }
+      rows.push(
+        <div className="grid grid-cols-7" key={day}>
+          {days}
+        </div>
+      );
+      days = [];
+    }
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">{format(calendarDate, "MMMM yyyy")}</h2>
+          <div className="flex gap-2">
+            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+              <ChevronLeftIcon className="w-5 h-5" />
+            </button>
+            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+              <ChevronRightIcon className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+            <div key={d} className="p-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{d}</div>
+          ))}
+        </div>
+        <div className="flex flex-col">
+          {rows}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="p-2 md:p-4 min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
+    <div className="p-2 md:p-4 min-h-screen w-full bg-[#F7F8FA] text-gray-900">
       <div className="w-full px-2 md:px-4">
-        <h1 className="text-3xl font-bold text-white mb-6">Enquiries</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Enquiries</h1>
 
         {/* --- FILTERS SECTION --- */}
-        {/* --- FILTERS SECTION --- */}
-        <div className="bg-[#202d33] p-3 rounded-lg shadow-lg mb-4 flex flex-col md:flex-row items-center gap-3">
+        <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 mb-4 flex flex-col md:flex-row items-center gap-3">
           {/* Search */}
           <div className="relative flex-1 w-full md:w-auto">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FaSearch className="text-gray-500 text-xs" />
             </div>
-            <input
+              <input
               type="text"
               placeholder="Search Name, Phone, Project..."
-              className="bg-[#2c3943] text-white pl-8 px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full placeholder-gray-500"
+              className="bg-gray-50 text-gray-900 border border-gray-200 pl-8 px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-gray-300 w-full placeholder-gray-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -197,7 +326,7 @@ export default function Enquiries() {
           {/* Status Filter */}
           <div className="w-full md:w-40 shrink-0">
             <select
-              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full"
+              className="bg-gray-50 text-gray-900 border border-gray-200 px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-gray-300 w-full"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -215,7 +344,7 @@ export default function Enquiries() {
           {/* Phone Number Filter */}
           <div className="w-full md:w-56 shrink-0">
             <select
-              className="bg-[#2c3943] text-white px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 w-full truncate"
+              className="bg-gray-50 text-gray-900 border border-gray-200 px-3 py-1.5 text-xs rounded-lg outline-none focus:ring-1 focus:ring-gray-300 w-full truncate"
               value={phoneNumberFilter}
               onChange={(e) => {
                 setPhoneNumberFilter(e.target.value);
@@ -231,6 +360,20 @@ export default function Enquiries() {
             </select>
           </div>
 
+          
+          {/* View Mode Toggle */}
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}>
+              <ListBulletIcon className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode('board')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'board' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}>
+              <Squares2X2Icon className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode('calendar')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'calendar' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}>
+              <CalendarDaysIcon className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Actions / Total */}
           <div className="flex items-center justify-between md:justify-end gap-3 text-xs w-full md:w-auto shrink-0">
             <button
@@ -238,7 +381,7 @@ export default function Enquiries() {
                 setIsSelectionMode(!isSelectionMode);
                 if (isSelectionMode) setSelectedIds([]);
               }}
-              className="text-emerald-500 hover:text-emerald-400 font-medium transition-colors whitespace-nowrap"
+              className="text-gray-900 hover:text-gray-800 font-semibold font-medium transition-colors whitespace-nowrap"
             >
               {isSelectionMode ? "Cancel" : "Select"}
             </button>
@@ -253,20 +396,21 @@ export default function Enquiries() {
               </button>
             )}
 
-            <div className="text-gray-400 border-l border-gray-600 pl-3 whitespace-nowrap">
+            <div className="text-gray-600 border-l border-gray-200 pl-3 whitespace-nowrap">
               Found{" "}
-              <span className="text-emerald-400 font-bold mx-1">
+              <span className="text-gray-800 font-semibold font-bold mx-1">
                 {totalRecords}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Table Container */}
-        <div className="bg-[#202d33] rounded-lg shadow-lg overflow-hidden">
+        {/* View Container */}
+        {viewMode === "list" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-300">
-              <thead className="text-xs text-uppercase bg-[#2c3943] text-gray-400">
+            <table className="w-full text-sm text-left text-gray-600">
+              <thead className="text-xs text-uppercase bg-gray-50 text-gray-600 border-b border-gray-200">
                 <tr>
                   {isSelectionMode && (
                     <th className="px-6 py-3 w-4">
@@ -277,7 +421,7 @@ export default function Enquiries() {
                           enquiries.length > 0 &&
                           selectedIds.length === enquiries.length
                         }
-                        className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
+                        className="w-4 h-4 text-indigo-600 bg-white border-gray-300 rounded focus:ring-indigo-600"
                       />
                     </th>
                   )}
@@ -292,12 +436,12 @@ export default function Enquiries() {
                   <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-100">
                 {isLoading ? (
                   <tr>
                     <td
                       colSpan={isSelectionMode ? 10 : 9}
-                      className="px-6 py-8 text-center text-emerald-500 animate-pulse"
+                      className="px-6 py-8 text-center text-gray-900 animate-pulse"
                     >
                       Loading enquiries...
                     </td>
@@ -315,7 +459,7 @@ export default function Enquiries() {
                   enquiries.map((enquiry) => (
                     <tr
                       key={enquiry._id}
-                      className="border-b border-gray-700 hover:bg-[#2a373f] transition-colors"
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                     >
                       {isSelectionMode && (
                         <td className="px-6 py-4">
@@ -323,11 +467,11 @@ export default function Enquiries() {
                             type="checkbox"
                             checked={selectedIds.includes(enquiry._id)}
                             onChange={() => handleSelectOne(enquiry._id)}
-                            className="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600"
+                            className="w-4 h-4 text-indigo-600 bg-white border-gray-300 rounded focus:ring-indigo-600"
                           />
                         </td>
                       )}
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                         {new Date(enquiry.createdAt).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -339,13 +483,13 @@ export default function Enquiries() {
                           {enquiry.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-white">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
                         {enquiry.name || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                         {enquiry.phoneNumber}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-emerald-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-semibold">
                         {enquiry.projectName || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -384,13 +528,17 @@ export default function Enquiries() {
           </div>
         </div>
 
+        )}
+        {viewMode === "board" && renderBoardView()}
+        {viewMode === "calendar" && renderCalendarView()}
+
         {/* --- PAGINATION --- */}
-        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 text-sm">
+        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-500 text-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span>Rows:</span>
               <select
-                className="bg-[#202d33] text-white px-2 py-1 rounded outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
+                className="bg-gray-50 border border-gray-200 text-gray-900 px-2 py-1 rounded outline-none focus:ring-1 focus:ring-gray-300 cursor-pointer text-xs"
                 value={limit}
                 onChange={(e) => {
                   setLimit(parseInt(e.target.value));
@@ -411,13 +559,13 @@ export default function Enquiries() {
               disabled={page === 1}
               className={`px-3 py-1 rounded text-xs transition-colors ${page === 1
                 ? "text-gray-600 cursor-not-allowed"
-                : "text-emerald-500 hover:bg-emerald-500/10"
+                : "text-gray-900 hover:bg-gray-100"
                 }`}
             >
               PREVIOUS
             </button>
             <span className="text-xs">
-              Page <span className="text-white font-medium">{page}</span> of{" "}
+              Page <span className="text-gray-900 font-medium">{page}</span> of{" "}
               {totalPages || 1}
             </span>
             <button
@@ -425,7 +573,7 @@ export default function Enquiries() {
               disabled={page === totalPages || totalPages === 0}
               className={`px-3 py-1 rounded text-xs transition-colors ${page === totalPages || totalPages === 0
                 ? "text-gray-600 cursor-not-allowed"
-                : "text-emerald-500 hover:bg-emerald-500/10"
+                : "text-gray-900 hover:bg-gray-100"
                 }`}
             >
               NEXT

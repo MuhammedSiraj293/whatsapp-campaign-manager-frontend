@@ -13,11 +13,11 @@ import {
 const TopPerformersChart = ({ data }) => {
   const getBarColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "hot":
-        return "#ef4444";
-      case "warm":
-        return "#f97316";
-      case "cold":
+      case "engaged":
+        return "#10b981";
+      case "unresponsive":
+        return "#f59e0b";
+      case "new":
         return "#3b82f6";
       default:
         return "#6b7280";
@@ -25,25 +25,25 @@ const TopPerformersChart = ({ data }) => {
   };
 
   return (
-    <div className="bg-[#202d33] p-6 rounded-lg shadow-md">
-      <h3 className="text-xl font-semibold text-white mb-4">Top Performers</h3>
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h3 className="text-xl font-semibold text-gray-900 mb-4">Top Performers</h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} layout="vertical">
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis type="number" stroke="#9ca3af" fontSize={12} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis type="number" stroke="#4b5563" fontSize={12} />
           <YAxis
             dataKey="name"
             type="category"
-            stroke="#9ca3af"
+            stroke="#4b5563"
             fontSize={12}
             width={100}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#2a3942",
-              border: "1px solid #374151",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e5e7eb",
               borderRadius: "8px",
-              color: "#fff",
+              color: "#111827",
             }}
             formatter={(value, name, props) => [
               value,

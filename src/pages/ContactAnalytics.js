@@ -180,45 +180,45 @@ const ContactAnalytics = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Hot":
-        return "bg-red-500 text-white";
-      case "Warm":
-        return "bg-orange-500 text-white";
-      case "Cold":
-        return "bg-blue-400 text-gray-900";
+      case "Engaged":
+        return "bg-red-500 text-gray-900";
+      case "Unresponsive":
+        return "bg-orange-500 text-gray-900";
+      case "New":
+        return "bg-blue-50 text-blue-700 font-medium px-2 py-0.5 rounded";
       case "Dead":
-        return "bg-gray-700 text-gray-300";
+        return "bg-gray-700 text-gray-600";
       default:
-        return "bg-gray-600 text-gray-200";
+        return "bg-gray-600 text-gray-900";
     }
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return "text-red-400";
-    if (score >= 50) return "text-orange-400";
-    return "text-gray-400";
+    if (score >= 80) return "text-red-600";
+    if (score >= 50) return "text-orange-600";
+    return "text-gray-500";
   };
 
   const renderSortIcon = (field) => {
     if (sortBy !== field) return <FaSort className="text-gray-600 ml-1" />;
     return sortOrder === "asc" ? (
-      <FaSortUp className="text-emerald-400 ml-1" />
+      <FaSortUp className="text-emerald-600 ml-1" />
     ) : (
-      <FaSortDown className="text-emerald-400 ml-1" />
+      <FaSortDown className="text-emerald-600 ml-1" />
     );
   };
 
   return (
-    <div className="p-6 bg-[#111b21] min-h-screen text-gray-200">
+    <div className="p-6 bg-[#F7F8FA] min-h-screen text-gray-900">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Contact Analytics Dashboard
           </h1>
           <div className="flex gap-2">
             <select
-              className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 text-white text-sm"
+              className="bg-white border border-gray-200 px-4 py-2 rounded border border-gray-200 text-gray-900 text-sm"
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
             >
@@ -247,11 +247,11 @@ const ContactAnalytics = () => {
               color="green"
             />
             <KPICard
-              title="Hot Leads"
-              value={summary.hotLeadsCount.toLocaleString()}
-              subtitle={`${Math.round((summary.hotLeadsCount / summary.totalContacts) * 100)}% of total`}
+              title="Engaged Leads"
+              value={summary.engagedLeadsCount.toLocaleString()}
+              subtitle={`${Math.round((summary.engagedLeadsCount / summary.totalContacts) * 100)}% of total`}
               icon={<FaFire />}
-              color="red"
+              color="green"
             />
             <KPICard
               title="Response Rate"
@@ -279,33 +279,33 @@ const ContactAnalytics = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-[#202d33] p-4 rounded-lg mb-6 shadow-md flex flex-col gap-4">
+        <div className="bg-white border border-gray-200 p-4 rounded-lg mb-6 shadow-md flex flex-col gap-4">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px] relative">
-              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+              <FaSearch className="absolute left-3 top-3 text-gray-500" />
               <input
                 type="text"
                 placeholder="Search contacts..."
-                className="w-full bg-[#2a3942] pl-10 pr-4 py-2 rounded border border-gray-600 focus:border-emerald-500 focus:outline-none text-white"
+                className="w-full bg-white border border-gray-200 pl-10 pr-4 py-2 rounded border border-gray-200 focus:border-emerald-500 focus:outline-none text-gray-900"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
             <select
-              className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 focus:border-emerald-500 text-white"
+              className="bg-white border border-gray-200 px-4 py-2 rounded border border-gray-200 focus:border-emerald-500 text-gray-900"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="all">All Statuses</option>
-              <option value="hot">Hot</option>
-              <option value="warm">Warm</option>
-              <option value="cold">Cold</option>
+              <option value="engaged">Engaged</option>
+              <option value="unresponsive">Unresponsive</option>
+              <option value="new">New</option>
               <option value="dead">Dead</option>
             </select>
 
             <select
-              className="bg-[#2a3942] px-4 py-2 rounded border border-gray-600 focus:border-emerald-500 text-white"
+              className="bg-white border border-gray-200 px-4 py-2 rounded border border-gray-200 focus:border-emerald-500 text-gray-900"
               value={listFilter}
               onChange={(e) => setListFilter(e.target.value)}
             >
@@ -321,35 +321,35 @@ const ContactAnalytics = () => {
           {/* Advanced Filters */}
           <div className="flex flex-wrap gap-4 items-center text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">Min Replies:</span>
+              <span className="text-gray-500">Min Replies:</span>
               <input
                 type="number"
                 placeholder="0"
-                className="w-20 bg-[#2a3942] px-2 py-1 rounded border border-gray-600 focus:border-emerald-500 text-white"
+                className="w-20 bg-white border border-gray-200 px-2 py-1 rounded border border-gray-200 focus:border-emerald-500 text-gray-900"
                 value={minReplies}
                 onChange={(e) => setMinReplies(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">Min Score:</span>
+              <span className="text-gray-500">Min Score:</span>
               <input
                 type="number"
                 placeholder="0-100"
-                className="w-20 bg-[#2a3942] px-2 py-1 rounded border border-gray-600 focus:border-emerald-500 text-white"
+                className="w-20 bg-white border border-gray-200 px-2 py-1 rounded border border-gray-200 focus:border-emerald-500 text-gray-900"
                 value={minScore}
                 onChange={(e) => setMinScore(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">Last Active &lt;</span>
+              <span className="text-gray-500">Last Active &lt;</span>
               <input
                 type="number"
                 placeholder="Days"
-                className="w-20 bg-[#2a3942] px-2 py-1 rounded border border-gray-600 focus:border-emerald-500 text-white"
+                className="w-20 bg-white border border-gray-200 px-2 py-1 rounded border border-gray-200 focus:border-emerald-500 text-gray-900"
                 value={lastActiveDays}
                 onChange={(e) => setLastActiveDays(e.target.value)}
               />
-              <span className="text-gray-400">days ago</span>
+              <span className="text-gray-500">days ago</span>
             </div>
             <button
               onClick={() => {
@@ -360,7 +360,7 @@ const ContactAnalytics = () => {
                 setLastActiveDays("");
                 setSearch("");
               }}
-              className="ml-auto text-emerald-400 hover:text-emerald-300 text-sm underline"
+              className="ml-auto text-emerald-600 hover:text-emerald-300 text-sm underline"
             >
               Reset Filters
             </button>
@@ -368,14 +368,14 @@ const ContactAnalytics = () => {
         </div>
 
         {/* Contacts Table */}
-        <div className="bg-[#202d33] rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-700">
-            <h2 className="text-lg font-semibold text-white">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">
               Contact Details
             </h2>
           </div>
           <table className="w-full text-left border-collapse">
-            <thead className="bg-[#2a3942] text-gray-300 uppercase text-xs">
+            <thead className="bg-white border border-gray-200 text-gray-600 uppercase text-xs">
               <tr>
                 <th className="px-6 py-4 font-semibold">Contact</th>
                 <th
@@ -406,7 +406,7 @@ const ContactAnalytics = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
                   <td
@@ -429,22 +429,22 @@ const ContactAnalytics = () => {
                 contacts.map((contact) => (
                   <tr
                     key={contact._id}
-                    className="hover:bg-[#2a3942] transition-colors cursor-pointer"
+                    className="hover:bg-white border border-gray-200 transition-colors cursor-pointer"
                     onClick={() => setSelectedContactId(contact._id)}
                   >
                     <td className="px-6 py-4">
-                      <div className="font-medium text-white">
+                      <div className="font-medium text-gray-900">
                         {contact.name || "Unknown"}
                       </div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-gray-500">
                         {contact.phoneNumber}
                       </div>
-                      <div className="text-xs text-emerald-500 mt-1">
+                      <div className="text-xs text-emerald-700 mt-1">
                         {contact.contactList?.name}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-white font-mono">
+                      <div className="text-gray-900 font-mono">
                         {contact.totalSent}
                       </div>
                       <div className="text-xs text-gray-500">
@@ -455,14 +455,14 @@ const ContactAnalytics = () => {
                       <div className="flex flex-col gap-1">
                         <div className="text-xs flex justify-between">
                           <span>Read:</span>
-                          <span className="font-mono text-white">
+                          <span className="font-mono text-gray-900">
                             {contact.read} ({Math.round(contact.readRate || 0)}
                             %)
                           </span>
                         </div>
                         <div className="text-xs flex justify-between">
                           <span>Reply:</span>
-                          <span className="font-mono text-white">
+                          <span className="font-mono text-gray-900">
                             {contact.replied} (
                             {Math.round(contact.replyRate || 0)}%)
                           </span>
@@ -483,7 +483,7 @@ const ContactAnalytics = () => {
                         {contact.computedStatus}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-300">
+                    <td className="px-6 py-4 text-sm text-gray-600">
                       {contact.lastActive
                         ? new Date(contact.lastActive).toLocaleDateString()
                         : "Never"}
@@ -508,18 +508,18 @@ const ContactAnalytics = () => {
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="px-4 py-2 bg-[#202d33] rounded hover:bg-[#2a3942] disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-white border border-gray-200 rounded hover:bg-white border border-gray-200 disabled:opacity-50 transition-colors"
           >
             Previous
           </button>
-          <span className="text-gray-400">
-            Page <span className="text-white font-bold">{page}</span> of{" "}
+          <span className="text-gray-500">
+            Page <span className="text-gray-900 font-bold">{page}</span> of{" "}
             {totalPages}
           </span>
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className="px-4 py-2 bg-[#202d33] rounded hover:bg-[#2a3942] disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-white border border-gray-200 rounded hover:bg-white border border-gray-200 disabled:opacity-50 transition-colors"
           >
             Next
           </button>

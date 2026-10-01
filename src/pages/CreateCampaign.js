@@ -45,6 +45,7 @@ export default function CreateCampaign() {
   const [selectedList, setSelectedList] = useState("");
   const [selectedExclusionList, setSelectedExclusionList] = useState("");
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
+  const [targetStatuses, setTargetStatuses] = useState(["Engaged", "Unresponsive", "New"]);
 
   // Filtered data
   const [filteredPhones, setFilteredPhones] = useState([]);
@@ -141,6 +142,7 @@ export default function CreateCampaign() {
     formData.append("templateLanguage", selectedTemplateObject.language);
     formData.append("contactList", selectedList);
     formData.append("exclusionList", selectedExclusionList);
+    formData.append("targetStatuses", JSON.stringify(targetStatuses));
     formData.append("phoneNumber", selectedPhoneNumber);
     formData.append("expectedVariables", expectedVariables);
     formData.append("spreadsheetId", spreadsheetId);
@@ -198,38 +200,41 @@ export default function CreateCampaign() {
 
   // --- STYLES ---
   const cardStyle =
-    "bg-[#202d33] p-6 rounded-xl shadow-sm border border-gray-800";
+    "bg-white p-6 rounded-2xl shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] border border-gray-100";
   const labelStyle =
-    "block mb-2 text-sm font-medium text-gray-300 flex items-center gap-2";
+    "block mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2";
   const inputStyle =
-    "bg-[#2c3943] border border-gray-700 text-white text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5 transition-colors";
+    "bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-gray-300 focus:border-gray-400 block w-full p-3 transition-colors outline-none shadow-sm";
 
   const selectStyles = {
     control: (base, state) => ({
       ...base,
-      backgroundColor: "#2c3943",
-      borderColor: state.isFocused ? "#10b981" : "#374151",
-      color: "#ffffff",
+      backgroundColor: "#f9fafb",
+      borderColor: state.isFocused ? "#9ca3af" : "#e5e7eb",
+      color: "#111827",
       padding: "2px",
-      borderRadius: "0.5rem",
-      boxShadow: "none",
-      "&:hover": { borderColor: "#10b981" },
+      borderRadius: "0.75rem",
+      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      "&:hover": { borderColor: "#9ca3af" },
     }),
-    singleValue: (base) => ({ ...base, color: "#ffffff" }),
+    singleValue: (base) => ({ ...base, color: "#111827" }),
     menu: (base) => ({
       ...base,
-      backgroundColor: "#1e293b",
-      color: "#ffffff",
+      backgroundColor: "#ffffff",
+      color: "#111827",
       zIndex: 50,
+      borderRadius: "0.75rem",
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+      overflow: "hidden"
     }),
     option: (base, { isFocused }) => ({
       ...base,
-      backgroundColor: isFocused ? "#047857" : "#1e293b",
-      color: "#ffffff",
+      backgroundColor: isFocused ? "#f3f4f6" : "#ffffff",
+      color: "#111827",
       cursor: "pointer",
     }),
     placeholder: (base) => ({ ...base, color: "#9ca3af" }),
-    input: (base) => ({ ...base, color: "#ffffff" }),
+    input: (base) => ({ ...base, color: "#111827" }),
   };
 
   const renderPreviewSection = () => {
@@ -266,7 +271,7 @@ export default function CreateCampaign() {
             <img
               src={overrideMedia}
               alt="Header"
-              className="h-32 mx-auto rounded-lg border border-gray-600 object-cover"
+              className="h-32 mx-auto rounded-lg border border-gray-200 object-cover"
             />
           </div>
         )}
@@ -281,17 +286,17 @@ export default function CreateCampaign() {
   };
 
   return (
-    <div className="bg-[#111b21] min-h-screen w-full p-4 md:p-8">
+    <div className="bg-[#F7F8FA] min-h-screen w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {scheduledFor ? "Schedule Campaign" : "New Campaign"}
             </h1>
           </div>
           {!activeWaba && (
-            <div className="text-amber-400 bg-amber-900/30 px-4 py-2 rounded-lg border border-amber-900 flex items-center gap-2">
+            <div className="text-amber-800 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200 flex items-center gap-2">
               ⚠️ Please select a WABA account.
             </div>
           )}
@@ -306,13 +311,13 @@ export default function CreateCampaign() {
             <div className="lg:col-span-2 space-y-6">
               {/* Card 1: Campaign Basics */}
               <div className={cardStyle}>
-                <h3 className="text-lg font-semibold text-emerald-400 mb-4 border-b border-gray-700 pb-2">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
                   1. Campaign Details
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="campaignName" className={labelStyle}>
-                      <span className="text-emerald-500">#</span> Campaign Name
+                      <span className="text-gray-400">#</span> Campaign Name
                     </label>
                     <input
                       id="campaignName"
@@ -361,7 +366,7 @@ export default function CreateCampaign() {
                       type="datetime-local"
                       value={scheduledFor}
                       onChange={(e) => setScheduledFor(e.target.value)}
-                      className={`${inputStyle} text-gray-300`} // Force lighter text
+                      className={`${inputStyle} text-gray-600`} // Force lighter text
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Leave blank to send immediately.
@@ -419,7 +424,7 @@ export default function CreateCampaign() {
 
               {/* Card 2: Audience */}
               <div className={cardStyle}>
-                <h3 className="text-lg font-semibold text-emerald-400 mb-4 border-b border-gray-700 pb-2">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
                   2. Audience Target
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -477,7 +482,34 @@ export default function CreateCampaign() {
                       isClearable
                     />
                   </div>
-                  <div className="md:col-span-2">
+                </div>
+
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <label className={labelStyle}>Target Engagement Statuses</label>
+                  <p className="text-xs text-gray-500 mb-2">Only send to contacts with these statuses (Dead contacts are always excluded by default).</p>
+                  <div className="flex flex-wrap gap-4">
+                    {["Engaged", "Unresponsive", "New"].map((status) => (
+                      <label key={status} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={targetStatuses.includes(status)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setTargetStatuses([...targetStatuses, status]);
+                            } else {
+                              setTargetStatuses(targetStatuses.filter((s) => s !== status));
+                            }
+                          }}
+                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        {status === "Engaged" ? "🔥 Engaged" : status === "Unresponsive" ? "🟡 Unresponsive" : "🟢 New"}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 mt-4 gap-4">
+                  <div className="md:col-span-1">
                     <label className={labelStyle}>
                       Google Sheet ID (Live Leads)
                     </label>
@@ -494,7 +526,7 @@ export default function CreateCampaign() {
 
               {/* Card 3: Content */}
               <div className={cardStyle}>
-                <h3 className="text-lg font-semibold text-emerald-400 mb-4 border-b border-gray-700 pb-2">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
                   3. Message Content
                 </h3>
 
@@ -522,9 +554,9 @@ export default function CreateCampaign() {
                 {/* Read-Only Body View */}
                 <div className="mb-6">
                   <label className={labelStyle}>Message Preview</label>
-                  <div className="p-4 bg-[#111b21] rounded-lg border border-gray-700 text-gray-300 text-sm whitespace-pre-wrap min-h-[100px]">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-gray-800 text-sm whitespace-pre-wrap min-h-[100px] shadow-sm leading-relaxed">
                     {formMessage || (
-                      <span className="text-gray-600 italic">
+                      <span className="text-gray-400 italic">
                         Select a template to view content...
                       </span>
                     )}
@@ -537,29 +569,29 @@ export default function CreateCampaign() {
                     c.type === "HEADER" &&
                     ["IMAGE", "VIDEO", "DOCUMENT"].includes(c.format),
                 ) && (
-                  <div className="mb-6 p-4 bg-[#1e293b] rounded-lg border border-gray-700">
+                  <div className="mb-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
                     <label className={`${labelStyle} mb-3`}>
                       <PhotoIcon className="w-4 h-4" /> Header Media
                     </label>
 
                     <div className="flex gap-6 mb-4">
-                      <label className="flex items-center cursor-pointer text-sm text-gray-300 hover:text-white">
+                      <label className="flex items-center cursor-pointer text-sm text-gray-700 hover:text-gray-900 font-medium">
                         <input
                           type="radio"
                           name="imgMode"
                           checked={imageMode === "url"}
                           onChange={() => setImageMode("url")}
-                          className="mr-2 text-emerald-500 focus:ring-emerald-500 bg-gray-700 border-gray-500"
+                          className="mr-2 text-emerald-600 focus:ring-emerald-500 bg-white border-gray-300"
                         />{" "}
                         Use URL
                       </label>
-                      <label className="flex items-center cursor-pointer text-sm text-gray-300 hover:text-white">
+                      <label className="flex items-center cursor-pointer text-sm text-gray-700 hover:text-gray-900 font-medium">
                         <input
                           type="radio"
                           name="imgMode"
                           checked={imageMode === "file"}
                           onChange={() => setImageMode("file")}
-                          className="mr-2 text-emerald-500 focus:ring-emerald-500 bg-gray-700 border-gray-500"
+                          className="mr-2 text-emerald-600 focus:ring-emerald-500 bg-white border-gray-300"
                         />{" "}
                         Upload File
                       </label>
@@ -577,7 +609,7 @@ export default function CreateCampaign() {
                       <input
                         type="file"
                         onChange={(e) => setHeaderImageFile(e.target.files[0])}
-                        className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-900 file:text-emerald-300 hover:file:bg-emerald-800"
+                        className="block w-full text-sm text-gray-700 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200 cursor-pointer"
                         accept="image/*,video/*,application/pdf"
                       />
                     )}
@@ -605,7 +637,7 @@ export default function CreateCampaign() {
               {/* Submit Action */}
               <button
                 type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:-translate-y-0.5"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:-translate-y-0.5"
               >
                 <span className="flex items-center justify-center gap-2">
                   <PaperAirplaneIcon className="w-5 h-5" />

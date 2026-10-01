@@ -109,7 +109,7 @@ export default function CampaignAnalytics() {
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         <div className="flex justify-between items-center mb-2">
           <h1 className="text-3xl font-bold text-gray-800">Campaign Analytics</h1>
-          <button onClick={handleCsvExport} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+          <button onClick={handleCsvExport} className="bg-blue-600 hover:bg-blue-700 text-gray-900 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
             Export to CSV
           </button>
         </div>
@@ -118,7 +118,7 @@ export default function CampaignAnalytics() {
       </h2>
       {/* PREPARATION STAGE */}
       <div className="mb-8">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
           1. Preparation Phase
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -137,7 +137,7 @@ export default function CampaignAnalytics() {
 
       {/* DELIVERY STAGE */}
       <div className="mb-8">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
           2. Delivery Phase
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -161,7 +161,7 @@ export default function CampaignAnalytics() {
 
       {/* ENGAGEMENT STAGE */}
       <div className="mb-8">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
           3. Engagement Phase
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -193,7 +193,7 @@ export default function CampaignAnalytics() {
           />
           <button
             onClick={handleSheetExport}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors whitespace-nowrap"
+            className="bg-emerald-600 hover:bg-emerald-700 text-gray-900 font-medium py-2 px-6 rounded-lg shadow-sm transition-colors whitespace-nowrap"
           >
             Export Replies
           </button>
@@ -338,7 +338,7 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
                   </td>
                   <td className="px-6 py-4">{item.contactName}</td>
                   <td
-                    className="px-6 py-4 truncate max-w-xs text-gray-400"
+                    className="px-6 py-4 truncate max-w-xs text-gray-500"
                     title={item.wamid}
                   >
                     {item.wamid}
@@ -403,7 +403,7 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
               disabled={page === 1}
               className={`px-3 py-1 rounded font-medium transition-colors ${
                 page === 1
-                  ? "text-gray-300 cursor-not-allowed"
+                  ? "text-gray-600 cursor-not-allowed"
                   : "text-emerald-600 hover:bg-emerald-50"
               }`}
             >
@@ -418,7 +418,7 @@ const DetailedAnalyticsTable = ({ campaignId }) => {
               disabled={page === totalPages || totalPages === 0}
               className={`px-3 py-1 rounded font-medium transition-colors ${
                 page === totalPages || totalPages === 0
-                  ? "text-gray-300 cursor-not-allowed"
+                  ? "text-gray-600 cursor-not-allowed"
                   : "text-emerald-600 hover:bg-emerald-50"
               }`}
             >

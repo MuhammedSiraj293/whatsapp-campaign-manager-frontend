@@ -264,7 +264,7 @@ export default function TemplateAnalytics() {
         <div className="flex flex-col sm:flex-row items-center gap-3 flex-wrap">
           {/* Date Filter */}
           <div className="flex items-center gap-2 bg-white border border-gray-200 p-2 rounded-lg shadow-sm">
-            <FaCalendarAlt className="text-gray-400 text-sm ml-1" />
+            <FaCalendarAlt className="text-gray-500 text-sm ml-1" />
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
@@ -309,7 +309,7 @@ export default function TemplateAnalytics() {
               >
                 <FaLayerGroup
                   className={
-                    noneSelected ? "text-gray-400" : "text-emerald-600"
+                    noneSelected ? "text-gray-500" : "text-emerald-600"
                   }
                 />
                 <span>{segmentBtnLabel}</span>
@@ -371,7 +371,7 @@ export default function TemplateAnalytics() {
                             }`}
                           >
                             {checked && (
-                              <FaCheck className="text-white text-[9px]" />
+                              <FaCheck className="text-gray-900 text-[9px]" />
                             )}
                           </div>
 
@@ -389,7 +389,7 @@ export default function TemplateAnalytics() {
                           {/* Mini stats */}
                           {checked && (
                             <div className="text-right flex-shrink-0">
-                              <span className="text-xs text-emerald-400 font-medium">
+                              <span className="text-xs text-emerald-600 font-medium">
                                 {seg.readRate}
                               </span>
                               <p className="text-[10px] text-gray-500">
@@ -404,9 +404,9 @@ export default function TemplateAnalytics() {
 
                   {/* Footer count */}
                   {!noneSelected && (
-                    <div className="bg-[#111b21] px-4 py-2 border-t border-white/5 text-center">
+                    <div className="bg-[#F7F8FA] px-4 py-2 border-t border-white/5 text-center">
                       <span className="text-xs text-gray-500">
-                        <span className="text-emerald-400 font-semibold">
+                        <span className="text-emerald-600 font-semibold">
                           {selectedSegments.size}
                         </span>{" "}
                         segment{selectedSegments.size > 1 ? "s" : ""} selected —
@@ -435,7 +435,7 @@ export default function TemplateAnalytics() {
               {name}
               <button
                 onClick={() => toggleSegment(name)}
-                className="text-emerald-400/70 hover:text-white transition-colors ml-0.5 text-[10px]"
+                className="text-emerald-600/70 hover:text-gray-900 transition-colors ml-0.5 text-[10px]"
               >
                 ✕
               </button>
@@ -443,7 +443,7 @@ export default function TemplateAnalytics() {
           ))}
           <button
             onClick={clearSegments}
-            className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors underline underline-offset-2 ml-1"
+            className="text-[11px] text-gray-600 hover:text-gray-500 transition-colors underline underline-offset-2 ml-1"
           >
             clear all
           </button>
@@ -453,7 +453,7 @@ export default function TemplateAnalytics() {
       {/* ── STAT CARDS ── */}
       {/* PREPARATION STAGE */}
       <div className="mb-8">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
           1. Preparation Phase
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -472,7 +472,7 @@ export default function TemplateAnalytics() {
 
       {/* DELIVERY STAGE */}
       <div className="mb-8">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
           2. Delivery Phase
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -496,7 +496,7 @@ export default function TemplateAnalytics() {
 
       {/* ENGAGEMENT STAGE */}
       <div className="mb-8">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
           3. Engagement Phase
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -528,7 +528,7 @@ export default function TemplateAnalytics() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <div className="absolute left-3 top-2.5 text-gray-400">
+              <div className="absolute left-3 top-2.5 text-gray-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-4 w-4"
@@ -574,7 +574,7 @@ export default function TemplateAnalytics() {
                             <FaSortDown />
                           )
                         ) : (
-                          <FaSort className="text-gray-300" />
+                          <FaSort className="text-gray-600" />
                         )}
                       </div>
                     </th>
