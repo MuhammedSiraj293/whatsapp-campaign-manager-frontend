@@ -486,9 +486,9 @@ export default function CreateCampaign() {
 
                 <div className="mt-4 border-t border-gray-100 pt-4">
                   <label className={labelStyle}>Target Engagement Statuses</label>
-                  <p className="text-xs text-gray-500 mb-2">Only send to contacts with these statuses (Dead contacts are always excluded by default).</p>
+                  <p className="text-xs text-gray-500 mb-2">Only send to contacts with these statuses. (If none selected, Dead contacts are safely ignored).</p>
                   <div className="flex flex-wrap gap-4">
-                    {["Engaged", "Unresponsive", "New"].map((status) => (
+                    {["Engaged", "Unresponsive", "New", "Dead"].map((status) => (
                       <label key={status} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                         <input
                           type="checkbox"
@@ -502,7 +502,7 @@ export default function CreateCampaign() {
                           }}
                           className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                         />
-                        {status === "Engaged" ? "🔥 Engaged" : status === "Unresponsive" ? "🟡 Unresponsive" : "🟢 New"}
+                        {status === "Engaged" ? "🔥 Engaged" : status === "Unresponsive" ? "🟡 Unresponsive" : status === "Dead" ? "💀 Dead" : "🟢 New"}
                       </label>
                     ))}
                   </div>
