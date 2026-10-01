@@ -488,23 +488,31 @@ export default function CreateCampaign() {
                   <label className={labelStyle}>Target Engagement Statuses</label>
                   <p className="text-xs text-gray-500 mb-2">Only send to contacts with these statuses. (If none selected, Dead contacts are safely ignored).</p>
                   <div className="flex flex-wrap gap-4">
-                    {["Engaged", "Unresponsive", "New", "Dead"].map((status) => (
-                      <label key={status} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={targetStatuses.includes(status)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setTargetStatuses([...targetStatuses, status]);
-                            } else {
-                              setTargetStatuses(targetStatuses.filter((s) => s !== status));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                        />
-                        {status === "Engaged" ? "🔥 Engaged" : status === "Unresponsive" ? "🟡 Unresponsive" : status === "Dead" ? "💀 Dead" : "🟢 New"}
-                      </label>
-                    ))}
+                    {[
+                      { id: "engaged", label: "🔥 Engaged / Hot", statuses: ["Engaged", "Hot"] },
+                      { id: "warm", label: "☀️ Warm / Unresponsive", statuses: ["Warm", "Unresponsive"] },
+                      { id: "new", label: "🟢 New / Cold", statuses: ["New", "Cold"] },
+                      { id: "dead", label: "💀 Dead", statuses: ["Dead"] }
+                    ].map((group) => {
+                      const isChecked = group.statuses.every(s => targetStatuses.includes(s));
+                      return (
+                        <label key={group.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setTargetStatuses([...new Set([...targetStatuses, ...group.statuses])]);
+                              } else {
+                                setTargetStatuses(targetStatuses.filter((s) => !group.statuses.includes(s)));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          {group.label}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
