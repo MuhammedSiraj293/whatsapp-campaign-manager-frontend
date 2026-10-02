@@ -46,6 +46,7 @@ export default function CreateCampaign() {
   const [selectedExclusionList, setSelectedExclusionList] = useState("");
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
   const [targetStatuses, setTargetStatuses] = useState(["Engaged", "Unresponsive", "New"]);
+  const [statusCounts, setStatusCounts] = useState(null);
 
   // Filtered data
   const [filteredPhones, setFilteredPhones] = useState([]);
@@ -98,6 +99,22 @@ export default function CreateCampaign() {
       }
     }
   }, [contactLists]);
+
+  useEffect(() => {
+    if (selectedList) {
+      const fetchStatusCounts = async () => {
+        const res = await authFetch(`/contacts/lists/${selectedList}/status-counts`);
+        if (res.success) {
+          setStatusCounts(res.data);
+        } else {
+          setStatusCounts(null);
+        }
+      };
+      fetchStatusCounts();
+    } else {
+      setStatusCounts(null);
+    }
+  }, [selectedList]);
 
   // Handle File Preview
   useEffect(() => {
@@ -489,12 +506,13 @@ export default function CreateCampaign() {
                   <p className="text-xs text-gray-500 mb-2">Only send to contacts with these statuses. (If none selected, Dead contacts are safely ignored).</p>
                   <div className="flex flex-wrap gap-4">
                     {[
-                      { id: "engaged", label: "🔥 Engaged / Hot", statuses: ["Engaged", "Hot"] },
-                      { id: "warm", label: "☀️ Warm / Unresponsive", statuses: ["Warm", "Unresponsive"] },
-                      { id: "new", label: "🟢 New / Cold", statuses: ["New", "Cold"] },
-                      { id: "dead", label: "💀 Dead", statuses: ["Dead"] }
+                      { id: "engaged", label: "🔥 Engaged / Hot", statuses: ["Engaged", "Hot"], countKey: "engaged" },
+                      { id: "warm", label: "☀️ Warm / Unresponsive", statuses: ["Warm", "Unresponsive"], countKey: "warm" },
+                      { id: "new", label: "🟢 New / Cold", statuses: ["New", "Cold"], countKey: "new" },
+                      { id: "dead", label: "💀 Dead", statuses: ["Dead"], countKey: "dead" }
                     ].map((group) => {
                       const isChecked = group.statuses.every(s => targetStatuses.includes(s));
+                      const countText = statusCounts ? ` (${statusCounts[group.countKey] || 0})` : "";
                       return (
                         <label key={group.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                           <input
@@ -509,7 +527,7 @@ export default function CreateCampaign() {
                             }}
                             className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                           />
-                          {group.label}
+                          {group.label}{countText}
                         </label>
                       );
                     })}
