@@ -195,10 +195,10 @@ export default function Replies() {
     activeConversationId,
   ]);
 
-  // Fetch conversations when selectedPhoneId (business phone) changes
+  // Fetch conversations when selectedPhoneId (business phone), filter, or search changes
   useEffect(() => {
     if (selectedPhoneId) {
-      setConvoPage(1); // Reset page on phone switch
+      setConvoPage(1); // Reset page on phone switch, search, or filter change
       fetchConversations(
         selectedPhoneId,
         1,
@@ -207,13 +207,17 @@ export default function Replies() {
         activeConversationId,
       );
     }
+    // We EXCLUDE activeConversationId from the dependency array below.
+    // If we include it, clicking on a contact deep in the list will trigger this effect,
+    // reset convoPage to 1, wipe out the currently loaded pages, cause the sidebar to jump to top,
+    // and lose the contact name in the header because the contact falls out of the array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedPhoneId,
     filterMode,
-    activeConversationId,
     fetchConversations,
     searchTerm,
-  ]); // Added filterMode dependency
+  ]);
 
   // Fetch messages for the selected chat
   const fetchMessages = async (customerPhone, recipientId, page = 1) => {
