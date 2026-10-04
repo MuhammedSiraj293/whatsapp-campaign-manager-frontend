@@ -47,7 +47,8 @@ export default function Chats({
     }, 500); // 500ms delay
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, onSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   // Use conversations directly (server filters them)
   const displayConversations = conversations;
