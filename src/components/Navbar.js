@@ -5,6 +5,7 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AuthContext } from "../context/AuthContext";
 import { useWaba } from "../context/WabaContext";
 import { authFetch } from "../services/api";
+import logoWhite from "../assets/images/logo-white.png";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -123,9 +124,9 @@ export default function Navbar() {
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="flex shrink-0 items-center">
                   <img
-                    alt="Logo"
-                    src="https://thecapitalavenue.com/wp-content/uploads/2025/09/Capital-Avenue-White.png"
-                    className="h-8 w-auto hover:opacity-90 transition-opacity cursor-pointer"
+                    alt="The Capital Avenue Real Estate"
+                    src={logoWhite}
+                    className="h-10 w-auto hover:opacity-90 transition-opacity cursor-pointer object-contain"
                     onClick={() => navigate("/")}
                   />
                 </div>
@@ -265,13 +266,11 @@ export default function Navbar() {
 
                     {/* Profile Dropdown */}
                     <Menu as="div" className="relative ml-3">
-                      <Menu.Button className="relative flex rounded-full ring-2 ring-transparent hover:ring-gray-500 transition-all">
+                      <Menu.Button className="relative flex rounded-full ring-2 ring-transparent hover:ring-amber-500/40 transition-all focus:outline-none">
                         <span className="sr-only">Open user menu</span>
-                        <img
-                          alt="profile"
-                          src="https://thecapitalavenue.com/wp-content/uploads/2025/08/Group-3.svg"
-                          className="size-9 rounded-full bg-gray-100"
-                        />
+                        <div className="size-9 rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 text-gray-900 font-bold flex items-center justify-center text-sm shadow-md ring-1 ring-amber-300/40 select-none">
+                          {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                        </div>
                       </Menu.Button>
                       <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-[#202d33] py-1 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-700">
                         <div className="px-4 py-3 text-sm text-white border-b border-gray-700/50 bg-[#1a252a]/50">
